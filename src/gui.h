@@ -24,14 +24,14 @@
 #include <gdk/gdk.h>
 
 
-void dvb_gui_init(void);
-void dvb_about(void);
-void dvb_configure(void);
-void dvb_getinfo(char *);
-void dvb_info_update(char *, char *);
+void dvb_gui_init (void);
+void dvb_about (void);
+void dvb_configure (void);
+void dvb_getinfo (char *);
+void dvb_info_update (char *, char *);
 
-static void     dvb_about_destroy(GtkWidget *, gpointer);
-static void     dvb_configure_destroy(GtkWidget *, gpointer);
-static void     dvb_info_destroy(GtkWidget *, gpointer);
-static gboolean dvb_config_ok(GtkWidget *, GdkEvent *);
-static gboolean dvb_config_apply(GtkWidget *, GdkEvent *);
+static void dvb_about_destroy (GtkWidget *, gpointer);
+static void dvb_configure_destroy (GtkWidget *, gpointer);
+static void dvb_info_destroy (GtkWidget *, gpointer);
+static gboolean dvb_config_ok (GtkWidget *, GdkEvent *);
+static gboolean dvb_config_apply (GtkWidget *, GdkEvent *);

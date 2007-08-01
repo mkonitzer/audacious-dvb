@@ -39,6 +39,6 @@
 #define LOG_DEBUG   7
 
 
-int log_open(void **, char *, int);
-int log_close(void *);
-int log_print(void *, int, char *, ...);
+int log_open (void **, char *, int);
+int log_close (void *);
+int log_print (void *, int, char *, ...);

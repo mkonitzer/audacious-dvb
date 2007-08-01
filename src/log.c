@@ -34,92 +34,74 @@ static char sccsid[] = "@(#)$Id$";
 #include "log.h"
 
 
-typedef struct _HLOG {
-  char  hl_pfx[256];
-  int   hl_level;
+typedef struct _HLOG
+{
+  char hl_pfx[256];
+  int hl_level;
 } HLOG;
 
 
-/*******************************************************************************
-** Function: log_open()
-**
-** Description: 
-**
-*******************************************************************************/
-
-int log_open(void **hlog, char *pfx, int lvl)
+int
+log_open (void **hlog, char *pfx, int lvl)
 {
-  HLOG  *hl;
+  HLOG *hl;
 
-  if ((hl = malloc(sizeof(HLOG))) == NULL) {
-    *hlog = NULL;
-    return (RC_LOG_OPEN_MALLOC_FAILED);
-  }
+  if ((hl = malloc (sizeof (HLOG))) == NULL)
+    {
+      *hlog = NULL;
+      return RC_LOG_OPEN_MALLOC_FAILED;
+    }
 
-  if (strlen(pfx) >= sizeof(hl->hl_pfx)) {
-    *hlog = NULL;
-    return (RC_LOG_OPEN_PREFIX_TOO_LONG);
-  }
-  strcpy(hl->hl_pfx, pfx);
+  if (strlen (pfx) >= sizeof (hl->hl_pfx))
+    {
+      *hlog = NULL;
+      return RC_LOG_OPEN_PREFIX_TOO_LONG;
+    }
+  strcpy (hl->hl_pfx, pfx);
 
   hl->hl_level = lvl;
 
-  *hlog = (void *)hl;
+  *hlog = (void *) hl;
 
-  return (RC_OK);
+  return RC_OK;
 }
 
 
-/*******************************************************************************
-** Function: log_close()
-**
-** Description: 
-**
-*******************************************************************************/
-
-int log_close(void *hlog)
+int
+log_close (void *hlog)
 {
-  HLOG  *hl;
+  HLOG *hl;
 
-  hl = (HLOG *)hlog;
+  if ((hl = (HLOG *) hlog) == NULL)
+    return RC_LOG_CLOSE_HANDLE_INVALID;
 
-  if (hl == NULL) {
-    return (RC_LOG_CLOSE_HANDLE_INVALID);
-  }
+  free (hl);
 
-  free(hl);
-
-  return (RC_OK);
+  return RC_OK;
 }
 
 
-/*******************************************************************************
-** Function: log_print()
-**
-** Description: 
-**
-*******************************************************************************/
-
-int log_print(void *hlog, int lvl, char *fmt, ...)
+int
+log_print (void *hlog, int lvl, char *fmt, ...)
 {
-  HLOG      *hl;
-  time_t    t;
-  va_list   args;
+  HLOG *hl;
+  time_t t;
+  va_list args;
   struct tm *tm;
-  char	    msgbuf[256];
+  char msgbuf[256];
 
-  hl = (HLOG *)hlog;
+  hl = (HLOG *) hlog;
 
-  if (hl == NULL) {
-    return (RC_LOG_PRINT_HANDLE_INVALID);
-  }
+  if (hl == NULL)
+    return RC_LOG_PRINT_HANDLE_INVALID;
 
-  if (hl->hl_level >= lvl) {
-    va_start(args, fmt);
-    vsnprintf(msgbuf, 255, fmt, args);
-    va_end(args);
-    g_message("[%s] %s", hl->hl_pfx, msgbuf);
-  }
+  if (hl->hl_level >= lvl)
+    {
+      va_start (args, fmt);
+      vsnprintf (msgbuf, 255, fmt, args);
+      va_end (args);
+      g_message ("[%s] %s", hl->hl_pfx, msgbuf);
+    }
 
-  return (RC_OK);
+  return RC_OK;
 }

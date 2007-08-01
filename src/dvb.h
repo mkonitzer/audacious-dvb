@@ -69,16 +69,16 @@
 #define RC_DVB_VOLUME_SET_MIXER         2112
 
 
-int dvb_open(int, void **);
-int dvb_close(void *);
-int dvb_tune_qpsk(void *, int, int, char, int, int);
-int dvb_status(void *);
-int dvb_filter(void *, int);
-int dvb_packet(void *, unsigned char *, int);
-int dvb_unfilter(void *);
-int dvb_section(void *, int, int, int, int, unsigned char *, int);
-int dvb_apid(void *, int);
-int dvb_apkt(void *, unsigned char *, int, int, int *);
-int dvb_dpid(void *, int);
-int dvb_dpkt(void *, unsigned char *, int, int, int *);
-int dvb_volume(void *, int);
+int dvb_open (int, void **);
+int dvb_close (void *);
+int dvb_tune_qpsk (void *, int, int, char, int, int);
+int dvb_status (void *);
+int dvb_filter (void *, int);
+int dvb_packet (void *, unsigned char *, int);
+int dvb_unfilter (void *);
+int dvb_section (void *, int, int, int, int, unsigned char *, int);
+int dvb_apid (void *, int);
+int dvb_apkt (void *, unsigned char *, int, int, int *);
+int dvb_dpid (void *, int);
+int dvb_dpkt (void *, unsigned char *, int, int, int *);
+int dvb_volume (void *, int);
