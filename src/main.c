@@ -1,86 +1,29 @@
-/*******************************************************************************
-**
-** Filename:      main.c
-**
-** Function List: get_iplugin_info()
-**                dvb_init()
-**                dvb_is_our_file()
-**                dvb_play()
-**                dvb_stop()
-**                dvb_pause()
-**                dvb_equalize()
-**                dvb_gettime()
-**                dvb_cleanup()
-**                dvb_parse_url()
-**                dvb_feed()
-**                dvb_pes_pkt()
-**                dvb_payload()
-**                dvb_mpeg_frame()
-**                dvb_get_pid()
-**                dvb_get_name()
-**                dvb_madmusic()
-**                dvb_parse_text()
-**                dvb_fixbillshit()
-**                dvb_xlt()
-**
-** Function:      This module contains code that implements the
-**                framework for a XMMS input plugin. This plugin
-**                allows XMMS to directly play DVB audio services.
-**                In addition, the plugin itself is able to record
-**                the received source stream to file while feeding
-**                it to XMMS for playback.
-**
-** Copyright:     (C) COPYRIGHT CHRISTIAN MOTZ 2003, 2004
-**
-**                This program is free software; you can redistribute
-**                it and/or modify it under the terms of the GNU
-**                General Public License as published by the Free
-**                Software Foundation; either version 2, or (at your
-**                option) any later version.
-**
-** Version:       $Id$
-**
-** Change Activity:
-**
-** 030618 -- CMO: Module created.
-**
-** 030622 -- CMO: Added logging for bughunting purposes, some more
-**                sanity checks in the packet feeder, code to use the
-**                SID in the service URL instead of the PID.
-**
-** 030626 -- CMO: Moved service name retrieval to its own thread and
-**                added a (still basically useless) info dialog.
-**                Moved GUI code out to a seperate file.
-**
-** 030628 -- CMO: Introduced code to allow for filesplitting by energy.
-**
-** 030701 -- CMO: Merged in code to retrieve track info on MAD Music
-**                channels (NetMed / Nova package on Hotbird 13° E).
-**
-** 030704 -- CMO: Cleaned up the code a bit, added some comments,
-**
-** 030713 -- CMO: Added a few more comments.
-**
-** 040102 -- CMO: Added a dummy equalizer function, fixed copyright
-**                statement to reflect the GPL status of the code.
-**
-** 040330 -- CMO: Hunted down the bug causing excessive CPU usage in
-**                the X server while the plugin is running.
-**                Incidentally the same cause was responsible for the
-**                flickering visualization display in XMMS.
-**
-** 040407 -- CMO: Added the missing output buffer free check before
-**                passing audio data to XMMS. Its absence caused
-**                problems with some output plugins, namely ALSA.
-**                Also fixed a bug in Service Name retrieval.
-**
-*******************************************************************************/
+/* $Id$ */
+/* audacious-dvb -- Audacious DVB Input Plugin
+
+   Copyright (C) 2007  Marius Konitzer
+   Copyright (C) 2003, 2004  Christian Motz
+   This file is part of audacious-dvb.
+
+   webchanges is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   webchanges is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with webchanges; if not, write to the Free Software Foundation,
+   Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
 #ifndef lint
 static char sccsid[] = "@(#)$Id$";
 #endif
 
-
+#include <fcntl.h>
 #include <time.h>
 #include <math.h>
 #include <stdio.h>
@@ -91,14 +34,14 @@ static char sccsid[] = "@(#)$Id$";
 #include <sys/stat.h>
 #include <sys/param.h>
 
-#include <fcntl.h>
-
 #include <audacious/plugin.h>
 #include <audacious/util.h>
 #include <audacious/configdb.h>
 
 #include <lame/lame.h>
 
+#include "gui.h"
+#include "epg.h"
 #include "dvb.h"
 #include "log.h"
 #include "config.h"
@@ -135,15 +78,6 @@ typedef struct _SVC {
 
 
 void dvb_close_record(void);
-
-extern void *dvb_epg(void *);
-extern void dvb_clean_string(char *);
-
-extern void dvb_gui_init(void);
-extern void dvb_about(void);
-extern void dvb_configure(void);
-extern void dvb_getinfo(char *);
-extern void dvb_info_update(char *, char *);
 
 static void dvb_init(void);
 static int  dvb_is_our_file(char *);

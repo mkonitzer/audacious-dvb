@@ -1,34 +1,23 @@
-/*******************************************************************************
-**
-** Filename:      dvb.h
-**
-** Function:      This include file contains the return code
-**                definitions and prototype declarations for the
-**                functions providing access to the DVB adapter.
-**
-** Copyright:     (C) COPYRIGHT CHRISTIAN MOTZ 2003, 2004
-**
-**                This program is free software; you can redistribute
-**                it and/or modify it under the terms of the GNU
-**                General Public License as published by the Free
-**                Software Foundation; either version 2, or (at your
-**                option) any later version.
-**
-** Version:       $Id$
-**
-** Change Activity:
-**
-** 030602 -- CMO: Module created.
-**
-** 030622 -- CMO: Added a few return codes.
-**
-** 030704 -- CMO: Added RCs and prototypes for audio handling
-**                functions.
-**
-** 040107 -- CMO: Fixed copyright statement to reflect the GPL status
-**                of the code.
-**
-*******************************************************************************/
+/* $Id$ */
+/* Structures and methods for communication with DVB adapter
+
+   Copyright (C) 2007  Marius Konitzer
+   Copyright (C) 2003, 2004  Christian Motz
+   This file is part of audacious-dvb.
+
+   webchanges is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   webchanges is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with webchanges; if not, write to the Free Software Foundation,
+   Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
 #ifndef RC_OK
 #define RC_OK                           0

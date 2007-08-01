@@ -1,5 +1,5 @@
 /* $Id$ */
-/* Gives logging capabilities to audacious-dvb (via glib)
+/* Methods for retrieving EPG information over DVB
 
    Copyright (C) 2007  Marius Konitzer
    Copyright (C) 2003, 2004  Christian Motz
@@ -19,26 +19,8 @@
    along with webchanges; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
-#ifndef RC_OK
-#define RC_OK                         0
-#endif
+void  *dvb_epg(void *);
+void  dvb_clean_string(char *);
 
-#define RC_LOG_OPEN_MALLOC_FAILED     3000
-#define RC_LOG_OPEN_PREFIX_TOO_LONG   3002
-#define RC_LOG_CLOSE_HANDLE_INVALID   3100
-#define RC_LOG_PRINT_HANDLE_INVALID   3200
-
-
-#define LOG_EMERG   0
-#define LOG_ALERT   1
-#define LOG_CRIT    2
-#define LOG_ERR     3
-#define LOG_WARNING 4
-#define LOG_NOTICE  5
-#define LOG_INFO    6
-#define LOG_DEBUG   7
-
-
-int log_open(void **, char *, int);
-int log_close(void *);
-int log_print(void *, int, char *, ...);
+static int  dvb_parse_eit(unsigned char *, int);
+static int  dvb_eit_desc(unsigned char *, int);

@@ -1,63 +1,27 @@
-/*******************************************************************************
-**
-** Filename:      dvb.c
-**
-** Function List: dvb_open()
-**                dvb_close()
-**                dvb_tune_qpsk()
-**                dvb_status()
-**                dvb_filter()
-**                dvb_packet()
-**                dvb_unfilter()
-**                dvb_section()
-**                dvb_apid()
-**                dvb_apkt()
-**                dvb_dpid()
-**                dvb_dpkt()
-**                dvb_volume()
-**
-** Function:      This module contains code that interfaces to a DVB
-**                PCI adapter using the driver available from
-**
-**                              http://www.linuxtv.org
-**
-**                It provides a bit of abstraction so there is no need
-**                to twiddle around with the device itself. The layer
-**                this code presents is far from perfect, but it seems
-**                to do the job in most cases.
-**
-** Copyright:     (C) COPYRIGHT CHRISTIAN MOTZ 2003, 2004
-**
-**                This program is free software; you can redistribute
-**                it and/or modify it under the terms of the GNU
-**                General Public License as published by the Free
-**                Software Foundation; either version 2, or (at your
-**                option) any later version.
-**
-** Version:       $Id$
-**
-** Change Activity:
-**
-** 030602 -- CMO: Module created.
-**
-** 030622 -- CMO: Added support for logging.
-**
-** 030701 -- CMO: Moved in code to use the adapter's audio path so
-**                that scrambled channels can be handled as well.
-**
-** 030704 -- CMO: Added an interface function to set the audio decoder
-**                volume. This is used for muting the audio path, as
-**                XMMS does its own output of raw PCM data.
-**
-** 040107 -- CMO: Fixed copyright statement to reflect the GPL status
-**                of the code.
-**
-*******************************************************************************/
+/* $Id$ */
+/* Structures and methods for communication with DVB adapter
+
+   Copyright (C) 2007  Marius Konitzer
+   Copyright (C) 2003, 2004  Christian Motz
+   This file is part of audacious-dvb.
+
+   webchanges is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   webchanges is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with webchanges; if not, write to the Free Software Foundation,
+   Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
 #ifndef lint
 static char sccsid[] = "@(#)$Id$";
 #endif
-
 
 #include <stdlib.h>
 #include <unistd.h>

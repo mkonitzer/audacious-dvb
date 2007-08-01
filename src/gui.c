@@ -1,45 +1,23 @@
-/*******************************************************************************
-**
-** Filename:      gui.c
-**
-** Function List: dvb_gui_init()
-**                dvb_about()
-**                dvb_about_destroy()
-**                dvb_configure()
-**                dvb_configure_destroy()
-**                dvb_config_ok()
-**                dvb_config_apply()
-**                dvb_getinfo()
-**                dvb_info_destroy()
-**                dvb_info_update()
-**                dvb_info_tupdate()
-**
-** Function:      This module contains the GTK code that makes up the
-**                user interface for the XMMS DVB Input Plugin. I am
-**                not an UI guru, and especially not one when it comes
-**                to GTK, and I suppose the code reflects this.
-**
-** Copyright:     (C) COPYRIGHT CHRISTIAN MOTZ 2003, 2004
-**
-**                This program is free software; you can redistribute
-**                it and/or modify it under the terms of the GNU
-**                General Public License as published by the Free
-**                Software Foundation; either version 2, or (at your
-**                option) any later version.
-**
-** Version:       $Id$
-**
-** Change Activity:
-**
-** 030627 -- CMO: Module created from main plugin code.
-**
-** 030627 -- CMO: Added configuration options for automatic splitting
-**                of the recording file by energy.
-**
-** 040107 -- CMO: Fixed copyright statement to reflect the GPL status
-**                of the code.
-**
-*******************************************************************************/
+/* $Id$ */
+/* Everything dealing with the graphical user interface
+
+   Copyright (C) 2007  Marius Konitzer
+   Copyright (C) 2003, 2004  Christian Motz
+   This file is part of audacious-dvb.
+
+   webchanges is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   webchanges is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with webchanges; if not, write to the Free Software Foundation,
+   Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
 #ifndef lint
 static char sccsid[] = "@(#)$Id$";
@@ -58,22 +36,8 @@ static char sccsid[] = "@(#)$Id$";
 
 #include "config.h"
 
+#include "gui.h"
 #include "log.h"
-
-
-void dvb_gui_init(void);
-void dvb_about(void);
-void dvb_configure(void);
-void dvb_getinfo(char *);
-void dvb_info_update(char *, char *);
-
-extern void     dvb_close_record(void);
-
-static void     dvb_about_destroy(GtkWidget *, gpointer);
-static void     dvb_configure_destroy(GtkWidget *, gpointer);
-static void     dvb_info_destroy(GtkWidget *, gpointer);
-static gboolean dvb_config_ok(GtkWidget *, GdkEvent *);
-static gboolean dvb_config_apply(GtkWidget *, GdkEvent *);
 
 
 static int  config_dialog_open;
