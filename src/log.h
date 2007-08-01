@@ -31,13 +31,9 @@
 #endif
 
 #define RC_LOG_OPEN_MALLOC_FAILED     3000
-#define RC_LOG_OPEN_FILENAME_TOO_LONG 3001
 #define RC_LOG_OPEN_PREFIX_TOO_LONG   3002
-
 #define RC_LOG_CLOSE_HANDLE_INVALID   3100
-
 #define RC_LOG_PRINT_HANDLE_INVALID   3200
-#define RC_LOG_PRINT_FOPEN_FAILED     3201
 
 
 #define LOG_EMERG   0
@@ -50,6 +46,6 @@
 #define LOG_DEBUG   7
 
 
-int log_open(char *, void **, char *, int);
+int log_open(void **, char *, int);
 int log_close(void *);
 int log_print(void *, int, char *, ...);

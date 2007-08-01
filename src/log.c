@@ -38,21 +38,16 @@ static char sccsid[] = "@(#)$Id$";
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
+#include <glib.h>
 #include <sys/param.h>
 
 #include "log.h"
 
 
 typedef struct _HLOG {
-  char  hl_fn[MAXPATHLEN];
   char  hl_pfx[256];
   int   hl_level;
 } HLOG;
-
-static char *month[] = {
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-};
 
 
 /*******************************************************************************
@@ -62,7 +57,7 @@ static char *month[] = {
 **
 *******************************************************************************/
 
-int log_open(char *fn, void **hlog, char *pfx, int lvl)
+int log_open(void **hlog, char *pfx, int lvl)
 {
   HLOG  *hl;
 
@@ -70,12 +65,6 @@ int log_open(char *fn, void **hlog, char *pfx, int lvl)
     *hlog = NULL;
     return (RC_LOG_OPEN_MALLOC_FAILED);
   }
-
-  if (strlen(fn) >= sizeof(hl->hl_fn)) {
-    *hlog = NULL;
-    return (RC_LOG_OPEN_FILENAME_TOO_LONG);
-  }
-  strcpy(hl->hl_fn, fn);
 
   if (strlen(pfx) >= sizeof(hl->hl_pfx)) {
     *hlog = NULL;
@@ -123,11 +112,11 @@ int log_close(void *hlog)
 
 int log_print(void *hlog, int lvl, char *fmt, ...)
 {
-  FILE      *f;
   HLOG      *hl;
   time_t    t;
   va_list   args;
   struct tm *tm;
+  char	    msgbuf[256];
 
   hl = (HLOG *)hlog;
 
@@ -136,23 +125,10 @@ int log_print(void *hlog, int lvl, char *fmt, ...)
   }
 
   if (hl->hl_level >= lvl) {
-    if ((f = fopen(hl->hl_fn, "a")) == NULL) {
-      return (RC_LOG_PRINT_FOPEN_FAILED);
-    }
-
-    time(&t);
-    tm = localtime(&t);
-    fprintf(f, "%s %2d %02d:%02d:%02d %s: ", month[tm->tm_mon], tm->tm_mday,
-            tm->tm_hour, tm->tm_min, tm->tm_sec, hl->hl_pfx);
-
     va_start(args, fmt);
-    vfprintf(f, fmt, args);
+    vsnprintf(msgbuf, 255, fmt, args);
     va_end(args);
-
-    fprintf(f, "\n");
-
-    fflush(f);
-    fclose(f);
+    g_message("[%s] %s", hl->hl_pfx, msgbuf);
   }
 
   return (RC_OK);

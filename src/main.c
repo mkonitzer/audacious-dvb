@@ -288,7 +288,7 @@ InputPlugin *get_iplugin_info(void)
 static void dvb_init(void)
 {
   int         rc, log_lvl, idb;
-  char        *s, log_fn[MAXPATHLEN];
+  char        *s;
   ConfigDb    *cfgdb;
 
   s    = NULL;
@@ -298,14 +298,6 @@ static void dvb_init(void)
   */
 
   if ((cfgdb = bmp_cfg_db_open()) != NULL) {
-    if (bmp_cfg_db_get_string(cfgdb, "DVB", "Logfile", &s)) {
-      if (s != NULL) {
-        strcpy(log_fn, s);
-      }
-    } else {
-      strcpy(log_fn, "/tmp/xmms-dvb.log");
-    }
-
     if (!bmp_cfg_db_get_int(cfgdb, "DVB", "Loglevel", &log_lvl)) {
       log_lvl = 0;
     }
@@ -373,10 +365,9 @@ static void dvb_init(void)
     strcpy(cf_rec_file, "");
 
     log_lvl = 0;
-    strcpy(log_fn, "/tmp/xmms-dvb.log");
   }
 
-  if ((rc = log_open(log_fn, &hlog, "xmms-dvb", log_lvl)) != RC_OK) {
+  if ((rc = log_open(&hlog, "xmms-dvb", log_lvl)) != RC_OK) {
     hlog = NULL;
   }
 
