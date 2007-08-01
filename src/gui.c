@@ -27,7 +27,7 @@
 **                Software Foundation; either version 2, or (at your
 **                option) any later version.
 **
-** Version:       $Id: gui.c,v 1.4 2004/04/07 14:46:11 douleftis Exp $
+** Version:       $Id$
 **
 ** Change Activity:
 **
@@ -42,7 +42,7 @@
 *******************************************************************************/
 
 #ifndef lint
-static char sccsid[] = "@(#)$Id: gui.c,v 1.4 2004/04/07 14:46:11 douleftis Exp $";
+static char sccsid[] = "@(#)$Id$";
 #endif
 
 #include <stdio.h>

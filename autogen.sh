@@ -3,7 +3,7 @@
 libtoolize --force
 aclocal
 autoheader
-automake -a --add-missing
+automake --add-missing --copy
 autoconf
 
 echo "Now you are ready to run ./configure (check '--help' for options)"

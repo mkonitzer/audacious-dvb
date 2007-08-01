@@ -17,7 +17,7 @@
 **                Software Foundation; either version 2, or (at your
 **                option) any later version.
 **
-** Version:       $Id: epg.c,v 1.2 2004/04/07 17:50:01 douleftis Exp $
+** Version:       $Id$
 **
 ** Change Activity:
 **
@@ -31,7 +31,7 @@
 *******************************************************************************/
 
 #ifndef lint
-static char sccsid[] = "@(#)$Id: epg.c,v 1.2 2004/04/07 17:50:01 douleftis Exp $";
+static char sccsid[] = "@(#)$Id$";
 #endif
 
 

@@ -14,7 +14,7 @@
 **                Software Foundation; either version 2, or (at your
 **                option) any later version.
 **
-** Version:       $Id: dvb.h,v 1.3 2004/04/07 14:46:11 douleftis Exp $
+** Version:       $Id$
 **
 ** Change Activity:
 **
