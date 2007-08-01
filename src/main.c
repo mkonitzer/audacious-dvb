@@ -91,9 +91,9 @@ static void dvb_cleanup (void);
 
 static int dvb_parse_url (char *, SVC *);
 static void *dvb_feed (void *);
-static void dvb_pes_pkt (unsigned char *, int, int);
-static void dvb_payload (unsigned char *, int, int);
-static void dvb_mpeg_frame (unsigned char *, int, int);
+static void dvb_pes_pkt (InputPlayback *, unsigned char *, int, int);
+static void dvb_payload (InputPlayback *, unsigned char *, int, int);
+static void dvb_mpeg_frame (InputPlayback *, unsigned char *, int, int);
 static int dvb_get_pid (int, int *, int *);
 static void *dvb_get_name (void *);
 static void *dvb_madmusic (void *);
@@ -465,7 +465,7 @@ dvb_play (InputPlayback * playback)
 	}
     }
 
-  if (pthread_create (&pt, 0, dvb_feed, 0) != 0)
+  if (pthread_create (&pt, 0, dvb_feed, playback) != 0)
     {
       playing = 0;
       log_print (hlog, LOG_CRIT, "pthread_create() failed for dvb_feed()");
@@ -497,7 +497,7 @@ dvb_stop (InputPlayback * playback)
 	  epg_running = 0;
 	}
 
-      dvb_ip.output->close_audio ();
+      playback->output->close_audio ();
 
       if (hdvb)
 	/* Stopping the audio and data PID filters should probably be added. */
@@ -539,7 +539,7 @@ static int
 dvb_gettime (InputPlayback * playback)
 {
   if (playing)
-    return (dvb_ip.output->output_time ());
+    return (playback->output->output_time ());
 
   return 0;
 }
@@ -683,13 +683,15 @@ dvb_feed (void *args)
 {
   int rc, ar, toctr;
   unsigned char pkt[3840];
+  InputPlayback *playback;
 
+  playback = (InputPlayback *) args;
   log_print (hlog, LOG_INFO, "dvb_feed() thread started");
 
   pthread_mutex_lock (&mutex);
 
-  dvb_pes_pkt (NULL, 0, 1);
-  dvb_payload (NULL, 0, 1);
+  dvb_pes_pkt (playback, NULL, 0, 1);
+  dvb_payload (playback, NULL, 0, 1);
 
   time (&isplit_last);
 
@@ -702,7 +704,7 @@ dvb_feed (void *args)
 	{
 	  toctr = 0;
 	  if (!paused)
-	    dvb_pes_pkt (pkt, ar, 0);
+	    dvb_pes_pkt (playback, pkt, ar, 0);
 	}
       else
 	{
@@ -735,7 +737,7 @@ dvb_feed (void *args)
 
   if (audio)
     {
-      dvb_ip.output->close_audio ();
+      playback->output->close_audio ();
       audio = 0;
     }
 
@@ -747,7 +749,7 @@ dvb_feed (void *args)
 
 
 static void
-dvb_pes_pkt (unsigned char *buf, int len, int reset)
+dvb_pes_pkt (InputPlayback * playback, unsigned char *buf, int len, int reset)
 {
   int i, stream_id, PES_packet_length, j, pp_len;
   static int pbh, pbl;
@@ -847,7 +849,7 @@ dvb_pes_pkt (unsigned char *buf, int len, int reset)
 
 			  pp = p + 9 + p[8];
 			  pp_len = PES_packet_length - 3 - p[8];
-			  dvb_payload (pp, pp_len, 0);
+			  dvb_payload (playback, pp, pp_len, 0);
 
 			  memcpy (pesbuf, &pesbuf[i + 6 + PES_packet_length],
 				  pbh - (i + 6 + PES_packet_length));
@@ -880,7 +882,7 @@ dvb_pes_pkt (unsigned char *buf, int len, int reset)
 
 
 static void
-dvb_payload (unsigned char *buf, int len, int reset)
+dvb_payload (InputPlayback * playback, unsigned char *buf, int len, int reset)
 {
   int br, sf, fl, num_samples;
   int i, mpv, mpl, crc, bri, tlu, sfi, pad;
@@ -949,7 +951,7 @@ dvb_payload (unsigned char *buf, int len, int reset)
 
 	      if ((mpbuf[fl] == 0xff) && ((mpbuf[fl + 1] & 0xf0) == 0xf0))
 		{
-		  dvb_mpeg_frame (mpbuf, fl, num_samples);
+		  dvb_mpeg_frame (playback, mpbuf, fl, num_samples);
 		  memcpy (mpbuf, &mpbuf[fl], bph - fl);
 		  bph -= fl;
 		}
@@ -989,7 +991,8 @@ dvb_payload (unsigned char *buf, int len, int reset)
 
 
 static void
-dvb_mpeg_frame (unsigned char *frame, int len, int smp)
+dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
+		int smp)
 {
   int nout, i, vu, ms;
   char xmms_info[4096];
@@ -1062,7 +1065,7 @@ dvb_mpeg_frame (unsigned char *frame, int len, int smp)
 	  if (!audio)
 	    {
 	      audio =
-		dvb_ip.output->open_audio (FMT_S16_NE, mp3d.samplerate, 2);
+		playback->output->open_audio (FMT_S16_NE, mp3d.samplerate, 2);
 	    }
 
 	  /* 
@@ -1115,13 +1118,13 @@ dvb_mpeg_frame (unsigned char *frame, int len, int smp)
 
       if (audio)
 	{
-	  dvb_ip.add_vis_pcm (dvb_ip.output->written_time (),
+	  dvb_ip.add_vis_pcm (playback->output->written_time (),
 			      FMT_S16_NE, 2, nout << 2, stereo);
 
-	  while ((dvb_ip.output->buffer_free () < (nout << 2)) && playing)
+	  while ((playback->output->buffer_free () < (nout << 2)) && playing)
 	    xmms_usleep (10000);
 
-	  dvb_ip.output->write_audio (stereo, nout << 2);
+	  playback->output->write_audio (stereo, nout << 2);
 	}
 
       sumarr[sap++] = vu;
