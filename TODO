@@ -1,0 +1,19 @@
+Things that need fixing:
+
+- 'hangs' in bad reception conditions (seems fixed?)
+
+
+Minor Improvements:
+
+- automatic tagging of recorded files when using information
+  retrieval.
+
+
+Additional future functionality:
+
+- support for conditional access via common interface when using the
+  link layer firmware.
+
+- I18N/locale-support
+
+- DVB-T and DVB-C frontend support.

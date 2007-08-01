@@ -1,0 +1,139 @@
+| XMMS DVB Input Plugin V0.5.0
+
+This package contains the source code for a XMMS input plugin that
+enables XMMS to directly play MPEG-1 Layer II audio streams received
+by a DVB-S PCI-Adapter compatible with the driver available from
+http://www.linuxtv.org/
+
+At this point it is a rather basic piece of code, more or less a
+quick-and-dirty kinda hack of some code I had floating around. But it
+does the job I need it for, so for now it'll have to do.
+
+Aside from the installed DVB driver the pluging uses libmp3lame, so
+LAME should be installed on your system. See
+http://lame.sourceforge.net/ for details.
+
+To make it work, install the plugin and open a location in your XMMS
+with an URL of the following syntax:
+
+		dvb0://SA/11836H/27500/Auto/3001
+
+or		dvb0://SA/11836H/27500/Auto/SID=28120
+
+where the individual components are:
+
+'dvb'	    - indicating that the DVB plugin should be used to play
+              this address.
+
+'0'	    - device number of the adapter to open.
+
+'SA'	    - indicates a 'S'atellite URL and selects LNB 'A' using
+              DiSEqC. This will probably be replaced with a more
+              flexible DiSEqC implementation at some point, similar to
+              the one used in VDR.
+
+'11836H'    - the transponder frequency and polarization to use.
+
+'27500'	    - the symbol rate of the transport stream.
+
+'Auto'	    - FEC mode of the transport stream; in theory can be None,
+	      1/2, 2/3, 3/4, 5/6, 7/8 or Auto. Leaving it at 'Auto'
+	      should be just fine, though.
+
+'3001'	    - PID of the audio stream to play. Can either be in
+              decimal or hexadecimal notation; in the latter case it
+              needs to be prefixed with '0x'
+
+	      or alternatively
+
+'SID=28120' - SID of the audio stream to play. As with the PID, it can
+	      either be specified in decimal or hexadecimal notation.
+	      So far, only the first audio stream is taken into
+	      consideration. So if a service consists of more than one
+	      audio stream, the remaining streams of the service can
+	      only be referenced by specifying their PIDs.
+
+	      If a service is referenced via SID, the plugin will
+	      attempt to retrieve the service name from the SDT and
+	      display it within XMMS. This process may take up to
+	      several seconds.
+
+| In order to create a channel list, simply put the URLs into a file and
+| load it into XMMS as a playlist (e.g. .m3u-file). Once you have
+| selected a service, its info will be updated and saved along with the
+| URL whenever you choose to save the playlist from XMMS. An example
+| of such a playlist is provided in the 'examples'-directory.
+
+Aside from feeding the stream to XMMS the plugin can also record the
+original received MPEG-1 layer II stream while playing it. See the
+plugin's configuration dialog for details -- it should mostly be
+self-explanatory. Recording can be enabled/disabled while playing as
+well as changing the filename of the recording file. Optionally the
+plugin can automatically split the recording file at regular,
+configurable intervals. In this case the filename should contain
+a printf()-style format string that enables the plugin to insert a
+sequence number into the recording file's name.
+
+From version 0.3.0, XMMS-DVB also provides the possibility for
+automatic splitting of the recording file by energy, i.e. a new file
+is started whenever the sound level drops below a configurable level
+for a configurable amount of time. In addition, a minimum length of
+the recording file can be specified to avoid fragmentation of the
+recording into too many files.
+
+For this, the analysis of the audio data is suspended for a
+configurable number of seconds after a new recording file has been
+started. At this point the recorded file may be up to a second
+shorter than the specified duration though. I hope to fix this
+eventually.
+
+Starting with version 0.4.0, audio is retrieved 'as such' from the
+DVB adapter. The advantage of this is that scrambled audio services
+will be handled correctly, given that an appropriate CAM and
+smart card are used for the service in question. Please, keep in
+mind that so far no specific CAM support is included with the
+plugin, so you cannot use the 'link layer' firmware for the adapter
+if you want to receive subscription services. You MUST use the
+'icam' firmware instead!
+
+In addition, I moved in some code I hacked up some time ago that
+extracts track information from the OpenTV stream of the 'MAD Music'
+channels offered by the greek Nova (NetMed) subscription service on
+Hotbird (13° east). Through this, XMMS will display the artist and
+title of the song currently playing while you listen to one of these
+channels. Note that most of these are, obviously, greek, so you need
+to select an appropriate (ISO 8859-7) font for XMMS for display.
+
+| To enable this (which really only makes sense if you have a Nova
+| subscription and the appropriate CI-CAM) just check 'MADMusic 
+| OpenTV Application' under "Information retrieval" in the options
+| dialog before you start listening to the service.
+
+(On a side note: a split level of -42.8 dB with a duration of 360 ms
+seems to work just fine on these channels to get individual files
+for most songs played.)
+
+| Version 0.5.0 introduces basic EPG support. So if a DVB service
+| provides EPG information, it can be retrieved and displayed by
+| XMMS. If you want EPG data displayed for the current broadcast
+| event, simply activate 'Electronic Program Guide' in the
+| "Information retrieval" section of the options dialog. This has
+| to be done _before_ selecting a service.
+
+For installation just make sure the prerequisites are met (see above)
+and do the usual configure/make/make install orgy. Configure should
+check for the presence of libmp3lame, but not the driver -- sorry,
+but I'm not exactly a big fan of the autoconf/automake stuff. But you
+never know, this might change someday ...
+
+If you find the plugin useful, let me know. If you have some
+suggestions on how to improve it, let me know. Just don't count on my
+implementing anything in the blink of an eye -- unless of course you
+pay me for it.
+
+If you find a bug, send me a _detailed_ bug description, preferably on
+how to reliably reproduce it, and I will see what I can do to fix it.
+
+Best regards,
+Chris.
+
