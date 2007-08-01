@@ -417,7 +417,10 @@ int dvb_packet(void *hdvb, unsigned char *pkt, int t)
   FD_ZERO(&rfd);
   FD_SET(h->dvb_dmxdh, &rfd);
 
-  if ((s = select(h->dvb_dmxdh + 1, &rfd, NULL, NULL, &tv)) <= 0) {
+  do {
+    s = select(h->dvb_dmxdh + 1, &rfd, NULL, NULL, &tv);
+  } while (s < 0 && errno==EINTR);
+  if (s <= 0) {
     if (s == 0) {
       return (RC_DVB_PACKET_SELECT_TIMEOUT);
     } else {
@@ -523,7 +526,9 @@ int dvb_section(void *hdvb, int pid, int sect, int sid, int sct, unsigned char *
   FD_ZERO(&fds);
   FD_SET(fd, &fds);
 
-  sel = select(fd + 1, &fds, NULL, NULL, &tv);
+  do {
+    sel = select(fd + 1, &fds, NULL, NULL, &tv);
+  } while (sel < 0 && errno==EINTR);
 
   if (sel > 0) {
     if ((r = read(fd, s, 4096)) < 0) {
@@ -615,7 +620,10 @@ int dvb_apkt(void *hdvb, unsigned char *pkt, int len, int t, int *rcvd)
   FD_ZERO(&rfd);
   FD_SET(h->dvb_admx, &rfd);
 
-  if ((sel = select(h->dvb_admx + 1, &rfd, NULL, NULL, &tv)) <= 0) {
+  do {
+    sel = select(h->dvb_admx + 1, &rfd, NULL, NULL, &tv);
+  } while (sel < 0 && errno==EINTR);
+  if (sel <= 0) {
     if (sel < 0) {
       return (RC_DVB_APKT_SELECT_FAILED);
     }
@@ -717,7 +725,9 @@ int dvb_dpkt(void *hdvb, unsigned char *s, int len, int t, int *rcvd)
   FD_ZERO(&fds);
   FD_SET(h->dvb_ddmx, &fds);
 
-  sel = select(h->dvb_ddmx + 1, &fds, NULL, NULL, &tv);
+  do {
+    sel = select(h->dvb_ddmx + 1, &fds, NULL, NULL, &tv);
+  } while (sel < 0 && errno==EINTR);
 
   if (sel > 0) {
     if ((r = read(h->dvb_ddmx, s, len)) < 0) {
