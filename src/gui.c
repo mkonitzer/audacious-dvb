@@ -50,7 +50,7 @@ static char sccsid[] = "@(#)$Id$";
 #include <string.h>
 #include <sys/param.h>
 
-#include <xmms/configfile.h>
+#include <audacious/configdb.h>
 
 #include <glib.h>
 #include <gtk/gtk.h>
@@ -93,7 +93,6 @@ extern int        cf_record, cf_rec_append, cf_rec_asplit, cf_rec_stime;
 extern char       cf_rec_file[MAXPATHLEN];
 extern void       *hlog;
 extern float      cf_rec_sillvl;
-extern ConfigFile *xcfg;
 
 static char *about_title = "About DVB Input Plugin";
 static char *about_text1 = "\n\
@@ -204,7 +203,7 @@ void dvb_configure(void)
   ** Create a dialog window with boxes.
   */
 
-  cf_win = gtk_window_new(GTK_WINDOW_DIALOG);
+  cf_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title(GTK_WINDOW(cf_win), "DVB Plugin Configuration");
   gtk_window_set_policy(GTK_WINDOW(cf_win), FALSE, FALSE, TRUE);
   gtk_signal_connect(GTK_OBJECT(cf_win), "destroy",
@@ -468,6 +467,7 @@ static gboolean dvb_config_ok(GtkWidget *w, GdkEvent *ev)
 static gboolean dvb_config_apply(GtkWidget *w, GdkEvent *ev)
 {
   int idb;
+  ConfigDb *cfgdb;
 
   if (GTK_TOGGLE_BUTTON(cf_cb1)->active) {
     cf_record = 1;
@@ -537,19 +537,19 @@ static gboolean dvb_config_apply(GtkWidget *w, GdkEvent *ev)
     strcpy(cf_rec_file, gtk_entry_get_text(GTK_ENTRY(cf_ef1)));
   }
 
-  if (xcfg != NULL) {
-    xmms_cfg_write_boolean(xcfg, "DVB", "Record", cf_record);
-    xmms_cfg_write_boolean(xcfg, "DVB", "Append", cf_rec_append);
-    xmms_cfg_write_boolean(xcfg, "DVB", "Autosplit", cf_rec_asplit);
-    xmms_cfg_write_boolean(xcfg, "DVB", "Split", cf_rec_isplit);
-    xmms_cfg_write_int(xcfg, "DVB", "Interval", cf_rec_stime);
-    xmms_cfg_write_int(xcfg, "DVB", "Duration", cf_rec_sildur);
-    xmms_cfg_write_int(xcfg, "DVB", "Level", idb);
-    xmms_cfg_write_int(xcfg, "DVB", "Guard", cf_rec_guard);
-    xmms_cfg_write_boolean(xcfg, "DVB", "Info", cf_get_info);
-    xmms_cfg_write_boolean(xcfg, "DVB", "EPG", cf_get_epg);
-    xmms_cfg_write_string(xcfg, "DVB", "File", cf_rec_file);
-    xmms_cfg_write_default_file(xcfg);
+  if ((cfgdb = bmp_cfg_db_open()) != NULL) {
+    bmp_cfg_db_set_bool(cfgdb, "DVB", "Record", cf_record);
+    bmp_cfg_db_set_bool(cfgdb, "DVB", "Append", cf_rec_append);
+    bmp_cfg_db_set_bool(cfgdb, "DVB", "Autosplit", cf_rec_asplit);
+    bmp_cfg_db_set_bool(cfgdb, "DVB", "Split", cf_rec_isplit);
+    bmp_cfg_db_set_int(cfgdb, "DVB", "Interval", cf_rec_stime);
+    bmp_cfg_db_set_int(cfgdb, "DVB", "Duration", cf_rec_sildur);
+    bmp_cfg_db_set_int(cfgdb, "DVB", "Level", idb);
+    bmp_cfg_db_set_int(cfgdb, "DVB", "Guard", cf_rec_guard);
+    bmp_cfg_db_set_bool(cfgdb, "DVB", "Info", cf_get_info);
+    bmp_cfg_db_set_bool(cfgdb, "DVB", "EPG", cf_get_epg);
+    bmp_cfg_db_set_string(cfgdb, "DVB", "File", cf_rec_file);
+    bmp_cfg_db_close(cfgdb);
   }
 
   return (TRUE);
@@ -573,7 +573,7 @@ void dvb_getinfo(char *s)
     return;
   }
 
-  if_win = gtk_window_new(GTK_WINDOW_DIALOG);
+  if_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title(GTK_WINDOW(if_win), "Service Information");
 //  gtk_window_set_policy(GTK_WINDOW(if_win), FALSE, FALSE, TRUE);
   gtk_signal_connect(GTK_OBJECT(if_win), "destroy",
@@ -658,7 +658,7 @@ void dvb_getinfo(char *s)
                    2, 2);
   gtk_label_set_justify(GTK_LABEL(lbl), GTK_JUSTIFY_LEFT);
 
-  if_tx1 = gtk_text_new(NULL, NULL);
+  if_tx1 = gtk_text_view_new();
   gtk_widget_show(if_tx1);
   gtk_table_attach(GTK_TABLE(tbl), if_tx1, 1, 2, 0, 1,
                    GTK_FILL | GTK_EXPAND, GTK_FILL | GTK_EXPAND,
@@ -716,7 +716,7 @@ void dvb_info_update(char *prov, char *name)
 **
 *******************************************************************************/
 
-void dvb_info_tupdate(char *tinfo, int ilen)
+/*void dvb_info_tupdate(char *tinfo, int ilen)
 {
 //  guint     old;
 
@@ -729,4 +729,4 @@ void dvb_info_tupdate(char *tinfo, int ilen)
   }
 
   return;
-}
+}*/

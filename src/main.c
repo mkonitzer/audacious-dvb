@@ -93,9 +93,9 @@ static char sccsid[] = "@(#)$Id$";
 
 #include <fcntl.h>
 
-#include <xmms/plugin.h>
-#include <xmms/util.h>
-#include <xmms/configfile.h>
+#include <audacious/plugin.h>
+#include <audacious/util.h>
+#include <audacious/configdb.h>
 
 #include <lame/lame.h>
 
@@ -147,11 +147,11 @@ extern void dvb_info_update(char *, char *);
 
 static void dvb_init(void);
 static int  dvb_is_our_file(char *);
-static void dvb_play(char *);
-static void dvb_stop(void);
-static void dvb_pause(short);
+static void dvb_play(InputPlayback *);
+static void dvb_stop(InputPlayback *);
+static void dvb_pause(InputPlayback *, short);
 static void dvb_equalize(int, float, float *);
-static int  dvb_gettime(void);
+static int  dvb_gettime(InputPlayback *);
 static void dvb_cleanup(void);
 
 static int dvb_parse_url(char *, SVC *);
@@ -177,7 +177,6 @@ int         playing;                    /* This is also used in the GUI */
 int         si_update;                  /* This is used in EPG retrieval */
 void        *hlog;                      /* This is used everywhere :) */
 void        *hdvb;                      /* EPG retrieval uses this */
-ConfigFile  *xcfg;                      /* This is also used in the GUI */
 
 /*
 ** Configuration file parameters
@@ -222,30 +221,40 @@ static int sft[] = {
 };
 
 InputPlugin dvb_ip = {
-  0,                // Handle, filled in by xmms
-  0,                // Filename, filled in by xmms
-  PLUGIN_NAME,      // description
-  dvb_init,         // Called when plugin is enabled
-  dvb_about,        // Show the about box
-  dvb_configure,    // Show the configure box
-  dvb_is_our_file,  // check if file is for our plugin
-  0,                // 
-  dvb_play,         // play
-  dvb_stop,         // stop
-  dvb_pause,        // pause
-  0,                // 
-  dvb_equalize,     // equalizer
-  dvb_gettime,      // get current play time
-  0,                // get volume
-  0,                // set volume
-  dvb_cleanup,      // cleanup
-  0,                // obsolete?
-  0,                // send visualisation data
-  0,                // set player window info
-  0,                // set song title text
-  0,                // get song title text to show on Playlist
-  dvb_getinfo,      // file info box
-  0                 // pointer to outputPlugin
+  0,                /* [handle]		Filled in by Audacious */
+  0,                /* [filename]	Filled in by Audacious */
+  PLUGIN_NAME,      /* [description] */
+
+  dvb_init,         /* [init]		Called when plugin is enabled */
+  dvb_about,        /* [about]		Show the about box */
+  dvb_configure,    /* [configure]	Show the configure box */
+
+  dvb_is_our_file,  /* [is_our_file]	Check if file is for our plugin */
+  0,                /* [scan_dir] */
+
+  dvb_play,         /* [play_file]	Start Playback */
+  dvb_stop,         /* [stop]		Stop Playback */
+  dvb_pause,        /* [pause]		Pause playback */
+  0,                /* [seek]		Seeking impossible for DVB-streams */
+
+  dvb_equalize,     /* [set_eq]		Set equalizer */
+
+  dvb_gettime,      /* [get_time]	Get current play time */
+
+  0,                /* [get_volume] */
+  0,                /* [set_volume] */
+
+  dvb_cleanup,      /* [cleanup] */
+
+  0,                /* [get_vis_type] */
+  0,                /* [add_vis_pcm] */
+
+  0,                /* [set_info]	Set player window info */
+  0,                /* [set_info_text]	Set song title text */
+  0,                /* [get_song_info]	Get song title text to show on Playlist */
+  dvb_getinfo,      /* [file_info_box]	Show file info box */
+
+  0                 /* [OutputPlugin]	deprecated */
 };
 
 
@@ -280,6 +289,7 @@ static void dvb_init(void)
 {
   int         rc, log_lvl, idb;
   char        *s, log_fn[MAXPATHLEN];
+  ConfigDb    *cfgdb;
 
   s    = NULL;
 
@@ -287,8 +297,8 @@ static void dvb_init(void)
   ** Plugin configuration parameters.
   */
 
-  if ((xcfg = xmms_cfg_open_default_file()) != NULL) {
-    if (xmms_cfg_read_string(xcfg, "DVB", "Logfile", &s)) {
+  if ((cfgdb = bmp_cfg_db_open()) != NULL) {
+    if (bmp_cfg_db_get_string(cfgdb, "DVB", "Logfile", &s)) {
       if (s != NULL) {
         strcpy(log_fn, s);
       }
@@ -296,54 +306,54 @@ static void dvb_init(void)
       strcpy(log_fn, "/tmp/xmms-dvb.log");
     }
 
-    if (!xmms_cfg_read_int(xcfg, "DVB", "Loglevel", &log_lvl)) {
+    if (!bmp_cfg_db_get_int(cfgdb, "DVB", "Loglevel", &log_lvl)) {
       log_lvl = 0;
     }
 
-    if (!xmms_cfg_read_boolean(xcfg, "DVB", "Record", &cf_record)) {
+    if (!bmp_cfg_db_get_bool(cfgdb, "DVB", "Record", &cf_record)) {
       cf_record = 0;
     }
 
-    if (!xmms_cfg_read_boolean(xcfg, "DVB", "Append", &cf_rec_append)) {
+    if (!bmp_cfg_db_get_bool(cfgdb, "DVB", "Append", &cf_rec_append)) {
       cf_rec_append = 0;
     }
 
-    if (!xmms_cfg_read_boolean(xcfg, "DVB", "Autosplit", &cf_rec_asplit)) {
+    if (!bmp_cfg_db_get_bool(cfgdb, "DVB", "Autosplit", &cf_rec_asplit)) {
       cf_rec_asplit = 0;
     }
 
-    if (!xmms_cfg_read_boolean(xcfg, "DVB", "Split", &cf_rec_isplit)) {
+    if (!bmp_cfg_db_get_bool(cfgdb, "DVB", "Split", &cf_rec_isplit)) {
       cf_rec_isplit = 0;
     }
 
-    if (!xmms_cfg_read_boolean(xcfg, "DVB", "EPG", &cf_get_epg)) {
+    if (!bmp_cfg_db_get_bool(cfgdb, "DVB", "EPG", &cf_get_epg)) {
       cf_get_epg = 1;
     }
 
-    if (!xmms_cfg_read_int(xcfg, "DVB", "Duration", &cf_rec_sildur)) {
+    if (!bmp_cfg_db_get_int(cfgdb, "DVB", "Duration", &cf_rec_sildur)) {
       cf_rec_sildur = 360;
     }
 
-    if (xmms_cfg_read_int(xcfg, "DVB", "Level", &idb)) {
+    if (bmp_cfg_db_get_int(cfgdb, "DVB", "Level", &idb)) {
       cf_rec_sillvl = (float)idb;
       cf_rec_sillvl /= 100;
     } else {
       cf_rec_sillvl = -42.80;           /* This is a good start */
     }
 
-    if (!xmms_cfg_read_int(xcfg, "DVB", "Guard", &cf_rec_guard)) {
+    if (!bmp_cfg_db_get_int(cfgdb, "DVB", "Guard", &cf_rec_guard)) {
       cf_rec_guard = 15;
     }
 
-    if (!xmms_cfg_read_boolean(xcfg, "DVB", "Info", &cf_get_info)) {
+    if (!bmp_cfg_db_get_bool(cfgdb, "DVB", "Info", &cf_get_info)) {
       cf_get_info = 0;
     }
 
-    if (!xmms_cfg_read_int(xcfg, "DVB", "Interval", &cf_rec_stime)) {
+    if (!bmp_cfg_db_get_int(cfgdb, "DVB", "Interval", &cf_rec_stime)) {
       cf_rec_stime = 0;
     }
 
-    if (xmms_cfg_read_string(xcfg, "DVB", "File", &s)) {
+    if (bmp_cfg_db_get_string(cfgdb, "DVB", "File", &s)) {
       if (s != NULL) {
         strcpy(cf_rec_file, s);
       }
@@ -435,12 +445,15 @@ static int dvb_is_our_file(char *s)
 **
 *******************************************************************************/
 
-static void dvb_play(char *s)
+static void dvb_play(InputPlayback *playback)
 {
   int         rc, apid, dpid, sid;
   SVC         svc;
   char        tfn[MAXPATHLEN];
   struct stat st;
+  gchar	      *s;
+  
+  s = playback->filename;
 
   log_print(hlog, LOG_DEBUG, "dvb_play(\"%s\");", s);
 
@@ -591,7 +604,7 @@ static void dvb_play(char *s)
 **
 *******************************************************************************/
 
-static void dvb_stop(void)
+static void dvb_stop(InputPlayback *playback)
 {
   if (playing) {
     playing = 0;
@@ -639,7 +652,7 @@ static void dvb_stop(void)
 **
 *******************************************************************************/
 
-static void dvb_pause(short i)
+static void dvb_pause(InputPlayback *playback, short i)
 {
   if (playing) {
     paused = i;
@@ -684,7 +697,7 @@ static void dvb_equalize(int on, float preamp, float *bands)
 **
 *******************************************************************************/
 
-static int dvb_gettime(void)
+static int dvb_gettime(InputPlayback *playback)
 {
   if (playing) {
     return(dvb_ip.output->output_time());
