@@ -63,7 +63,7 @@ static char sccsid[] = "@(#)$Id$";
 #define RC_DVB_GET_PID_SID_NOT_IN_PAT     1100
 
 
-#define PLUGIN_NAME "DVB Audio Player 0.5.0"
+#define PLUGIN_NAME "DVB Input Plugin"
 
 
 typedef struct _SVC
