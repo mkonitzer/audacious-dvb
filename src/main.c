@@ -273,7 +273,7 @@ dvb_init (void)
       log_lvl = 0;
     }
 
-  if ((rc = log_open (&hlog, "xmms-dvb", log_lvl)) != RC_OK)
+  if ((rc = log_open (&hlog, "audacious-dvb", log_lvl)) != RC_OK)
     hlog = NULL;
 
   log_print (hlog, LOG_INFO, "logging started.");
@@ -995,7 +995,7 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 		int smp)
 {
   int nout, i, vu, ms;
-  char xmms_info[4096];
+  char info[4096];
   float dB;
   time_t t;
   static short left[34560], right[34560];
@@ -1079,8 +1079,8 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 	      si_previous = si_update;
 	      if (cf_get_epg && epg_running && (strlen (epg_desc) > 0))
 		{
-		  sprintf (xmms_info, "%s: %s", service_name, epg_desc);
-		  dvb_ip.set_info (xmms_info, -1, mp3d.bitrate * 1000,
+		  sprintf (info, "%s: %s", service_name, epg_desc);
+		  dvb_ip.set_info (info, -1, mp3d.bitrate * 1000,
 				   mp3d.samplerate, mp3d.stereo);
 		}
 	      else
@@ -1092,7 +1092,7 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 	}
 
       /*
-       * Unfortunately XMMS output wants sample data interleaved,
+       * Unfortunately Audacious' output wants sample data interleaved,
        * not seperate, so we have to rearrange it accordingly. But
        * that's ok, we need to look at the PCM data to determine
        * the energy level anyway :)
@@ -1122,7 +1122,7 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 			      FMT_S16_NE, 2, nout << 2, stereo);
 
 	  while ((playback->output->buffer_free () < (nout << 2)) && playing)
-	    xmms_usleep (10000);
+	    bmp_usleep (10000);
 
 	  playback->output->write_audio (stereo, nout << 2);
 	}
