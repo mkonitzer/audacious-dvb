@@ -1,0 +1,53 @@
+#!/usr/bin/perl -w
+use strict;
+use XML::Writer;
+
+#
+# conf2xspf
+#
+# Description:
+#   Convert 'zap'-style channels.conf (scan) to .xspf-playlist (Audacious)
+#
+# Dependencies:
+#   XML::Writer (see http://search.cpan.org/dist/XML-Writer/ for details)
+#
+# Usage:
+#   scan -t 2 -x 0 -s 0 /path/to/Astra-19.2E > dvb-radio.conf
+#   scan -t 2 -x 0 -s 1 /path/to/Astra-19.2E >> dvb-radio.conf
+#   [...]
+#   ./conf2xspf < dvb-radio.conf > dvb-radio.xspf
+
+
+my $writer = new XML::Writer(DATA_MODE => '1', DATA_INDENT => '2');
+$writer->xmlDecl('iso-8859-1');
+$writer->startTag('playlist', 'xmlns' => 'http://xspf.org/ns/0/', 'version' => '1');
+
+$writer->dataElement('creator', 'conf2xspf');
+
+$writer->startTag('extension', 'application' => 'audacious');
+$writer->emptyTag('options', 'staticlist' => 'true');
+$writer->endTag('extension');
+
+$writer->startTag('trackList');
+while ( <> ) {
+    # only process valid channels.conf-lines
+    if (/^([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):(.*)$/) {
+	my $sname = $1;
+	my $freq = $2;
+	my $pol = $3;
+	my $satnr = $4;
+	$satnr =~ tr/[0-9]/[A-J]/;
+	my $srate = $5;
+	my $vpid = $6;
+	my $apid = $7;
+	my $spid = $8;
+	$writer->startTag('track');
+	$writer->dataElement('location', "dvb://S$satnr/$freq$pol/$srate/Auto/SID=$spid");
+	$writer->dataElement('title', "$sname");
+	$writer->endTag('track');
+    }
+}
+$writer->endTag('trackList');
+
+$writer->endTag('playlist');
+$writer->end();
