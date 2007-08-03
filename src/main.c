@@ -87,7 +87,6 @@ static int dvb_is_our_file (char *);
 static void dvb_play (InputPlayback *);
 static void dvb_stop (InputPlayback *);
 static void dvb_pause (InputPlayback *, short);
-static void dvb_equalize (int, float, float *);
 static int dvb_gettime (InputPlayback *);
 static void dvb_cleanup (void);
 
@@ -168,7 +167,7 @@ InputPlugin dvb_ip = {
   dvb_pause,		/* [pause]          Pause playback */
   0,			/* [seek]           Seeking impossible for DVB-streams */
 
-  dvb_equalize,		/* [set_eq]         Set equalizer */
+  0,			/* [set_eq]         Set equalizer */
 
   dvb_gettime,		/* [get_time]       Get current play time */
 
@@ -516,24 +515,6 @@ dvb_pause (InputPlayback * playback, short i)
 {
   if (playing)
     paused = i;
-}
-
-
-static void
-dvb_equalize (int on, float preamp, float *bands)
-{
-  int i;
-
-  static char *eq_lbl[] = {
-    " 60 Hz", "170 Hz", "310 Hz", "600 Hz", " 1 kHz",
-    " 3 kHz", " 6 kHz", "12 kHz", "14 kHz", "16 kHz"
-  };
-
-  log_print (hlog, LOG_DEBUG, "dvb_equalize(%d, %f, 0x%08lx);", on, preamp,
-	     bands);
-
-  for (i = 0; i < 10; i++)
-    log_print (hlog, LOG_DEBUG, "%s: %f dB", eq_lbl[i], bands[i]);
 }
 
 
@@ -1016,21 +997,15 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 	  (rec_file != NULL) && (cf_rec_stime > 0))
 	{
 	  if ((t - t_start) >= cf_rec_stime)
-	    {
 	      dvb_close_record ();
-	    }
 	}
 
       if (rec_file == NULL)
 	{
 	  if (cf_rec_asplit || cf_rec_isplit)
-	    {
 	      sprintf (erfn, cf_rec_file, file_index);
-	    }
 	  else
-	    {
 	      sprintf (erfn, cf_rec_file, 0);
-	    }
 
 	  if (cf_rec_append)
 	    {
@@ -1055,9 +1030,7 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 	}
 
       if (rec_file != NULL)
-	{
 	  fwrite (frame, sizeof (unsigned char), len, rec_file);
-	}
     }
 
   if ((nout = lame_decode_headers (frame, len, left, right, &mp3d)) > 0)
@@ -1065,10 +1038,8 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
       if (mp3d.header_parsed == 1)
 	{
 	  if (!audio)
-	    {
 	      audio =
 		playback->output->open_audio (FMT_S16_NE, mp3d.samplerate, 2);
-	    }
 
 	  /* 
 	   * This is just a quick fix -- we now update the info only
@@ -1119,15 +1090,7 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
       vu /= nout;
 
       if (audio)
-	{
-	  dvb_ip.add_vis_pcm (playback->output->written_time (),
-			      FMT_S16_NE, 2, nout << 2, stereo);
-
-	  while ((playback->output->buffer_free () < (nout << 2)) && playing)
-	    bmp_usleep (10000);
-
-	  playback->output->write_audio (stereo, nout << 2);
-	}
+	  produce_audio(playback->output->written_time(), FMT_S16_NE, 2, nout << 2, stereo, NULL);
 
       sumarr[sap++] = vu;
       ms = (sap * nout) / mp3d.bitrate;
