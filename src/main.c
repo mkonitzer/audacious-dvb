@@ -1,22 +1,24 @@
 /* $Id$ */
 /* audacious-dvb -- Audacious DVB Input Plugin
 
-   Copyright (C) 2007  Marius Konitzer
-   Copyright (C) 2003, 2004  Christian Motz
    This file is part of audacious-dvb.
-
-   webchanges is free software; you can redistribute it and/or modify
+   Copyright (C) 2007  Marius Konitzer
+   
+   Based on xmms-dvb:
+   Copyright (C) 2003, 2004  Christian Motz
+  
+   audacious-dvb is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
    (at your option) any later version.
 
-   webchanges is distributed in the hope that it will be useful, but
+   audacious-dvb is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with webchanges; if not, write to the Free Software Foundation,
+   along with audacious-dvb; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
 #ifndef lint
@@ -150,40 +152,40 @@ static int sft[] = {
 };
 
 InputPlugin dvb_ip = {
-  0,				/* [handle]         Filled in by Audacious */
-  0,				/* [filename]       Filled in by Audacious */
-  PLUGIN_NAME,			/* [description] */
+  0,			/* [handle]         Filled in by Audacious */
+  0,			/* [filename]       Filled in by Audacious */
+  PLUGIN_NAME,		/* [description] */
 
-  dvb_init,			/* [init]           Called when plugin is enabled */
-  dvb_about,			/* [about]          Show the about box */
-  dvb_configure,		/* [configure]      Show the configure box */
+  dvb_init,		/* [init]           Called when plugin is enabled */
+  dvb_about,		/* [about]          Show the about box */
+  dvb_configure,	/* [configure]      Show the configure box */
 
-  dvb_is_our_file,		/* [is_our_file]    Check if file is for our plugin */
-  0,				/* [scan_dir] */
+  dvb_is_our_file,	/* [is_our_file]    Check if file is for our plugin */
+  0,			/* [scan_dir] */
 
-  dvb_play,			/* [play_file]      Start Playback */
-  dvb_stop,			/* [stop]           Stop Playback */
-  dvb_pause,			/* [pause]          Pause playback */
-  0,				/* [seek]           Seeking impossible for DVB-streams */
+  dvb_play,		/* [play_file]      Start Playback */
+  dvb_stop,		/* [stop]           Stop Playback */
+  dvb_pause,		/* [pause]          Pause playback */
+  0,			/* [seek]           Seeking impossible for DVB-streams */
 
-  dvb_equalize,			/* [set_eq]         Set equalizer */
+  dvb_equalize,		/* [set_eq]         Set equalizer */
 
-  dvb_gettime,			/* [get_time]       Get current play time */
+  dvb_gettime,		/* [get_time]       Get current play time */
 
-  0,				/* [get_volume] */
-  0,				/* [set_volume] */
+  0,			/* [get_volume] */
+  0,			/* [set_volume] */
 
-  dvb_cleanup,			/* [cleanup] */
+  dvb_cleanup,		/* [cleanup] */
 
-  0,				/* [get_vis_type] */
-  0,				/* [add_vis_pcm] */
+  0,			/* [get_vis_type] */
+  0,			/* [add_vis_pcm] */
 
-  0,				/* [set_info]       Set player window info */
-  0,				/* [set_info_text]  Set song title text */
-  0,				/* [get_song_info]  Get song title text to show on Playlist */
-  dvb_getinfo,			/* [file_info_box]  Show file info box */
+  0,			/* [set_info]       Set player window info */
+  0,			/* [set_info_text]  Set song title text */
+  0,			/* [get_song_info]  Get song title text to show on Playlist */
+  dvb_getinfo,		/* [file_info_box]  Show file info box */
 
-  0				/* [OutputPlugin]   deprecated */
+  0			/* [OutputPlugin]   deprecated */
 };
 
 
@@ -1093,7 +1095,7 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 
       /*
        * Unfortunately Audacious' output wants sample data interleaved,
-       * not seperate, so we have to rearrange it accordingly. But
+       * not separate, so we have to rearrange it accordingly. But
        * that's ok, we need to look at the PCM data to determine
        * the energy level anyway :)
        */
