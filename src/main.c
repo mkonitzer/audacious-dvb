@@ -1082,12 +1082,12 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 	      if (cf_get_epg && epg_running && (strlen (epg_desc) > 0))
 		{
 		  sprintf (info, "%s: %s", service_name, epg_desc);
-		  dvb_ip.set_info (info, -1, mp3d.bitrate * 1000,
+		  dvb_ip.set_info ((gchar *)str_to_utf8(info), -1, mp3d.bitrate * 1000,
 				   mp3d.samplerate, mp3d.stereo);
 		}
 	      else
 		{
-		  dvb_ip.set_info (service_name, -1, mp3d.bitrate * 1000,
+		  dvb_ip.set_info ((gchar *)str_to_utf8(service_name), -1, mp3d.bitrate * 1000,
 				   mp3d.samplerate, mp3d.stereo);
 		}
 	    }
