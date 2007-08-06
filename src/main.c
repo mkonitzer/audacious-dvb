@@ -25,13 +25,9 @@
 static char sccsid[] = "@(#)$Id$";
 #endif
 
-#include <fcntl.h>
 #include <time.h>
 #include <math.h>
-#include <stdio.h>
-#include <ctype.h>
 #include <string.h>
-#include <stdlib.h>
 #include <pthread.h>
 #include <sys/stat.h>
 #include <sys/param.h>
@@ -39,6 +35,7 @@ static char sccsid[] = "@(#)$Id$";
 #include <audacious/plugin.h>
 #include <audacious/util.h>
 #include <audacious/configdb.h>
+#include <audacious/vfs.h>
 
 #include <lame/lame.h>
 
@@ -117,7 +114,7 @@ static int si_previous;
 static int paused, audio, file_index, mad_len, trnum, frm_ctr;
 static char erfn[MAXPATHLEN], album[256], artist[256], title[256];
 static char service_name[MAXPATHLEN];
-static FILE *rec_file;
+static VFSFile *rec_file;
 static time_t t_start, isplit_last, mad_time;
 static pthread_t pt, ptd, pte;
 static unsigned char mad_buf[8192];
@@ -658,29 +655,16 @@ dvb_pes_pkt (InputPlayback * playback, unsigned char *buf, int len, int reset)
 
   while (1)
     {
-      if (pbl > pbh)
-	{
-	  /* This is a serious logic error */
-	}
-
       if (pbl < pbh)
 	{
 	  if ((pbh - pbl) > 4)
 	    {
 	      for (i = pbl; i < (pbh - 4); i++)
 		{
-/*          if ((pesbuf[i] == 0x00) &&
-              (pesbuf[i + 1] == 0x00) &&
-              (pesbuf[i + 2] == 0x01)) {
-            printf("%02x\n", pesbuf[i + 3]);
-          } */
-
 		  if ((pesbuf[i] == 0x00) &&
 		      (pesbuf[i + 1] == 0x00) &&
 		      (pesbuf[i + 2] == 0x01) && ((pesbuf[i + 3] >> 4) > 0xa))
-		    {
-		      break;
-		    }
+		    break;
 		}
 
 	      if (i < (pbh - 4))
@@ -705,19 +689,13 @@ dvb_pes_pkt (InputPlayback * playback, unsigned char *buf, int len, int reset)
 				  (pesbuf[j + 1] == 0x00) &&
 				  (pesbuf[j + 2] == 0x01) &&
 				  ((pesbuf[j + 3] >> 4) > 0xa))
-				{
-				  break;
-				}
+				break;
 			    }
 
 			  if (j < (pbh - 4))
-			    {
-			      PES_packet_length = j - i - 6;
-			    }
+			    PES_packet_length = j - i - 6;
 			  else
-			    {
-			      return;
-			    }
+			    return;
 			}
 
 		      if ((pbh - pbl) <= (PES_packet_length + 6))
@@ -749,9 +727,7 @@ dvb_pes_pkt (InputPlayback * playback, unsigned char *buf, int len, int reset)
 		}
 	    }
 	  else
-	    {
-	      return;
-	    }
+	    return;
 	}
       else
 	{
@@ -910,12 +886,12 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 	    {
 	      log_print (hlog, LOG_INFO, "opening record \"%s\" for append",
 			 erfn);
-	      rec_file = fopen (erfn, "ab");
+	      rec_file = vfs_fopen (erfn, "ab");
 	    }
 	  else
 	    {
 	      log_print (hlog, LOG_INFO, "opening record \"%s\"", erfn);
-	      rec_file = fopen (erfn, "wb");
+	      rec_file = vfs_fopen (erfn, "wb");
 	    }
 
 	  if (config->isplit || config->vsplit)
@@ -929,7 +905,7 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 	}
 
       if (rec_file != NULL)
-	fwrite (frame, sizeof (unsigned char), len, rec_file);
+	vfs_fwrite (frame, sizeof (unsigned char), len, rec_file);
     }
 
   if ((nout = lame_decode_headers (frame, len, left, right, &mp3d)) > 0)
@@ -1039,7 +1015,7 @@ dvb_close_record ()
   if (rec_file != NULL)
     {
       log_print (hlog, LOG_INFO, "closing record \"%s\"", erfn);
-      fclose (rec_file);
+      vfs_fclose (rec_file);
       rec_file = NULL;
       sap = 0;
       memset (sumarr, 0x00, sizeof (sumarr));

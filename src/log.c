@@ -25,13 +25,9 @@
 static char sccsid[] = "@(#)$Id$";
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 #include <time.h>
 #include <glib.h>
-#include <sys/param.h>
 
 #include "log.h"
 
@@ -87,9 +83,7 @@ int
 log_print (void *hlog, int lvl, char *fmt, ...)
 {
   HLOG *hl;
-  time_t t;
   va_list args;
-  struct tm *tm;
   char msgbuf[256];
 
   hl = (HLOG *) hlog;
