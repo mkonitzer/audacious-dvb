@@ -149,20 +149,21 @@ InputPlugin *dvb_ip = NULL;
 InputPlugin *
 get_iplugin_info (void)
 {
-  if (dvb_ip == NULL) {
-    dvb_ip = g_new0(InputPlugin, 1);
-    dvb_ip->description = g_strdup("DVB Input Plugin");
-    dvb_ip->init = dvb_init;			/* Called when enabled */
-    dvb_ip->about = dvb_about;			/* Show the about box */
-    dvb_ip->configure = dvb_configure;		/* Show the configure box */
-    dvb_ip->is_our_file = dvb_is_our_file;	/* Is URL for this plugin */
-    dvb_ip->play_file = dvb_play;		/* Start playback */
-    dvb_ip->stop = dvb_stop;			/* Stop playback */
-    dvb_ip->pause = dvb_pause;			/* Pause playback */
-    dvb_ip->get_time = dvb_gettime;		/* Get current play time */
-    dvb_ip->cleanup = dvb_cleanup;		/* Called when disabled */
-    dvb_ip->file_info_box = dvb_getinfo;	/* Show stream info box */
-  }
+  if (dvb_ip == NULL)
+    {
+      dvb_ip = g_new0 (InputPlugin, 1);
+      dvb_ip->description = g_strdup ("DVB Input Plugin");
+      dvb_ip->init = dvb_init;
+      dvb_ip->about = dvb_about;
+      dvb_ip->configure = dvb_configure;
+      dvb_ip->is_our_file = dvb_is_our_file;
+      dvb_ip->play_file = dvb_play;
+      dvb_ip->stop = dvb_stop;
+      dvb_ip->pause = dvb_pause;
+      dvb_ip->get_time = dvb_gettime;
+      dvb_ip->cleanup = dvb_cleanup;
+      dvb_ip->file_info_box = dvb_getinfo;
+    }
   return dvb_ip;
 }
 
@@ -174,10 +175,10 @@ dvb_init (void)
 
   if (config == NULL)
     {
-      config = g_new(cfgstruct, 1);
-      config_from_db(config);
+      config = g_new (cfgstruct, 1);
+      config_from_db (config);
     }
-  
+
   if (log_open (&hlog, "auddacious-dvb", config->loglvl) != RC_OK)
     hlog = NULL;
 
@@ -202,7 +203,7 @@ static int
 dvb_is_our_file (char *s)
 {
   int rc;
-  
+
   if ((rc = dvb_parse_url (s, NULL)) == RC_OK)
     return 1;
 
@@ -251,7 +252,7 @@ dvb_play (InputPlayback * playback)
   memset (mad_buf, 0x00, sizeof (mad_buf));
 
   if (rec_file == NULL)
-      memset (erfn, 0x00, sizeof (erfn));
+    memset (erfn, 0x00, sizeof (erfn));
 
   file_index = 0;
   if (config->isplit || config->vsplit)
@@ -895,15 +896,15 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 	  (rec_file != NULL) && (config->isplit_ival > 0))
 	{
 	  if ((t - t_start) >= config->isplit_ival)
-	      dvb_close_record ();
+	    dvb_close_record ();
 	}
 
       if (rec_file == NULL)
 	{
 	  if (config->isplit || config->vsplit)
-	      sprintf (erfn, config->rec_fname, file_index);
+	    sprintf (erfn, config->rec_fname, file_index);
 	  else
-	      sprintf (erfn, config->rec_fname, 0);
+	    sprintf (erfn, config->rec_fname, 0);
 
 	  if (config->rec_append)
 	    {
@@ -928,7 +929,7 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 	}
 
       if (rec_file != NULL)
-	  fwrite (frame, sizeof (unsigned char), len, rec_file);
+	fwrite (frame, sizeof (unsigned char), len, rec_file);
     }
 
   if ((nout = lame_decode_headers (frame, len, left, right, &mp3d)) > 0)
@@ -936,8 +937,8 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
       if (mp3d.header_parsed == 1)
 	{
 	  if (!audio)
-	      audio =
-		playback->output->open_audio (FMT_S16_NE, mp3d.samplerate, 2);
+	    audio =
+	      playback->output->open_audio (FMT_S16_NE, mp3d.samplerate, 2);
 
 	  /* 
 	   * This is just a quick fix -- we now update the info only
@@ -951,13 +952,15 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 	      if (config->info_epg && epg_running && (strlen (epg_desc) > 0))
 		{
 		  sprintf (info, "%s: %s", service_name, epg_desc);
-		  dvb_ip->set_info ((gchar *)str_to_utf8(info), -1, mp3d.bitrate * 1000,
-				   mp3d.samplerate, mp3d.stereo);
+		  dvb_ip->set_info ((gchar *) str_to_utf8 (info), -1,
+				    mp3d.bitrate * 1000, mp3d.samplerate,
+				    mp3d.stereo);
 		}
 	      else
 		{
-		  dvb_ip->set_info ((gchar *)str_to_utf8(service_name), -1, mp3d.bitrate * 1000,
-				   mp3d.samplerate, mp3d.stereo);
+		  dvb_ip->set_info ((gchar *) str_to_utf8 (service_name), -1,
+				    mp3d.bitrate * 1000, mp3d.samplerate,
+				    mp3d.stereo);
 		}
 	    }
 	}
@@ -988,7 +991,8 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
       vu /= nout;
 
       if (audio)
-	  produce_audio(playback->output->written_time(), FMT_S16_NE, 2, nout << 2, stereo, NULL);
+	produce_audio (playback->output->written_time (), FMT_S16_NE, 2,
+		       nout << 2, stereo, NULL);
 
       sumarr[sap++] = vu;
       ms = (sap * nout) / mp3d.bitrate;
@@ -1143,7 +1147,7 @@ dvb_get_pid (int s, int *apid, int *dpid)
     }
 
   if (es_audio < 0)
-      return RC_DVB_GET_PID_SID_NOT_IN_PAT;
+    return RC_DVB_GET_PID_SID_NOT_IN_PAT;
 
   *apid = es_audio;
   *dpid = es_data;

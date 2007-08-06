@@ -28,28 +28,28 @@
 
 typedef struct _cfgstruct
 {
-  gchar   *devpath;		/* DVB device path */
-  gint     loglvl;		/* Log level */
+  gchar *devpath;		/* DVB device path */
+  gint loglvl;			/* Log level */
 
   gboolean rec;			/* Activate recording of stream? */
-  gchar   *rec_fname;		/* Filename for recording */
+  gchar *rec_fname;		/* Filename for recording */
   gboolean rec_append;		/* Append to existing file? */
-  
+
   gboolean isplit;		/* Activate interval-split? */
-  gint 	   isplit_ival;		/* Length of interval */
-  
+  gint isplit_ival;		/* Length of interval */
+
   gboolean vsplit;		/* Activate volume-split? */
-  gdouble  vsplit_vol;		/* Split when below XYZ dB ...  */
-  gint     vsplit_dur;		/* ... for at least XYZ ms ... */
-  gint     vsplit_minlen;	/* ... with minimum length of XYZ s. */
-  
+  gdouble vsplit_vol;		/* Split when below XYZ dB ...  */
+  gint vsplit_dur;		/* ... for at least XYZ ms ... */
+  gint vsplit_minlen;		/* ... with minimum length of XYZ s. */
+
   gboolean info_epg;		/* Receive EPG info? */
   gboolean info_mmusic;		/* Receive MADMusic info? */
 } cfgstruct;
 
 
-void config_init(cfgstruct *);
-gboolean config_from_db(cfgstruct *);
-gboolean config_to_db(cfgstruct *);
+void config_init (cfgstruct *);
+gboolean config_from_db (cfgstruct *);
+gboolean config_to_db (cfgstruct *);
 
 #endif // __AUDACIOUS_DVB_CFG_H__

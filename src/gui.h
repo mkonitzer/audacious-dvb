@@ -65,11 +65,11 @@ void dvb_configure (void);
 void dvb_getinfo (char *);
 void dvb_info_update (char *, char *);
 
-static void recordClicked (GtkWidget *w, gpointer user_data);
-static void isplitClicked (GtkWidget *w, gpointer user_data);
-static void vsplitClicked (GtkWidget *w, gpointer user_data);
+static void recordClicked (GtkWidget * w, gpointer user_data);
+static void isplitClicked (GtkWidget * w, gpointer user_data);
+static void vsplitClicked (GtkWidget * w, gpointer user_data);
 static void dvb_configure_ok (GtkWidget *, gpointer);
-static void config_to_gui(cfgstruct *);
-static void config_from_gui(cfgstruct *);
+static void config_to_gui (cfgstruct *);
+static void config_from_gui (cfgstruct *);
 
 #endif // __AUDACIOUS_DVB_GUI_H__
