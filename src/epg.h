@@ -21,8 +21,13 @@
    along with audacious-dvb; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
+#ifndef __AUDACIOUS_DVB_EPG_H__
+#define __AUDACIOUS_DVB_EPG_H__
+
 void *dvb_epg (void *);
 void dvb_clean_string (char *);
 
 static int dvb_parse_eit (unsigned char *, int);
 static int dvb_eit_desc (unsigned char *, int);
+
+#endif // __AUDACIOUS_DVB_EPG_H__

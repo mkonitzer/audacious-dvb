@@ -21,6 +21,9 @@
    along with audacious-dvb; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
+#ifndef __AUDACIOUS_DVB_DVB_H__
+#define __AUDACIOUS_DVB_DVB_H__
+
 #ifndef RC_OK
 #define RC_OK                           0
 #endif
@@ -84,3 +87,5 @@ int dvb_apkt (void *, unsigned char *, int, int, int *);
 int dvb_dpid (void *, int);
 int dvb_dpkt (void *, unsigned char *, int, int, int *);
 int dvb_volume (void *, int);
+
+#endif // __AUDACIOUS_DVB_DVB_H__

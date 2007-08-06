@@ -21,6 +21,11 @@
    along with audacious-dvb; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
+#ifndef __AUDACIOUS_DVB_LOG_H__
+#define __AUDACIOUS_DVB_LOG_H__
+
+#include <glib.h>
+
 #ifndef RC_OK
 #define RC_OK                         0
 #endif
@@ -44,3 +49,5 @@
 int log_open (void **, char *, int);
 int log_close (void *);
 int log_print (void *, int, char *, ...);
+
+#endif // __AUDACIOUS_DVB_LOG_H__

@@ -46,6 +46,7 @@ static char sccsid[] = "@(#)$Id$";
 #include "epg.h"
 #include "dvb.h"
 #include "log.h"
+#include "cfg.h"
 #include "config.h"
 
 
@@ -63,9 +64,6 @@ static char sccsid[] = "@(#)$Id$";
 #define RC_PARSE_URL_UNK_POLARIZATION     1011
 
 #define RC_DVB_GET_PID_SID_NOT_IN_PAT     1100
-
-
-#define PLUGIN_NAME "DVB Input Plugin"
 
 
 typedef struct _SVC
@@ -110,13 +108,8 @@ int playing;			/* This is also used in the GUI */
 int si_update;			/* This is used in EPG retrieval */
 void *hlog;			/* This is used everywhere :) */
 void *hdvb;			/* EPG retrieval uses this */
-
-/* Configuration file parameters */
-int cf_rec_guard, cf_get_info, cf_rec_sildur, cf_rec_isplit;
-int cf_record, cf_rec_append, cf_rec_asplit, cf_rec_stime;
-int cf_get_epg, epg_running;
-char cf_rec_file[MAXPATHLEN];
-float cf_rec_sillvl;
+int epg_running;
+cfgstruct *config = NULL;
 
 extern char epg_desc[4096];
 
@@ -150,136 +143,45 @@ static int sft[] = {
   22050, 24000, 16000, 0, 44100, 48000, 32000, 0
 };
 
-InputPlugin dvb_ip = {
-  0,			/* [handle]         Filled in by Audacious */
-  0,			/* [filename]       Filled in by Audacious */
-  PLUGIN_NAME,		/* [description] */
-
-  dvb_init,		/* [init]           Called when plugin is enabled */
-  dvb_about,		/* [about]          Show the about box */
-  dvb_configure,	/* [configure]      Show the configure box */
-
-  dvb_is_our_file,	/* [is_our_file]    Check if file is for our plugin */
-  0,			/* [scan_dir] */
-
-  dvb_play,		/* [play_file]      Start Playback */
-  dvb_stop,		/* [stop]           Stop Playback */
-  dvb_pause,		/* [pause]          Pause playback */
-  0,			/* [seek]           Seeking impossible for DVB-streams */
-
-  0,			/* [set_eq]         Set equalizer */
-
-  dvb_gettime,		/* [get_time]       Get current play time */
-
-  0,			/* [get_volume] */
-  0,			/* [set_volume] */
-
-  dvb_cleanup,		/* [cleanup] */
-
-  0,			/* [get_vis_type] */
-  0,			/* [add_vis_pcm] */
-
-  0,			/* [set_info]       Set player window info */
-  0,			/* [set_info_text]  Set song title text */
-  0,			/* [get_song_info]  Get song title text to show on Playlist */
-  dvb_getinfo,		/* [file_info_box]  Show file info box */
-
-  0			/* [OutputPlugin]   deprecated */
-};
+InputPlugin *dvb_ip = NULL;
 
 
 InputPlugin *
 get_iplugin_info (void)
 {
-  return &dvb_ip;
+  if (dvb_ip == NULL) {
+    dvb_ip = g_new0(InputPlugin, 1);
+    dvb_ip->description = g_strdup("DVB Input Plugin");
+    dvb_ip->init = dvb_init;			/* Called when enabled */
+    dvb_ip->about = dvb_about;			/* Show the about box */
+    dvb_ip->configure = dvb_configure;		/* Show the configure box */
+    dvb_ip->is_our_file = dvb_is_our_file;	/* Is URL for this plugin */
+    dvb_ip->play_file = dvb_play;		/* Start playback */
+    dvb_ip->stop = dvb_stop;			/* Stop playback */
+    dvb_ip->pause = dvb_pause;			/* Pause playback */
+    dvb_ip->get_time = dvb_gettime;		/* Get current play time */
+    dvb_ip->cleanup = dvb_cleanup;		/* Called when disabled */
+    dvb_ip->file_info_box = dvb_getinfo;	/* Show stream info box */
+  }
+  return dvb_ip;
 }
 
 
 static void
 dvb_init (void)
 {
-  int rc, log_lvl, idb;
-  char *s;
-  ConfigDb *cfgdb;
+  int rc;
 
-  s = NULL;
-
-  /* Plugin configuration parameters. */
-
-  if ((cfgdb = bmp_cfg_db_open ()) != NULL)
+  if (config == NULL)
     {
-      if (!bmp_cfg_db_get_int (cfgdb, "DVB", "Loglevel", &log_lvl))
-	log_lvl = 0;
-
-      if (!bmp_cfg_db_get_bool (cfgdb, "DVB", "Record", &cf_record))
-	cf_record = 0;
-
-      if (!bmp_cfg_db_get_bool (cfgdb, "DVB", "Append", &cf_rec_append))
-	cf_rec_append = 0;
-
-      if (!bmp_cfg_db_get_bool (cfgdb, "DVB", "Autosplit", &cf_rec_asplit))
-	cf_rec_asplit = 0;
-
-      if (!bmp_cfg_db_get_bool (cfgdb, "DVB", "Split", &cf_rec_isplit))
-	cf_rec_isplit = 0;
-
-      if (!bmp_cfg_db_get_bool (cfgdb, "DVB", "EPG", &cf_get_epg))
-	cf_get_epg = 1;
-
-      if (!bmp_cfg_db_get_int (cfgdb, "DVB", "Duration", &cf_rec_sildur))
-	cf_rec_sildur = 360;
-
-      if (bmp_cfg_db_get_int (cfgdb, "DVB", "Level", &idb))
-	{
-	  cf_rec_sillvl = (float) idb;
-	  cf_rec_sillvl /= 100;
-	}
-      else
-	{
-	  cf_rec_sillvl = -42.80;	/* This is a good start */
-	}
-
-      if (!bmp_cfg_db_get_int (cfgdb, "DVB", "Guard", &cf_rec_guard))
-	cf_rec_guard = 15;
-
-      if (!bmp_cfg_db_get_bool (cfgdb, "DVB", "Info", &cf_get_info))
-	cf_get_info = 0;
-
-      if (!bmp_cfg_db_get_int (cfgdb, "DVB", "Interval", &cf_rec_stime))
-	cf_rec_stime = 0;
-
-      if (bmp_cfg_db_get_string (cfgdb, "DVB", "File", &s))
-	{
-	  if (s != NULL)
-	    strcpy (cf_rec_file, s);
-	}
-      else
-	{
-	  strcpy (cf_rec_file, "");
-	}
+      config = g_new(cfgstruct, 1);
+      config_from_db(config);
     }
-  else
-    {
-      cf_record = 0;
-      cf_rec_append = 0;
-      cf_rec_asplit = 0;
-      cf_rec_isplit = 0;
-      cf_rec_sildur = 360;
-      cf_rec_guard = 15;
-      cf_get_info = 0;
-      cf_get_epg = 1;
-      cf_rec_stime = 0;
-      strcpy (cf_rec_file, "");
-
-      log_lvl = 0;
-    }
-
-  if ((rc = log_open (&hlog, "audacious-dvb", log_lvl)) != RC_OK)
+  
+  if (log_open (&hlog, "auddacious-dvb", config->loglvl) != RC_OK)
     hlog = NULL;
 
   log_print (hlog, LOG_INFO, "logging started.");
-  log_print (hlog, LOG_DEBUG, "%.2f dB (%d), %d ms, %d s", cf_rec_sillvl, idb,
-	     cf_rec_sildur, cf_rec_guard);
 
   audio = 0;
   t_start = 0;
@@ -289,8 +191,6 @@ dvb_init (void)
   hdvb = NULL;
   rec_file = NULL;
   epg_running = 0;
-
-  dvb_gui_init ();
 
   memset (&pt, 0x00, sizeof (pt));
   memset (&ptd, 0x00, sizeof (ptd));
@@ -302,7 +202,7 @@ static int
 dvb_is_our_file (char *s)
 {
   int rc;
-
+  
   if ((rc = dvb_parse_url (s, NULL)) == RC_OK)
     return 1;
 
@@ -351,18 +251,16 @@ dvb_play (InputPlayback * playback)
   memset (mad_buf, 0x00, sizeof (mad_buf));
 
   if (rec_file == NULL)
-    {
       memset (erfn, 0x00, sizeof (erfn));
-    }
 
   file_index = 0;
-  if (cf_rec_asplit || cf_rec_isplit)
+  if (config->isplit || config->vsplit)
     {
-      if (index (cf_rec_file, '%'))
+      if (index (config->rec_fname, '%'))
 	{
 	  while (1)
 	    {
-	      sprintf (tfn, cf_rec_file, file_index);
+	      sprintf (tfn, config->rec_fname, file_index);
 	      if (stat (tfn, &st) < 0)
 		break;
 	      file_index++;
@@ -431,7 +329,7 @@ dvb_play (InputPlayback * playback)
 
   lame_decode_init ();
 
-  if ((dpid > 0) && cf_get_info)
+  if ((dpid > 0) && config->info_mmusic)
     {
       log_print (hlog, LOG_INFO,
 		 "Data service associated on PID %d (0x%04x).", dpid, dpid);
@@ -456,7 +354,7 @@ dvb_play (InputPlayback * playback)
 
   if (sid != -1)
     {
-      if (cf_get_epg)
+      if (config->info_epg)
 	{
 	  if (pthread_create (&pte, 0, dvb_epg, (void *) sid) != 0)
 	    log_print (hlog, LOG_ERR,
@@ -485,13 +383,13 @@ dvb_stop (InputPlayback * playback)
       pthread_join (pt, NULL);
       memset (&pt, 0x00, sizeof (pt));
 
-      if (cf_get_info)
+      if (config->info_mmusic)
 	{
 	  pthread_join (ptd, NULL);
 	  memset (&ptd, 0x00, sizeof (ptd));
 	}
 
-      if (epg_running && cf_get_epg)
+      if (epg_running && config->info_epg)
 	{
 	  pthread_join (pte, NULL);
 	  memset (&ptd, 0x00, sizeof (pte));
@@ -989,25 +887,25 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 
   memset (&mp3d, 0x00, sizeof (mp3d));
 
-  if (cf_record)
+  if (config->rec)
     {
       time (&t);
 
-      if (cf_rec_asplit && (t_start > 0) &&
-	  (rec_file != NULL) && (cf_rec_stime > 0))
+      if (config->isplit && (t_start > 0) &&
+	  (rec_file != NULL) && (config->isplit_ival > 0))
 	{
-	  if ((t - t_start) >= cf_rec_stime)
+	  if ((t - t_start) >= config->isplit_ival)
 	      dvb_close_record ();
 	}
 
       if (rec_file == NULL)
 	{
-	  if (cf_rec_asplit || cf_rec_isplit)
-	      sprintf (erfn, cf_rec_file, file_index);
+	  if (config->isplit || config->vsplit)
+	      sprintf (erfn, config->rec_fname, file_index);
 	  else
-	      sprintf (erfn, cf_rec_file, 0);
+	      sprintf (erfn, config->rec_fname, 0);
 
-	  if (cf_rec_append)
+	  if (config->rec_append)
 	    {
 	      log_print (hlog, LOG_INFO, "opening record \"%s\" for append",
 			 erfn);
@@ -1019,7 +917,7 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 	      rec_file = fopen (erfn, "wb");
 	    }
 
-	  if (cf_rec_asplit || cf_rec_isplit)
+	  if (config->isplit || config->vsplit)
 	    {
 	      if (rec_file != NULL)
 		{
@@ -1050,15 +948,15 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 	  if (si_update > si_previous)
 	    {
 	      si_previous = si_update;
-	      if (cf_get_epg && epg_running && (strlen (epg_desc) > 0))
+	      if (config->info_epg && epg_running && (strlen (epg_desc) > 0))
 		{
 		  sprintf (info, "%s: %s", service_name, epg_desc);
-		  dvb_ip.set_info ((gchar *)str_to_utf8(info), -1, mp3d.bitrate * 1000,
+		  dvb_ip->set_info ((gchar *)str_to_utf8(info), -1, mp3d.bitrate * 1000,
 				   mp3d.samplerate, mp3d.stereo);
 		}
 	      else
 		{
-		  dvb_ip.set_info ((gchar *)str_to_utf8(service_name), -1, mp3d.bitrate * 1000,
+		  dvb_ip->set_info ((gchar *)str_to_utf8(service_name), -1, mp3d.bitrate * 1000,
 				   mp3d.samplerate, mp3d.stereo);
 		}
 	    }
@@ -1094,7 +992,7 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 
       sumarr[sap++] = vu;
       ms = (sap * nout) / mp3d.bitrate;
-      if (ms >= cf_rec_sildur)
+      if (ms >= config->vsplit_dur)
 	{
 	  vu = 0;
 
@@ -1105,10 +1003,10 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 
 	  dB = 20 * log10 ((float) vu / 32767);
 
-	  if (dB < cf_rec_sillvl)
+	  if (dB < config->vsplit_vol)
 	    {
 	      time (&t);
-	      if ((t - isplit_last) >= cf_rec_guard)
+	      if ((t - isplit_last) >= config->vsplit_minlen)
 		{
 		  log_print (hlog, LOG_INFO,
 			     "Avg: %.2f dB (%d) / %d ms (%d f) / %d:%02d.",
@@ -1116,7 +1014,7 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 			     (t - isplit_last) % 60);
 		  time (&isplit_last);
 
-		  if (cf_rec_isplit && cf_record)
+		  if (config->vsplit && config->rec)
 		    dvb_close_record ();
 
 		  sap = 1;
@@ -1245,9 +1143,7 @@ dvb_get_pid (int s, int *apid, int *dpid)
     }
 
   if (es_audio < 0)
-    {
       return RC_DVB_GET_PID_SID_NOT_IN_PAT;
-    }
 
   *apid = es_audio;
   *dpid = es_data;
@@ -1366,7 +1262,7 @@ dvb_madmusic (void *arg)
 
   fbf = off = 0;
 
-  while (playing && cf_get_info)
+  while (playing && config->info_mmusic)
     {
       memset (sect, 0xff, sizeof (sect));
       rc = dvb_dpkt (hdvb, sect, sizeof (sect), 1000, &dr);
