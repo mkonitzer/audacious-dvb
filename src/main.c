@@ -59,6 +59,7 @@ static char sccsid[] = "@(#)$Id$";
 #define RC_PARSE_URL_FEC_IMPLAUSIBLE      1009
 #define RC_PARSE_URL_FEC_NOT_RECOGNIZED   1010
 #define RC_PARSE_URL_UNK_POLARIZATION     1011
+#define RC_PARSE_URL_POLARIZATION_MISSING 1012
 
 #define RC_DVB_GET_PID_SID_NOT_IN_PAT     1100
 
@@ -71,7 +72,7 @@ typedef struct _SVC
   int viterbi;
   char polarisation;
   char delivery[256];
-  char service[256];
+  int spid;
 } SVC;
 
 
@@ -285,32 +286,13 @@ dvb_play (InputPlayback * playback)
   strcpy (service_name, s);
   dvb_info_update ("", "");
 
-  if (strncasecmp (svc.service, "0x", 2) == 0)
+  if ((rc = dvb_get_pid (svc.spid, &apid, &dpid)) != RC_OK)
     {
-      sscanf (&svc.service[2], "%x", &apid);
-    }
-  else
-    {
-      if (strncasecmp (svc.service, "sid=", 4) == 0)
-	{
-	  if (strncasecmp (&svc.service[4], "0x", 2) == 0)
-	    sscanf (&svc.service[6], "%x", &sid);
-	  else
-	    sid = atoi (&svc.service[4]);
-
-	  if ((rc = dvb_get_pid (sid, &apid, &dpid)) != RC_OK)
-	    {
-	      log_print (hlog, LOG_WARNING, "dvb_get_pid() returned %d.", rc);
-	      dvb_close (hdvb);
-	      playing = 0;
-	      hdvb = NULL;
-	      return;
-	    }
-	}
-      else
-	{
-	  apid = atoi (svc.service);
-	}
+      log_print (hlog, LOG_WARNING, "dvb_get_pid() returned %d.", rc);
+      dvb_close (hdvb);
+      playing = 0;
+      hdvb = NULL;
+      return;
     }
 
   if ((rc = dvb_volume (hdvb, 0)) != RC_OK)
@@ -437,7 +419,7 @@ dvb_cleanup (void)
 static int
 dvb_parse_url (char *url, SVC * svc)
 {
-  int i, a_num, fec1, fec2, sr, qrg, fec;
+  int i, a_num, fec1, fec2, sr, qrg, fec, spid;
   char *p, *q, fn[MAXPATHLEN], pol;
   char *sdlv, *sqrg, *sfec1, *sfec2;
 
@@ -474,7 +456,7 @@ dvb_parse_url (char *url, SVC * svc)
   sdlv = p;
 
   if ((p = index (q, '/')) == NULL)
-    return RC_PARSE_URL_DLVRY_SYS_MISSING;
+    return RC_PARSE_URL_POLARIZATION_MISSING;
   *p++ = '\0';
   sqrg = q;
 
@@ -542,6 +524,14 @@ dvb_parse_url (char *url, SVC * svc)
 
   qrg = 1000 * atoi (sqrg);
 
+  if (strncasecmp (q, "0x", 2) == 0)
+    {
+      q+=2;
+      sscanf ((char *)&q, "%x", &spid);
+    }
+  else
+    spid = atoi (q);
+  
   if (svc != NULL)
     {
       svc->adapter = a_num;
@@ -550,7 +540,7 @@ dvb_parse_url (char *url, SVC * svc)
       svc->symbolrate = sr;
       svc->polarisation = pol;
       strcpy (svc->delivery, sdlv);
-      strcpy (svc->service, q);
+      svc->spid = spid;
     }
 
   return RC_OK;
@@ -1168,7 +1158,7 @@ dvb_get_name (void *arg)
 
 	  log_print (hlog, LOG_DEBUG, "SDT service ID = %d", sid);
 
-	  if (svc_sid == svc_sid)
+	  if (sid == svc_sid)
 	    {
 	      pp = p;
 	      qq = pp + len;

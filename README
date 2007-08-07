@@ -16,9 +16,7 @@ http://lame.sourceforge.net/ for details.
 To make it work, install the plugin and open a location in your XMMS
 with an URL of the following syntax:
 
-		dvb0://SA/11836H/27500/Auto/3001
-
-or		dvb0://SA/11836H/27500/Auto/SID=28120
+		dvb0://SA/11836H/27500/Auto/28120
 
 where the individual components are:
 
@@ -40,23 +38,14 @@ where the individual components are:
 	      1/2, 2/3, 3/4, 5/6, 7/8 or Auto. Leaving it at 'Auto'
 	      should be just fine, though.
 
-'3001'	    - PID of the audio stream to play. Can either be in
+'28120'     - SID of the audio stream to play. Can either be in
               decimal or hexadecimal notation; in the latter case it
-              needs to be prefixed with '0x'
-
-	      or alternatively
-
-'SID=28120' - SID of the audio stream to play. As with the PID, it can
-	      either be specified in decimal or hexadecimal notation.
+              needs to be prefixed with '0x'.
+	      The plugin will attempt to retrieve the service name
+	      from the SDT and display it within XMMS. This
+	      process may take up to several seconds.
 	      So far, only the first audio stream is taken into
-	      consideration. So if a service consists of more than one
-	      audio stream, the remaining streams of the service can
-	      only be referenced by specifying their PIDs.
-
-	      If a service is referenced via SID, the plugin will
-	      attempt to retrieve the service name from the SDT and
-	      display it within XMMS. This process may take up to
-	      several seconds.
+	      consideration.
 
 | In order to create a channel list, simply put the URLs into a file and
 | load it into XMMS as a playlist (e.g. .m3u-file). Once you have

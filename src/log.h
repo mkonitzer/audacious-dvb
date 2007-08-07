@@ -24,8 +24,6 @@
 #ifndef __AUDACIOUS_DVB_LOG_H__
 #define __AUDACIOUS_DVB_LOG_H__
 
-#include <glib.h>
-
 #ifndef RC_OK
 #define RC_OK                         0
 #endif

@@ -42,7 +42,7 @@ while ( <> ) {
 	my $apid = $7;
 	my $spid = $8;
 	$writer->startTag('track');
-	$writer->dataElement('location', "dvb://S$satnr/$freq$pol/$srate/Auto/SID=$spid");
+	$writer->dataElement('location', "dvb://S$satnr/$freq$pol/$srate/Auto/$spid");
 	$writer->dataElement('title', "$sname");
 	$writer->endTag('track');
     }
