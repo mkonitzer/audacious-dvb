@@ -273,8 +273,8 @@ dvb_play (InputPlayback * playback)
   if ((rc = dvb_tune_qpsk (hdvb, svc.delivery[1] - 'A', svc.frequency,
 			   svc.polarisation, svc.symbolrate, 0)) != RC_OK)
     {
-      playing = 0;
       dvb_close (hdvb);
+      playing = 0;
       hdvb = NULL;
       return;
     }
@@ -292,9 +292,7 @@ dvb_play (InputPlayback * playback)
     }
 
   if (pthread_create (&pt, 0, dvb_get_name, (void *) &svc.spid) != 0)
-    {
-      log_print (hlog, LOG_WARNING, "Failed to start dvb_get_name() thread");
-    }
+    log_print (hlog, LOG_WARNING, "Failed to start dvb_get_name() thread");
 
   if ((rc = dvb_volume (hdvb, 0)) != RC_OK)
     log_print (hlog, LOG_WARNING, "dvb_volume() returned %d.", rc);
@@ -322,9 +320,7 @@ dvb_play (InputPlayback * playback)
 		       "pthread_create() failed for dvb_madmusic()");
 	}
       else
-	{
-	  log_print (hlog, LOG_ERR, "dvb_dpid() returned %d.", rc);
-	}
+	log_print (hlog, LOG_ERR, "dvb_dpid() returned %d.", rc);
     }
   else
     {
@@ -380,8 +376,10 @@ dvb_stop (InputPlayback * playback)
       playback->output->close_audio ();
 
       if (hdvb)
-	/* Stopping the audio and data PID filters should probably be added. */
-	dvb_close (hdvb);
+	{
+	  dvb_unfilter (hdvb);
+	  dvb_close (hdvb);
+	}
 
       if (rec_file)
 	dvb_close_record ();
@@ -412,7 +410,6 @@ dvb_cleanup (void)
 {
   log_print (hlog, LOG_INFO, "logging stopped.");
   log_close (hlog);
-
   hlog = NULL;
 }
 
@@ -597,9 +594,6 @@ dvb_feed (void *args)
 
   log_print (hlog, LOG_DEBUG, "play-loop terminated");
 
-  dvb_unfilter (hdvb);
-  dvb_close (hdvb);
-  hdvb = NULL;
   t_start = 0;
 
   if (rec_file != NULL)
