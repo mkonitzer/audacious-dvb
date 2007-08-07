@@ -96,7 +96,7 @@ log_print (void *hlog, int lvl, char *fmt, ...)
       va_start (args, fmt);
       vsnprintf (msgbuf, 255, fmt, args);
       va_end (args);
-      g_message ("[%s] %s", hl->hl_pfx, msgbuf);
+      g_message ("[%s] %s\n", hl->hl_pfx, msgbuf);
     }
 
   return RC_OK;

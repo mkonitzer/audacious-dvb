@@ -284,7 +284,7 @@ dvb_filter (void *hdvb, int pid)
   sprintf (h->dvb_dmxdn, "/dev/dvb/adapter%d/demux0", h->dvb_num);
   if ((h->dvb_dmxdh = open (h->dvb_dmxdn, O_RDWR)) < 0)
     {
-      log_print (hlog, LOG_ERR, "open() failed in dvb_filter(), errno = %d\n",
+      log_print (hlog, LOG_ERR, "open() failed in dvb_filter(), errno = %d",
 		 errno);
       return RC_DVB_FILTER_OPEN_DEMUX;
     }
@@ -304,7 +304,7 @@ dvb_filter (void *hdvb, int pid)
   if (ioctl (h->dvb_dmxdh, DMX_SET_PES_FILTER, &h->dvb_dmx) < 0)
     {
       log_print (hlog, LOG_ERR,
-		 "DMX_SET_PES_FILTER failed in dvb_filter(), errno = %d\n",
+		 "DMX_SET_PES_FILTER failed in dvb_filter(), errno = %d",
 		 errno);
       close (h->dvb_dmxdh);
       return RC_DVB_FILTER_SET_FAILED;
@@ -381,7 +381,7 @@ dvb_section (void *hdvb, int pid, int sect, int sid, int sct,
   sprintf (h->dvb_dmxdn, "/dev/dvb/adapter%d/demux0", h->dvb_num);
   if ((fd = open (h->dvb_dmxdn, O_RDWR)) < 0)
     {
-      log_print (hlog, LOG_ERR, "open failed in dvb_section(), errno = %d\n",
+      log_print (hlog, LOG_ERR, "open failed in dvb_section(), errno = %d",
 		 errno);
       return RC_DVB_SECTION_OPEN_DEMUX;
     }
@@ -488,7 +488,7 @@ dvb_apid (void *hdvb, int pid)
   sprintf (h->dvb_dmxdn, "/dev/dvb/adapter%d/demux0", h->dvb_num);
   if ((h->dvb_admx = open (h->dvb_dmxdn, O_RDWR)) < 0)
     {
-      log_print (hlog, LOG_ERR, "open() failed in dvb_apid(), errno = %d\n",
+      log_print (hlog, LOG_ERR, "open() failed in dvb_apid(), errno = %d",
 		 errno);
       return RC_DVB_APID_OPEN_DEMUX;
     }
@@ -544,7 +544,7 @@ dvb_apkt (void *hdvb, unsigned char *pkt, int len, int t, int *rcvd)
 
   if (r <= 0)
     {
-      log_print (hlog, LOG_ERR, "read() failed, errno = %d.\n", errno);
+      log_print (hlog, LOG_ERR, "read() failed, errno = %d.", errno);
       return RC_DVB_APKT_READ_FAILED;
     }
 
@@ -566,7 +566,7 @@ dvb_dpid (void *hdvb, int pid)
   sprintf (h->dvb_dmxdn, "/dev/dvb/adapter%d/demux0", h->dvb_num);
   if ((h->dvb_ddmx = open (h->dvb_dmxdn, O_RDWR)) < 0)
     {
-      log_print (hlog, LOG_ERR, "open() failed in dvb_dpid(), errno = %d\n",
+      log_print (hlog, LOG_ERR, "open() failed in dvb_dpid(), errno = %d",
 		 errno);
       return RC_DVB_DPID_OPEN_DEMUX;
     }
@@ -635,7 +635,7 @@ dvb_dpkt (void *hdvb, unsigned char *s, int len, int t, int *rcvd)
     {
       if ((r = read (h->dvb_ddmx, s, len)) < 0)
 	{
-	  log_print (hlog, LOG_ERR, "Fuck, data read failed, errno = %d\n",
+	  log_print (hlog, LOG_ERR, "Fuck, data read failed, errno = %d",
 		     errno);
 	  return RC_DVB_DPKT_READ_FAILED;
 	}
@@ -665,7 +665,7 @@ dvb_volume (void *hdvb, int vol)
   sprintf (h->dvb_audn, "/dev/dvb/adapter%d/audio0", h->dvb_num);
   if ((h->dvb_audh = open (h->dvb_audn, O_RDWR)) < 0)
     {
-      log_print (hlog, LOG_ERR, "open() failed in dvb_volume(), errno = %d\n",
+      log_print (hlog, LOG_ERR, "open() failed in dvb_volume(), errno = %d",
 		 errno);
       return RC_DVB_VOLUME_OPEN_AUDIO;
     }
@@ -676,7 +676,7 @@ dvb_volume (void *hdvb, int vol)
   if (ioctl (h->dvb_audh, AUDIO_SET_MIXER, &mix) < 0)
     {
       log_print (hlog, LOG_ERR,
-		 "ioctl() failed in dvb_volume(), errno = %d\n", errno);
+		 "ioctl() failed in dvb_volume(), errno = %d", errno);
       return RC_DVB_VOLUME_SET_MIXER;
     }
 
@@ -685,6 +685,7 @@ dvb_volume (void *hdvb, int vol)
 
   return RC_OK;
 }
+
 
 int
 dvb_get_pid (void *hdvb, int s, int *apid, int *dpid)
