@@ -65,13 +65,13 @@ static char sccsid[] = "@(#)$Id$";
 
 typedef struct _SVC
 {
-  int svc_adapter;
-  int svc_frequency;
-  int svc_symbolrate;
-  int svc_viterbi;
-  char svc_polarisation;
-  char svc_delivery[256];
-  char svc_service[256];
+  int adapter;
+  int frequency;
+  int symbolrate;
+  int viterbi;
+  char polarisation;
+  char delivery[256];
+  char service[256];
 } SVC;
 
 
@@ -266,14 +266,14 @@ dvb_play (InputPlayback * playback)
 	}
     }
 
-  if ((rc = dvb_open (svc.svc_adapter, &hdvb)) != RC_OK)
+  if ((rc = dvb_open (svc.adapter, &hdvb)) != RC_OK)
     {
       playing = 0;
       return;
     }
 
-  if ((rc = dvb_tune_qpsk (hdvb, svc.svc_delivery[1] - 'A', svc.svc_frequency,
-			   svc.svc_polarisation, svc.svc_symbolrate,
+  if ((rc = dvb_tune_qpsk (hdvb, svc.delivery[1] - 'A', svc.frequency,
+			   svc.polarisation, svc.symbolrate,
 			   0)) != RC_OK)
     {
       playing = 0;
@@ -285,18 +285,18 @@ dvb_play (InputPlayback * playback)
   strcpy (service_name, s);
   dvb_info_update ("", "");
 
-  if (strncasecmp (svc.svc_service, "0x", 2) == 0)
+  if (strncasecmp (svc.service, "0x", 2) == 0)
     {
-      sscanf (&svc.svc_service[2], "%x", &apid);
+      sscanf (&svc.service[2], "%x", &apid);
     }
   else
     {
-      if (strncasecmp (svc.svc_service, "sid=", 4) == 0)
+      if (strncasecmp (svc.service, "sid=", 4) == 0)
 	{
-	  if (strncasecmp (&svc.svc_service[4], "0x", 2) == 0)
-	    sscanf (&svc.svc_service[6], "%x", &sid);
+	  if (strncasecmp (&svc.service[4], "0x", 2) == 0)
+	    sscanf (&svc.service[6], "%x", &sid);
 	  else
-	    sid = atoi (&svc.svc_service[4]);
+	    sid = atoi (&svc.service[4]);
 
 	  if ((rc = dvb_get_pid (sid, &apid, &dpid)) != RC_OK)
 	    {
@@ -309,7 +309,7 @@ dvb_play (InputPlayback * playback)
 	}
       else
 	{
-	  apid = atoi (svc.svc_service);
+	  apid = atoi (svc.service);
 	}
     }
 
@@ -544,13 +544,13 @@ dvb_parse_url (char *url, SVC * svc)
 
   if (svc != NULL)
     {
-      svc->svc_adapter = a_num;
-      svc->svc_frequency = qrg;
-      svc->svc_viterbi = fec;
-      svc->svc_symbolrate = sr;
-      svc->svc_polarisation = pol;
-      strcpy (svc->svc_delivery, sdlv);
-      strcpy (svc->svc_service, q);
+      svc->adapter = a_num;
+      svc->frequency = qrg;
+      svc->viterbi = fec;
+      svc->symbolrate = sr;
+      svc->polarisation = pol;
+      strcpy (svc->delivery, sdlv);
+      strcpy (svc->service, q);
     }
 
   return RC_OK;
@@ -1141,7 +1141,7 @@ dvb_get_name (void *arg)
 
   svc_sid = *(int *) arg;
 
-  pthread_mutex_lock (&svc_mutex);
+  pthread_mutex_lock (&mutex);
 
   log_print (hlog, LOG_INFO, "dvb_get_name(%d) thread starting", svc_sid);
 
@@ -1168,7 +1168,7 @@ dvb_get_name (void *arg)
 
 	  log_print (hlog, LOG_DEBUG, "SDT service ID = %d", sid);
 
-	  if (sid == svc_sid)
+	  if (svc_sid == svc_sid)
 	    {
 	      pp = p;
 	      qq = pp + len;
@@ -1201,7 +1201,7 @@ dvb_get_name (void *arg)
 		      log_print (hlog, LOG_INFO,
 				 "dvb_get_name() thread stopping");
 
-		      pthread_mutex_unlock (&svc_mutex);
+		      pthread_mutex_unlock (&mutex);
 		      pthread_exit (NULL);
 		      return NULL;
 		    }
@@ -1224,7 +1224,7 @@ dvb_get_name (void *arg)
 
   log_print (hlog, LOG_INFO, "dvb_get_name() thread stopping");
 
-  pthread_mutex_unlock (&svc_mutex);
+  pthread_mutex_unlock (&mutex);
   pthread_exit (NULL);
   return NULL;
 }
