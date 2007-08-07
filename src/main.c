@@ -61,8 +61,6 @@ static char sccsid[] = "@(#)$Id$";
 #define RC_PARSE_URL_UNK_POLARIZATION     1011
 #define RC_PARSE_URL_POLARIZATION_MISSING 1012
 
-#define RC_DVB_GET_PID_SID_NOT_IN_PAT     1100
-
 
 typedef struct _SVC
 {
@@ -91,7 +89,6 @@ static void *dvb_feed (void *);
 static void dvb_pes_pkt (InputPlayback *, unsigned char *, int, int);
 static void dvb_payload (InputPlayback *, unsigned char *, int, int);
 static void dvb_mpeg_frame (InputPlayback *, unsigned char *, int, int);
-static int dvb_get_pid (int, int *, int *);
 static void *dvb_get_name (void *);
 static void *dvb_madmusic (void *);
 static void dvb_parse_text (unsigned char *, int);
@@ -274,8 +271,7 @@ dvb_play (InputPlayback * playback)
     }
 
   if ((rc = dvb_tune_qpsk (hdvb, svc.delivery[1] - 'A', svc.frequency,
-			   svc.polarisation, svc.symbolrate,
-			   0)) != RC_OK)
+			   svc.polarisation, svc.symbolrate, 0)) != RC_OK)
     {
       playing = 0;
       dvb_close (hdvb);
@@ -286,13 +282,18 @@ dvb_play (InputPlayback * playback)
   strcpy (service_name, s);
   dvb_info_update ("", "");
 
-  if ((rc = dvb_get_pid (svc.spid, &apid, &dpid)) != RC_OK)
+  if ((rc = dvb_get_pid (hdvb, svc.spid, &apid, &dpid)) != RC_OK)
     {
       log_print (hlog, LOG_WARNING, "dvb_get_pid() returned %d.", rc);
       dvb_close (hdvb);
       playing = 0;
       hdvb = NULL;
       return;
+    }
+
+  if (pthread_create (&pt, 0, dvb_get_name, (void *) &svc.spid) != 0)
+    {
+      log_print (hlog, LOG_WARNING, "Failed to start dvb_get_name() thread");
     }
 
   if ((rc = dvb_volume (hdvb, 0)) != RC_OK)
@@ -526,12 +527,12 @@ dvb_parse_url (char *url, SVC * svc)
 
   if (strncasecmp (q, "0x", 2) == 0)
     {
-      q+=2;
-      sscanf ((char *)&q, "%x", &spid);
+      q += 2;
+      sscanf ((char *) &q, "%x", &spid);
     }
   else
     spid = atoi (q);
-  
+
   if (svc != NULL)
     {
       svc->adapter = a_num;
@@ -1033,96 +1034,7 @@ dvb_close_record ()
 }
 
 
-static int
-dvb_get_pid (int s, int *apid, int *dpid)
-{
-  int rc, len, pmt, pil, es, es_type, es_audio, es_data;
-  static int sid;
-  unsigned char sct[4096], *p, *q;
-
-  if ((rc = dvb_section (hdvb, 0, 0, 0, 0, sct, 10000)) != RC_OK)
-    return rc;
-
-  len = 3 + (((sct[1] << 8) | sct[2]) & 0xfff);
-  p = &sct[8];
-  q = (sct + len) - 4;
-
-  es_audio = es_data = -1;
-
-  while (p < q)
-    {
-      sid = (p[0] << 8) | p[1];
-      pmt = ((p[2] << 8) | p[3]) & 0x1fff;
-
-      if (sid == s)
-	{
-	  if ((rc = dvb_section (hdvb, pmt, 2, sid, 0, sct, 10000)) == RC_OK)
-	    {
-	      len = 3 + (((sct[1] << 8) | sct[2]) & 0xfff);
-	      pil = ((sct[10] << 8) | sct[11]) & 0xfff;
-	      p = sct + 12 + pil;
-	      q = sct + len - 4;
-
-	      while (p < q)
-		{
-		  es = ((p[1] << 8) | p[2]) & 0x1fff;
-		  es_type = p[0];
-		  pil = ((p[3] << 8) | p[4]) & 0xfff;
-		  p += 5;
-
-		  if ((es_type == 0x03) || (es_type == 0x04))
-		    {
-		      if (es_audio < 0)
-			{
-			  log_print (hlog, LOG_INFO,
-				     "Service Audio PID = %d (0x%04x)", es,
-				     es);
-			  if (pthread_create
-			      (&pt, 0, dvb_get_name, (void *) &sid) != 0)
-			    {
-			      log_print (hlog, LOG_WARNING,
-					 "Failed to start dvb_get_name() thread");
-			    }
-
-			  es_audio = es;
-			}
-		    }
-
-		  if (es_type == 0x05)
-		    {
-		      if (es_data < 0)
-			{
-			  log_print (hlog, LOG_INFO,
-				     "Service Data PID = %d (0x%04x)", es,
-				     es);
-
-			  es_data = es;
-			}
-		    }
-
-		  p += pil;
-		}
-	    }
-	  else
-	    {
-	      return rc;
-	    }
-	}
-
-      p += 4;
-    }
-
-  if (es_audio < 0)
-    return RC_DVB_GET_PID_SID_NOT_IN_PAT;
-
-  *apid = es_audio;
-  *dpid = es_data;
-
-  return RC_OK;
-}
-
-
-static void *
+void *
 dvb_get_name (void *arg)
 {
   int sct, rc, len, sid, dt, dl, svc_sid;

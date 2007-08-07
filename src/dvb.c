@@ -685,3 +685,83 @@ dvb_volume (void *hdvb, int vol)
 
   return RC_OK;
 }
+
+int
+dvb_get_pid (void *hdvb, int s, int *apid, int *dpid)
+{
+  int rc, len, pmt, pil, es, es_type, es_audio, es_data;
+  static int sid;
+  unsigned char sct[4096], *p, *q;
+
+  if ((rc = dvb_section (hdvb, 0, 0, 0, 0, sct, 10000)) != RC_OK)
+    return rc;
+
+  len = 3 + (((sct[1] << 8) | sct[2]) & 0xfff);
+  p = &sct[8];
+  q = (sct + len) - 4;
+
+  es_audio = es_data = -1;
+
+  while (p < q)
+    {
+      sid = (p[0] << 8) | p[1];
+      pmt = ((p[2] << 8) | p[3]) & 0x1fff;
+
+      if (sid == s)
+	{
+	  if ((rc = dvb_section (hdvb, pmt, 2, sid, 0, sct, 10000)) == RC_OK)
+	    {
+	      len = 3 + (((sct[1] << 8) | sct[2]) & 0xfff);
+	      pil = ((sct[10] << 8) | sct[11]) & 0xfff;
+	      p = sct + 12 + pil;
+	      q = sct + len - 4;
+
+	      while (p < q)
+		{
+		  es = ((p[1] << 8) | p[2]) & 0x1fff;
+		  es_type = p[0];
+		  pil = ((p[3] << 8) | p[4]) & 0xfff;
+		  p += 5;
+
+		  if ((es_type == 0x03) || (es_type == 0x04))
+		    {
+		      if (es_audio < 0)
+			{
+			  log_print (hlog, LOG_INFO,
+				     "Service Audio PID = %d (0x%04x)", es,
+				     es);
+			  es_audio = es;
+			}
+		    }
+
+		  if (es_type == 0x05)
+		    {
+		      if (es_data < 0)
+			{
+			  log_print (hlog, LOG_INFO,
+				     "Service Data PID = %d (0x%04x)", es,
+				     es);
+			  es_data = es;
+			}
+		    }
+
+		  p += pil;
+		}
+	    }
+	  else
+	    {
+	      return rc;
+	    }
+	}
+
+      p += 4;
+    }
+
+  if (es_audio < 0)
+    return RC_DVB_GET_PID_SID_NOT_IN_PAT;
+
+  *apid = es_audio;
+  *dpid = es_data;
+
+  return RC_OK;
+}

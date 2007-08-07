@@ -73,6 +73,7 @@
 #define RC_DVB_VOLUME_OPEN_AUDIO        2111
 #define RC_DVB_VOLUME_SET_MIXER         2112
 
+#define RC_DVB_GET_PID_SID_NOT_IN_PAT   2120
 
 int dvb_open (int, void **);
 int dvb_close (void *);
@@ -87,5 +88,6 @@ int dvb_apkt (void *, unsigned char *, int, int, int *);
 int dvb_dpid (void *, int);
 int dvb_dpkt (void *, unsigned char *, int, int, int *);
 int dvb_volume (void *, int);
+int dvb_get_pid (void *, int, int *, int *);
 
 #endif // __AUDACIOUS_DVB_DVB_H__
