@@ -32,8 +32,7 @@ static char sccsid[] = "@(#)$Id$";
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-
-#define RT_MEL 65
+#include "rtxt.h"
 
 
 const char *pty_string[] = {
@@ -52,9 +51,7 @@ const char *pty_string[] = {
   "M.O.R. music",
   "Light classical",
   "Serious classical",
-  "Other music",
-  "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-  "Alarm"
+  "Other music"
 };
 
 unsigned char rds_addchar[128] = {
@@ -306,7 +303,7 @@ radiotext_read_frame (const unsigned char *data, int len)
 			{
 			case 0x07:	// PTY
 			  printf ("mec %d: PTY\n", mec);
-			  if (mtext[8] <= 31)
+			  if (mtext[8] <= 15)
 			    printf ("RDS-PTY set to '%s'\n",
 				    pty_string[mtext[8]]);
 			  else

@@ -24,9 +24,20 @@
    along with audacious-dvb; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
-#ifndef __AUDACIOUS_DVB_RADIOTEXT_H__
-#define __AUDACIOUS_DVB_RADIOTEXT_H__
+#ifndef __AUDACIOUS_DVB_RTXT_H__
+#define __AUDACIOUS_DVB_RTXT_H__
+
+#define RT_MEL 65
+
+typedef struct _rtstruct
+{
+  gchar title[RT_MEL+1];
+  gchar artist[RT_MEL+1];
+  gchar radiotext[RT_MEL+10];
+  gchar pty[21];
+  gboolean refresh;
+} rtstruct;
 
 void radiotext_read_frame (const unsigned char *data, int len);
 
-#endif // __AUDACIOUS_DVB_RADIOTEXT_H__
+#endif // __AUDACIOUS_DVB_RTXT_H__

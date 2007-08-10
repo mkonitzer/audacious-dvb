@@ -44,6 +44,7 @@ static char sccsid[] = "@(#)$Id$";
 #include "dvb.h"
 #include "log.h"
 #include "cfg.h"
+#include "rtxt.h"
 #include "config.h"
 
 
