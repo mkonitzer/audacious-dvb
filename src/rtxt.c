@@ -24,10 +24,6 @@
    along with audacious-dvb; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
-#ifndef lint
-static char sccsid[] = "@(#)$Id$";
-#endif
-
 #include <glib.h>
 #include <stdio.h>
 #include <string.h>
@@ -35,7 +31,7 @@ static char sccsid[] = "@(#)$Id$";
 #include "rtxt.h"
 
 
-const char *pty_string[] = {
+const gchar *pty_string[] = {
   "unknown program type",
   "News",
   "Current affairs",
@@ -54,7 +50,7 @@ const char *pty_string[] = {
   "Other music"
 };
 
-unsigned char rds_addchar[128] = {
+guchar rds_addchar[128] = {
   0xe1, 0xe0, 0xe9, 0xe8, 0xed, 0xec, 0xf3, 0xf2,
   0xfa, 0xf9, 0xd1, 0xc7, 0x8c, 0xdf, 0x8e, 0x8f,
   0xe2, 0xe4, 0xea, 0xeb, 0xee, 0xef, 0xf4, 0xf6,
@@ -75,12 +71,12 @@ unsigned char rds_addchar[128] = {
 
 
 
-unsigned short
-crc16_ccitt (unsigned char *daten, int len, int skipfirst)
+gushort
+crc16_ccitt (guchar * daten, gint len, gint skipfirst)
 {
   // CRC16-CCITT: x^16 + x^12 + x^5 + 1
   // with start 0xffff and result inverse
-  register unsigned short crc = 0xffff;
+  register gushort crc = 0xffff;
 
   if (skipfirst)
     daten++;
@@ -99,11 +95,11 @@ crc16_ccitt (unsigned char *daten, int len, int skipfirst)
 
 
 void
-radiotext_decode (unsigned char *mtext, int len)
+radiotext_decode (guchar * mtext, gint len)
 {
-  int i, ii;
-  char temptext[RT_MEL];
-  static char plustext[RT_MEL];
+  gint i, ii;
+  gchar temptext[RT_MEL];
+  static gchar plustext[RT_MEL];
 
   /*
    * byte 1+2 = ADD (10bit SiteAdress + 6bit EncoderAdress)
@@ -111,7 +107,7 @@ radiotext_decode (unsigned char *mtext, int len)
    * byte 4 = MFL (Message Field Length)
    * byte 5 = MEC (Message Element Code, 0x0a for RT, 0x46 for RTplus)
    */
-  int leninfo = mtext[4];
+  gint leninfo = mtext[4];
   if (len >= leninfo + 7)
     {
       if (mtext[5] == 0x0a)
@@ -164,7 +160,7 @@ radiotext_decode (unsigned char *mtext, int len)
 	      return;
 	    }
 
-	  unsigned int rtp_typ[2], rtp_start[2], rtp_len[2];
+	  guint rtp_typ[2], rtp_start[2], rtp_len[2];
 	  rtp_typ[0] = (0x38 & mtext[10] << 3) | mtext[11] >> 5;
 	  rtp_start[0] = (0x3e & mtext[11] << 1) | mtext[12] >> 7;
 	  rtp_len[0] = 0x3f & mtext[12] >> 1;
@@ -194,18 +190,18 @@ radiotext_decode (unsigned char *mtext, int len)
 
 
 void
-radiotext_read_frame (const unsigned char *data, int len)
+radiotext_read_frame (const guchar * data, gint len)
 {
-  int i, val;
-  const int mframel = 263;	// max. 255(MSG)+4(ADD/SQC/MFL)+2(CRC)+2(Start/Stop) of RDS-data
-  static unsigned char mtext[263 + 1];
-  static int rt_start = 0, rt_bstuff = 0;
-  static int index;
-  static int mec = 0;
+  gint i, val;
+  const gint mframel = 263;	// max. 255(MSG)+4(ADD/SQC/MFL)+2(CRC)+2(Start/Stop) of RDS-data
+  static guchar mtext[263 + 1];
+  static gint rt_start = 0, rt_bstuff = 0;
+  static gint index;
+  static gint mec = 0;
 
 
-  int offset = len;
-  int rdsl = data[offset - 2];	// RDS DataFieldLength
+  gint offset = len;
+  gint rdsl = data[offset - 2];	// RDS DataFieldLength
   // RDS DataSync = 0xfd @ end
   if (data[offset - 1] == 0xfd && rdsl > 0)
     {

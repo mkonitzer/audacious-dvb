@@ -24,6 +24,8 @@
 #ifndef __AUDACIOUS_DVB_LOG_H__
 #define __AUDACIOUS_DVB_LOG_H__
 
+#include <glib.h>
+
 #ifndef RC_OK
 #define RC_OK                         0
 #endif
@@ -44,8 +46,9 @@
 #define LOG_DEBUG   7
 
 
-int log_open (void **, char *, int);
-int log_close (void *);
-int log_print (void *, int, char *, ...);
+gint log_open (gpointer *, gchar *, gint);
+gint log_close (gpointer);
+gint log_print (gpointer, gint, gchar *, ...);
+void log_set_level (gpointer hlog, gint lvl);
 
 #endif // __AUDACIOUS_DVB_LOG_H__

@@ -21,20 +21,15 @@
    along with audacious-dvb; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
-#ifndef lint
-static char sccsid[] = "@(#)$Id$";
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <ctype.h>
+#include <glib.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/select.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/param.h>
-
 #include <linux/dvb/frontend.h>
 #include <linux/dvb/audio.h>
 #include <linux/dvb/dmx.h>
@@ -42,46 +37,44 @@ static char sccsid[] = "@(#)$Id$";
 #include "dvb.h"
 #include "log.h"
 
-extern void *hlog;
+extern gpointer hlog;
 
 
 typedef struct _HDVB
 {
-  int dvb_num;
-  char dvb_fedn[MAXPATHLEN];
-  int dvb_fedh;
-  int dvb_excl;
-  char dvb_dmxdn[MAXPATHLEN];
-  int dvb_dmxdh;
-  char dvb_audn[MAXPATHLEN];
-  int dvb_audh;
-  int dvb_admx;
-  int dvb_ddmx;
-  int dvb_pid;
+  gint dvb_num;
+  gchar dvb_fedn[MAXPATHLEN];
+  gint dvb_fedh;
+  gint dvb_excl;
+  gchar dvb_dmxdn[MAXPATHLEN];
+  gint dvb_dmxdh;
+  gchar dvb_audn[MAXPATHLEN];
+  gint dvb_audh;
+  gint dvb_admx;
+  gint dvb_ddmx;
+  gint dvb_pid;
   struct dmx_pes_filter_params dvb_dmx;
 } HDVB;
 
 
-int
-dvb_open (int dev, void **hdvb)
+gint
+dvb_open (gint dev, gpointer * hdvb)
 {
   HDVB *h;
 
-  if ((h = malloc (sizeof (HDVB))) == NULL)
+  if ((h = g_malloc (sizeof (HDVB))) == NULL)
     return RC_DVB_OPEN_MALLOC_FAILED;
 
   memset (h, 0x00, sizeof (HDVB));
 
   h->dvb_num = dev;
-  sprintf (h->dvb_fedn, "/dev/dvb/adapter%d/frontend0", h->dvb_num);
+  g_sprintf (h->dvb_fedn, "/dev/dvb/adapter%d/frontend0", h->dvb_num);
   h->dvb_excl = 1;
 
   if ((h->dvb_fedh = open (h->dvb_fedn, O_RDWR)) < 0)
     {
       if (errno == EBUSY)
-	{
-	  h->dvb_excl = 0;
-	}
+	h->dvb_excl = 0;
       else
 	{
 	  free (h);
@@ -95,8 +88,8 @@ dvb_open (int dev, void **hdvb)
 }
 
 
-int
-dvb_close (void *hdvb)
+gint
+dvb_close (gpointer hdvb)
 {
   HDVB *h;
 
@@ -120,10 +113,11 @@ dvb_close (void *hdvb)
 }
 
 
-int
-dvb_tune_qpsk (void *hdvb, int lnb, int qrg, char pol, int sr, int npow)
+gint
+dvb_tune_qpsk (gpointer hdvb, gint lnb, gint qrg, gchar pol, gint sr,
+	       gint npow)
 {
-  int zf, tone, volt, err;
+  gint zf, tone, volt, err;
   HDVB *h;
   struct dvb_diseqc_master_cmd cmd;
   struct dvb_frontend_parameters fep;
@@ -157,7 +151,7 @@ dvb_tune_qpsk (void *hdvb, int lnb, int qrg, char pol, int sr, int npow)
 
   if (npow)
     {
-      if (toupper (pol) == 'H')
+      if (g_ascii_toupper (pol) == 'H')
 	volt = 2;
       else
 	volt = 0;
@@ -166,7 +160,7 @@ dvb_tune_qpsk (void *hdvb, int lnb, int qrg, char pol, int sr, int npow)
     }
   else
     {
-      if (toupper (pol) == 'H')
+      if (g_ascii_toupper (pol) == 'H')
 	{
 	  volt = 2;
 	  err = ioctl (h->dvb_fedh, FE_SET_VOLTAGE, SEC_VOLTAGE_18);
@@ -217,14 +211,14 @@ dvb_tune_qpsk (void *hdvb, int lnb, int qrg, char pol, int sr, int npow)
 }
 
 
-int
-dvb_status (void *hdvb)
+/*gint
+dvb_status (gpointer hdvb)
 {
-  int qual;
+  gint qual;
   HDVB *h;
-  long sstr, snr;
+  glong sstr, snr;
   fe_status_t fest;
-  unsigned long ber;
+  gulong ber;
 
   h = (HDVB *) hdvb;
 
@@ -274,17 +268,17 @@ dvb_status (void *hdvb)
     printf (" ");
 
   return RC_OK;
-}
+}*/
 
 
-int
-dvb_filter (void *hdvb, int pid)
+gint
+dvb_filter (gpointer hdvb, gint pid)
 {
   HDVB *h;
 
   h = (HDVB *) hdvb;
 
-  sprintf (h->dvb_dmxdn, "/dev/dvb/adapter%d/demux0", h->dvb_num);
+  g_sprintf (h->dvb_dmxdn, "/dev/dvb/adapter%d/demux0", h->dvb_num);
   if ((h->dvb_dmxdh = open (h->dvb_dmxdn, O_RDWR)) < 0)
     {
       log_print (hlog, LOG_ERR, "open() failed in dvb_filter(), errno = %d",
@@ -317,8 +311,8 @@ dvb_filter (void *hdvb, int pid)
 }
 
 
-int
-dvb_packet (void *hdvb, unsigned char *pkt, int t)
+gint
+dvb_packet (gpointer hdvb, guchar * pkt, gint t)
 {
   int r, s;
   HDVB *h;
@@ -353,8 +347,8 @@ dvb_packet (void *hdvb, unsigned char *pkt, int t)
 }
 
 
-int
-dvb_unfilter (void *hdvb)
+gint
+dvb_unfilter (gpointer hdvb)
 {
   HDVB *h;
 
@@ -369,11 +363,11 @@ dvb_unfilter (void *hdvb)
 }
 
 
-int
-dvb_section (void *hdvb, int pid, int sect, int sid, int sct,
-	     unsigned char *s, int t)
+gint
+dvb_section (gpointer hdvb, gint pid, gint sect, gint sid, gint sct,
+	     guchar * s, gint t)
 {
-  int sel, r, fd;
+  gint sel, r, fd;
   HDVB *h;
   fd_set fds;
   struct timeval tv;
@@ -381,7 +375,7 @@ dvb_section (void *hdvb, int pid, int sect, int sid, int sct,
 
   h = (HDVB *) hdvb;
 
-  sprintf (h->dvb_dmxdn, "/dev/dvb/adapter%d/demux0", h->dvb_num);
+  g_sprintf (h->dvb_dmxdn, "/dev/dvb/adapter%d/demux0", h->dvb_num);
   if ((fd = open (h->dvb_dmxdn, O_RDWR)) < 0)
     {
       log_print (hlog, LOG_ERR, "open failed in dvb_section(), errno = %d",
@@ -451,7 +445,6 @@ dvb_section (void *hdvb, int pid, int sect, int sid, int sct,
 	  close (fd);
 	  return RC_DVB_SECTION_READ_FAILED;
 	}
-
       close (fd);
       return RC_OK;
     }
@@ -480,15 +473,15 @@ dvb_section (void *hdvb, int pid, int sect, int sid, int sct,
 }
 
 
-int
-dvb_apid (void *hdvb, int pid)
+gint
+dvb_apid (gpointer hdvb, gint pid)
 {
   HDVB *h;
   struct dmx_pes_filter_params fp;
 
   h = (HDVB *) hdvb;
 
-  sprintf (h->dvb_dmxdn, "/dev/dvb/adapter%d/demux0", h->dvb_num);
+  g_sprintf (h->dvb_dmxdn, "/dev/dvb/adapter%d/demux0", h->dvb_num);
   if ((h->dvb_admx = open (h->dvb_dmxdn, O_RDWR)) < 0)
     {
       log_print (hlog, LOG_ERR, "open() failed in dvb_apid(), errno = %d",
@@ -515,10 +508,10 @@ dvb_apid (void *hdvb, int pid)
 }
 
 
-int
-dvb_apkt (void *hdvb, unsigned char *pkt, int len, int t, int *rcvd)
+gint
+dvb_apkt (gpointer hdvb, guchar * pkt, gint len, gint t, gint * rcvd)
 {
-  int r, sel;
+  gint r, sel;
   HDVB *h;
   fd_set rfd;
   struct timeval tv;
@@ -536,12 +529,11 @@ dvb_apkt (void *hdvb, unsigned char *pkt, int len, int t, int *rcvd)
       sel = select (h->dvb_admx + 1, &rfd, NULL, NULL, &tv);
     }
   while (sel < 0 && errno == EINTR);
-  if (sel <= 0)
-    {
-      if (sel < 0)
-	return RC_DVB_APKT_SELECT_FAILED;
-      return RC_DVB_APKT_SELECT_TIMEOUT;
-    }
+
+  if (sel < 0)
+    return RC_DVB_APKT_SELECT_FAILED;
+  if (sel == 0)
+    return RC_DVB_APKT_SELECT_TIMEOUT;
 
   r = read (h->dvb_admx, pkt, len);
 
@@ -557,8 +549,8 @@ dvb_apkt (void *hdvb, unsigned char *pkt, int len, int t, int *rcvd)
 }
 
 
-int
-dvb_dpid (void *hdvb, int pid)
+gint
+dvb_dpid (gpointer hdvb, gint pid)
 {
   HDVB *h;
   struct dmx_sct_filter_params fp;
@@ -566,7 +558,7 @@ dvb_dpid (void *hdvb, int pid)
 
   h = (HDVB *) hdvb;
 
-  sprintf (h->dvb_dmxdn, "/dev/dvb/adapter%d/demux0", h->dvb_num);
+  g_sprintf (h->dvb_dmxdn, "/dev/dvb/adapter%d/demux0", h->dvb_num);
   if ((h->dvb_ddmx = open (h->dvb_dmxdn, O_RDWR)) < 0)
     {
       log_print (hlog, LOG_ERR, "open() failed in dvb_dpid(), errno = %d",
@@ -612,10 +604,10 @@ dvb_dpid (void *hdvb, int pid)
 }
 
 
-int
-dvb_dpkt (void *hdvb, unsigned char *s, int len, int t, int *rcvd)
+gint
+dvb_dpkt (void *hdvb, guchar * s, gint len, gint t, gint * rcvd)
 {
-  int r, sel;
+  gint r, sel;
   HDVB *h;
   fd_set fds;
   struct timeval tv;
@@ -654,8 +646,8 @@ dvb_dpkt (void *hdvb, unsigned char *s, int len, int t, int *rcvd)
 }
 
 
-int
-dvb_volume (void *hdvb, int vol)
+gint
+dvb_volume (gpointer hdvb, gint vol)
 {
   HDVB *h;
   audio_mixer_t mix;
@@ -665,7 +657,7 @@ dvb_volume (void *hdvb, int vol)
   if (h == NULL)
     return RC_DVB_VOLUME_INVALID_HANDLE;
 
-  sprintf (h->dvb_audn, "/dev/dvb/adapter%d/audio0", h->dvb_num);
+  g_sprintf (h->dvb_audn, "/dev/dvb/adapter%d/audio0", h->dvb_num);
   if ((h->dvb_audh = open (h->dvb_audn, O_RDWR)) < 0)
     {
       log_print (hlog, LOG_ERR, "open() failed in dvb_volume(), errno = %d",
@@ -690,12 +682,12 @@ dvb_volume (void *hdvb, int vol)
 }
 
 
-int
-dvb_get_pid (void *hdvb, int s, int *apid, int *dpid)
+gint
+dvb_get_pid (gpointer hdvb, gint s, gint * apid, gint * dpid)
 {
-  int rc, len, pmt, pil, es, es_type, es_audio, es_data;
-  static int sid;
-  unsigned char sct[4096], *p, *q;
+  gint rc, len, pmt, pil, es, es_type, es_audio, es_data;
+  gint sid;
+  guchar sct[4096], *p, *q;
 
   if ((rc = dvb_section (hdvb, 0, 0, 0, 0, sct, 10000)) != RC_OK)
     return rc;
@@ -753,9 +745,7 @@ dvb_get_pid (void *hdvb, int s, int *apid, int *dpid)
 		}
 	    }
 	  else
-	    {
-	      return rc;
-	    }
+	    return rc;
 	}
 
       p += 4;

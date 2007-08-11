@@ -27,6 +27,7 @@
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
+
 #include "cfg.h"
 
 typedef struct _Widgets
@@ -62,8 +63,8 @@ typedef struct _Widgets
 
 void dvb_about (void);
 void dvb_configure (void);
-void dvb_getinfo (char *);
-void dvb_info_update (char *, char *);
+void dvb_getinfo (gchar *);
+void dvb_info_update (gchar *, gchar *);
 
 static void recordClicked (GtkWidget * w, gpointer user_data);
 static void isplitClicked (GtkWidget * w, gpointer user_data);

@@ -21,36 +21,33 @@
    along with audacious-dvb; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
-#ifndef lint
-static char sccsid[] = "@(#)$Id$";
-#endif
-
-#include <stdio.h>
+#include <glib.h>
 #include <string.h>
-#include <pthread.h>
 
 #include "epg.h"
 #include "log.h"
 #include "dvb.h"
 
 
-extern int playing, epg_running, si_update;
-extern void *hlog, *hdvb;
+extern gint playing, epg_running, si_update;
+extern gpointer hlog, hdvb;
 
-char epg_desc[4096];
+gchar epg_desc[4096];
 
-static pthread_mutex_t epg_mutex = PTHREAD_MUTEX_INITIALIZER;
+static GMutex *gmt_epg = NULL;
 
 
-void *
-dvb_epg (void *arg)
+gpointer
+dvb_epg (gpointer arg)
 {
-  int sid, rc, len, sct;
-  unsigned char s[4096];
+  gint sid, rc, len, sct;
+  guchar s[4096];
 
   log_print (hlog, LOG_INFO, "dvb_epg() thread started");
 
-  pthread_mutex_lock (&epg_mutex);
+  if (gmt_epg == NULL)
+    gmt_epg = g_mutex_new ();
+  g_mutex_lock (gmt_epg);
 
   sid = (int) arg;
   log_print (hlog, LOG_DEBUG, "EPG SID: %d (0x%04x)", sid, sid);
@@ -83,17 +80,18 @@ dvb_epg (void *arg)
 
   log_print (hlog, LOG_INFO, "dvb_epg() thread stopping");
 
-  pthread_mutex_unlock (&epg_mutex);
-  pthread_exit (NULL);
+  g_mutex_unlock (gmt_epg);
+  gmt_epg = NULL;
+  g_thread_exit (0);
 }
 
 
-int
-dvb_parse_eit (unsigned char *sect, int len)
+gint
+dvb_parse_eit (guchar * sect, gint len)
 {
-  int dll, rc, rst;
-  unsigned char *p, *q;
-  static unsigned char un[4096];
+  gint dll, rc, rst;
+  guchar *p, *q;
+  static guchar un[4096];
 
   if (len == 0)
     {
@@ -125,14 +123,10 @@ dvb_parse_eit (unsigned char *sect, int len)
 	      rc = dvb_eit_desc (p, dll);
 	    }
 	  else
-	    {
-	      p += 12;
-	    }
+	    p += 12;
 	}
       else
-	{
-	  p += 12;
-	}
+	p += 12;
 
       p += dll;
     }
@@ -141,12 +135,12 @@ dvb_parse_eit (unsigned char *sect, int len)
 }
 
 
-int
-dvb_eit_desc (unsigned char *d, int l)
+gint
+dvb_eit_desc (guchar * d, gint l)
 {
-  int dt, dl, i, j, cdn, ldn, loi;
-  char ll[1024], hex[16], lg[4], name[256], text[256];
-  unsigned char *p, *q;
+  gint dt, dl, i, j, cdn, ldn, loi;
+  gchar ll[1024], hex[16], lg[4], name[256], text[256];
+  guchar *p, *q;
 
   p = d;
 
@@ -154,7 +148,6 @@ dvb_eit_desc (unsigned char *d, int l)
     {
       dt = *p++;
       dl = *p++;
-
       q = p;
 
       switch (dt)
@@ -218,9 +211,7 @@ dvb_eit_desc (unsigned char *d, int l)
 	  dvb_clean_string (text);
 
 	  if (strlen (epg_desc) > 0)
-	    {
-	      strcat (epg_desc, " - ");
-	    }
+	    strcat (epg_desc, " - ");
 	  strcat (epg_desc, text);
 	  si_update++;
 
@@ -229,13 +220,13 @@ dvb_eit_desc (unsigned char *d, int l)
 	  break;
 
 	default:
-	  sprintf (ll, "%02x", dt);
+	  g_sprintf (ll, "%02x", dt);
 	  if (dl > 0)
 	    {
 	      strcat (ll, ":");
 	      for (i = 0; i < dl; i++)
 		{
-		  sprintf (hex, "%02x", p[i]);
+		  g_sprintf (hex, "%02x", p[i]);
 		  strcat (ll, hex);
 		}
 	    }
@@ -251,12 +242,12 @@ dvb_eit_desc (unsigned char *d, int l)
 
 
 void
-dvb_clean_string (char *s)
+dvb_clean_string (gchar * s)
 {
-  int i, l;
-  char *ws;
+  gint i, l;
+  gchar *ws;
 
-  if ((ws = malloc (1 + strlen (s))) != NULL)
+  if ((ws = g_malloc (1 + strlen (s))) != NULL)
     {
       l = 0;
       for (i = 0; i < strlen (s); i++)
@@ -268,6 +259,6 @@ dvb_clean_string (char *s)
 	}
       ws[l] = '\0';
       strcpy (s, ws);
-      free (ws);
+      g_free (ws);
     }
 }

@@ -21,10 +21,6 @@
    along with audacious-dvb; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
-#ifndef lint
-static char sccsid[] = "@(#)$Id$";
-#endif
-
 #include <glib.h>
 #include <audacious/configdb.h>
 
@@ -51,6 +47,7 @@ config_init (cfgstruct * config)
   config->info_epg = TRUE;
   config->info_mmusic = FALSE;
 }
+
 
 gboolean
 config_from_db (cfgstruct * config)

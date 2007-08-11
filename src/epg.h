@@ -24,10 +24,12 @@
 #ifndef __AUDACIOUS_DVB_EPG_H__
 #define __AUDACIOUS_DVB_EPG_H__
 
-void *dvb_epg (void *);
-void dvb_clean_string (char *);
+#include <glib.h>
 
-static int dvb_parse_eit (unsigned char *, int);
-static int dvb_eit_desc (unsigned char *, int);
+gpointer dvb_epg (gpointer);
+void dvb_clean_string (gchar *);
+
+static gint dvb_parse_eit (guchar *, gint);
+static gint dvb_eit_desc (guchar *, gint);
 
 #endif // __AUDACIOUS_DVB_EPG_H__

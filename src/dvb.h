@@ -24,6 +24,8 @@
 #ifndef __AUDACIOUS_DVB_DVB_H__
 #define __AUDACIOUS_DVB_DVB_H__
 
+#include <glib.h>
+
 #ifndef RC_OK
 #define RC_OK                           0
 #endif
@@ -75,19 +77,19 @@
 
 #define RC_DVB_GET_PID_SID_NOT_IN_PAT   2120
 
-int dvb_open (int, void **);
-int dvb_close (void *);
-int dvb_tune_qpsk (void *, int, int, char, int, int);
-int dvb_status (void *);
-int dvb_filter (void *, int);
-int dvb_packet (void *, unsigned char *, int);
-int dvb_unfilter (void *);
-int dvb_section (void *, int, int, int, int, unsigned char *, int);
-int dvb_apid (void *, int);
-int dvb_apkt (void *, unsigned char *, int, int, int *);
-int dvb_dpid (void *, int);
-int dvb_dpkt (void *, unsigned char *, int, int, int *);
-int dvb_volume (void *, int);
-int dvb_get_pid (void *, int, int *, int *);
+int dvb_open (gint, gpointer *);
+int dvb_close (gpointer);
+int dvb_tune_qpsk (gpointer, gint, gint, gchar, gint, gint);
+/*int dvb_status (gpointer);*/
+int dvb_filter (gpointer, gint);
+int dvb_packet (gpointer, guchar *, gint);
+int dvb_unfilter (gpointer);
+int dvb_section (gpointer, gint, gint, gint, gint, guchar *, gint);
+int dvb_apid (gpointer, gint);
+int dvb_apkt (gpointer, guchar *, gint, gint, gint *);
+int dvb_dpid (gpointer, gint);
+int dvb_dpkt (gpointer, guchar *, gint, gint, gint *);
+int dvb_volume (gpointer, gint);
+int dvb_get_pid (gpointer, gint, gint *, gint *);
 
 #endif // __AUDACIOUS_DVB_DVB_H__

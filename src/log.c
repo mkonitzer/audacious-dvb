@@ -21,26 +21,21 @@
    along with audacious-dvb; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
-#ifndef lint
-static char sccsid[] = "@(#)$Id$";
-#endif
-
-#include <string.h>
-#include <time.h>
 #include <glib.h>
+#include <string.h>
 
 #include "log.h"
 
 
 typedef struct _HLOG
 {
-  char hl_pfx[256];
-  int hl_level;
+  gchar hl_pfx[256];
+  gint hl_level;
 } HLOG;
 
 
-int
-log_open (void **hlog, char *pfx, int lvl)
+gint
+log_open (gpointer * hlog, gchar * pfx, gint lvl)
 {
   HLOG *hl;
 
@@ -65,8 +60,8 @@ log_open (void **hlog, char *pfx, int lvl)
 }
 
 
-int
-log_close (void *hlog)
+gint
+log_close (gpointer hlog)
 {
   HLOG *hl;
 
@@ -79,12 +74,12 @@ log_close (void *hlog)
 }
 
 
-int
-log_print (void *hlog, int lvl, char *fmt, ...)
+gint
+log_print (gpointer hlog, gint lvl, gchar * fmt, ...)
 {
   HLOG *hl;
   va_list args;
-  char msgbuf[256];
+  gchar msgbuf[256];
 
   hl = (HLOG *) hlog;
 
@@ -94,10 +89,18 @@ log_print (void *hlog, int lvl, char *fmt, ...)
   if (hl->hl_level >= lvl)
     {
       va_start (args, fmt);
-      vsnprintf (msgbuf, 255, fmt, args);
+      g_vsnprintf (msgbuf, 255, fmt, args);
       va_end (args);
-      g_message ("[%s] %s\n", hl->hl_pfx, msgbuf);
+      g_message ("[%s] %s", hl->hl_pfx, msgbuf);
     }
 
   return RC_OK;
+}
+
+void
+log_set_level (gpointer hlog, gint lvl)
+{
+  HLOG *hl;
+  hl = (HLOG *) hlog;
+  hl->hl_level = lvl;
 }

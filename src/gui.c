@@ -21,18 +21,10 @@
    along with audacious-dvb; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
-#ifndef lint
-static char sccsid[] = "@(#)$Id$";
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
+#include <glib.h>
 #include <string.h>
-#include <sys/param.h>
 
 #include <audacious/configdb.h>
-
-#include <glib.h>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 
@@ -41,11 +33,11 @@ static char sccsid[] = "@(#)$Id$";
 #include "cfg.h"
 #include "config.h"
 
-extern int playing;
-extern void *hlog;
+extern gint playing;
+extern gpointer hlog;
 extern cfgstruct *config;
 
-static char si_prov[256], si_station[256];
+static gchar si_prov[256], si_station[256];
 static Widgets widgets = { 0 };
 
 
@@ -93,7 +85,7 @@ dvb_configure (void)
       return;
     }
 
-  int i;
+  gint i;
   GtkWidget *hbox, *vbox;
 
   GtkWidget *configBox = gtk_window_new (GTK_WINDOW_TOPLEVEL);
@@ -285,6 +277,8 @@ dvb_configure_ok (GtkWidget * w, gpointer data)
   config_from_gui (config);
   config_to_db (config);
 
+  log_set_level (hlog, config->loglvl);
+
   gtk_widget_destroy (GTK_WIDGET (widgets.configBox));
 }
 
@@ -402,7 +396,7 @@ config_from_gui (cfgstruct * config)
 }
 
 void
-dvb_getinfo (char *s)
+dvb_getinfo (gchar * s)
 {
   GtkWidget *fr, *lbl, *tbl;
   GtkWidget *box1, *box2, *box3;
@@ -413,7 +407,7 @@ dvb_getinfo (char *s)
       return;
     }
 
-  int i;
+  gint i;
   GtkWidget *hbox, *vbox;
 
   GtkWidget *infoBox = gtk_window_new (GTK_WINDOW_TOPLEVEL);
@@ -505,7 +499,7 @@ dvb_getinfo (char *s)
 
 
 void
-dvb_info_update (char *prov, char *station)
+dvb_info_update (gchar * prov, gchar * station)
 {
   strcpy (si_prov, prov);
   strcpy (si_station, station);

@@ -21,20 +21,14 @@
    along with audacious-dvb; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
-#ifndef lint
-static char sccsid[] = "@(#)$Id$";
-#endif
-
-#include <time.h>
+#include <glib.h>
 #include <math.h>
 #include <string.h>
-#include <pthread.h>
 #include <sys/stat.h>
 #include <sys/param.h>
 
 #include <audacious/plugin.h>
 #include <audacious/util.h>
-#include <audacious/configdb.h>
 #include <audacious/vfs.h>
 
 #include <lame/lame.h>
@@ -65,66 +59,70 @@ static char sccsid[] = "@(#)$Id$";
 
 typedef struct _SVC
 {
-  int adapter;
-  int frequency;
-  int symbolrate;
-  int viterbi;
-  char polarisation;
-  char delivery[256];
-  int spid;
+  gint adapter;
+  gint frequency;
+  gint symbolrate;
+  gint viterbi;
+  gchar polarisation;
+  gchar delivery[256];
+  gint spid;
 } SVC;
 
 
 void dvb_close_record (void);
 
 static void dvb_init (void);
-static int dvb_is_our_file (char *);
+static gint dvb_is_our_file (gchar *);
 static void dvb_play (InputPlayback *);
 static void dvb_stop (InputPlayback *);
-static void dvb_pause (InputPlayback *, short);
-static int dvb_gettime (InputPlayback *);
+static void dvb_pause (InputPlayback *, gshort);
+static gint dvb_gettime (InputPlayback *);
 static void dvb_cleanup (void);
 
-static int dvb_parse_url (char *, SVC *);
-static void *dvb_feed (void *);
-static void dvb_pes_pkt (InputPlayback *, unsigned char *, int, int);
-static void dvb_payload (InputPlayback *, unsigned char *, int, int);
-static void dvb_mpeg_frame (InputPlayback *, unsigned char *, int, int);
-static void *dvb_get_name (void *);
-static void *dvb_madmusic (void *);
-static void dvb_parse_text (unsigned char *, int);
-static void dvb_fixbillshit (unsigned char *);
-static void dvb_xlt (unsigned char *);
+static gint dvb_parse_url (gchar *, SVC *);
+static gpointer dvb_feed (gpointer);
+static void dvb_pes_pkt (InputPlayback *, guchar *, gint, gint);
+static void dvb_payload (InputPlayback *, guchar *, gint, gint);
+static void dvb_mpeg_frame (InputPlayback *, guchar *, gint, gint);
+static gpointer dvb_get_name (gpointer);
+static gpointer dvb_madmusic (gpointer);
+static void dvb_parse_text (guchar *, gint);
+static void dvb_fixbillshit (guchar *);
+static void dvb_xlt (guchar *);
 
-int dvb_read_conf (char *, char *, char *, char *, int, char *);
+gint dvb_read_conf (gchar *, gchar *, gchar *, gchar *, gint, gchar *);
 
 
-/* Miscellaneous globals */
-int playing;			/* This is also used in the GUI */
-int si_update;			/* This is used in EPG retrieval */
-void *hlog;			/* This is used everywhere :) */
-void *hdvb;			/* EPG retrieval uses this */
-int epg_running;
+// Miscellaneous globals
+gint playing;			// This is also used in the GUI
+gint si_update;			// This is used in EPG retrieval
+gpointer hlog;			// This is used everywhere :)
+gpointer hdvb;			// EPG retrieval uses this
+gint epg_running;
 cfgstruct *config = NULL;
 
-extern char epg_desc[4096];
+extern gchar epg_desc[4096];
 
-static int si_previous;
-static int paused, audio, file_index, mad_len, trnum, frm_ctr;
-static char erfn[MAXPATHLEN], album[256], artist[256], title[256];
-static char service_name[MAXPATHLEN];
+static gint si_previous;
+static gint paused, audio, file_index, mad_len, trnum, frm_ctr;
+static gchar erfn[MAXPATHLEN], album[256], artist[256], title[256];
+static gchar service_name[MAXPATHLEN];
 static VFSFile *rec_file;
 static time_t t_start, isplit_last, mad_time;
-static pthread_t pt, ptd, pte;
-static unsigned char mad_buf[8192];
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t svc_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t data_mutex = PTHREAD_MUTEX_INITIALIZER;
+static GThread *gt_feed = NULL;
+static GThread *gt_get_name = NULL;
+static GThread *gt_epg = NULL;
+static GThread *gt_mmusic = NULL;
+static GMutex *gmt_feed = NULL;
+static GMutex *gmt_get_name = NULL;
+static GMutex *gmt_svc = NULL;
+static GMutex *gmt_mmusic = NULL;
+static guchar mad_buf[8192];
 
-static int sap;
-static int sumarr[512];
+static gint sap;
+static gint sumarr[512];
 
-static int brt[] = {
+static gint brt[] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0,
   0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0,
@@ -135,7 +133,7 @@ static int brt[] = {
   0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448, 0
 };
 
-static int sft[] = {
+static gint sft[] = {
   22050, 24000, 16000, 0, 44100, 48000, 32000, 0
 };
 
@@ -167,7 +165,7 @@ get_iplugin_info (void)
 static void
 dvb_init (void)
 {
-  int rc;
+  gint rc;
 
   if (config == NULL)
     {
@@ -189,16 +187,15 @@ dvb_init (void)
   rec_file = NULL;
   epg_running = 0;
 
-  memset (&pt, 0x00, sizeof (pt));
-  memset (&ptd, 0x00, sizeof (ptd));
-  memset (&pte, 0x00, sizeof (pte));
+  if (!g_thread_supported ())
+    g_thread_init (NULL);
 }
 
 
-static int
-dvb_is_our_file (char *s)
+static gint
+dvb_is_our_file (gchar * s)
 {
-  int rc;
+  gint rc;
 
   if ((rc = dvb_parse_url (s, NULL)) == RC_OK)
     return 1;
@@ -212,9 +209,9 @@ dvb_is_our_file (char *s)
 static void
 dvb_play (InputPlayback * playback)
 {
-  int rc, apid, dpid, sid;
+  gint rc, apid, dpid;
   SVC svc;
-  char tfn[MAXPATHLEN];
+  gchar tfn[MAXPATHLEN];
   struct stat st;
   gchar *s;
 
@@ -235,14 +232,13 @@ dvb_play (InputPlayback * playback)
   t_start = 0;
   frm_ctr = 0;
 
-  sid = -1;
   sap = 0;
   memset (sumarr, 0x00, sizeof (sumarr));
 
-  /* Initialize Service Information counters; */
+  // Initialize Service Information counters
   si_update = si_previous = 0;
 
-  /* Make sure information retrieval is initialized. */
+  // Make sure information retrieval is initialized
   mad_len = 0;
   mad_time = 0;
   memset (mad_buf, 0x00, sizeof (mad_buf));
@@ -257,7 +253,7 @@ dvb_play (InputPlayback * playback)
 	{
 	  while (1)
 	    {
-	      sprintf (tfn, config->rec_fname, file_index);
+	      g_sprintf (tfn, config->rec_fname, file_index);
 	      if (stat (tfn, &st) < 0)
 		break;
 	      file_index++;
@@ -292,7 +288,9 @@ dvb_play (InputPlayback * playback)
       return;
     }
 
-  if (pthread_create (&pt, 0, dvb_get_name, (void *) &svc.spid) != 0)
+  if ((gt_get_name =
+       g_thread_create (dvb_get_name, (gpointer) & svc.spid, TRUE,
+			NULL)) == NULL)
     log_print (hlog, LOG_WARNING, "Failed to start dvb_get_name() thread");
 
   if ((rc = dvb_volume (hdvb, 0)) != RC_OK)
@@ -316,9 +314,10 @@ dvb_play (InputPlayback * playback)
 
       if ((rc = dvb_dpid (hdvb, dpid)) == RC_OK)
 	{
-	  if (pthread_create (&ptd, 0, dvb_madmusic, 0) != 0)
+	  if ((gt_mmusic =
+	       g_thread_create (dvb_madmusic, 0, TRUE, NULL)) == NULL)
 	    log_print (hlog, LOG_ERR,
-		       "pthread_create() failed for dvb_madmusic()");
+		       "g_thread_create() failed for dvb_madmusic()");
 	}
       else
 	log_print (hlog, LOG_ERR, "dvb_dpid() returned %d.", rc);
@@ -330,22 +329,20 @@ dvb_play (InputPlayback * playback)
       memset (album, 0x00, sizeof (album));
     }
 
-  if (sid != -1)
+  if (config->info_epg)
     {
-      if (config->info_epg)
-	{
-	  if (pthread_create (&pte, 0, dvb_epg, (void *) sid) != 0)
-	    log_print (hlog, LOG_ERR,
-		       "pthread_create() failed for dvb_epg()");
-	  else
-	    epg_running = 1;
-	}
+      if ((gt_epg =
+	   g_thread_create (dvb_epg, (gpointer) svc.spid, TRUE,
+			    NULL)) == NULL)
+	log_print (hlog, LOG_ERR, "g_thread_create() failed for dvb_epg()");
+      else
+	epg_running = 1;
     }
 
-  if (pthread_create (&pt, 0, dvb_feed, playback) != 0)
+  if ((gt_feed = g_thread_create (dvb_feed, playback, TRUE, NULL)) == NULL)
     {
       playing = 0;
-      log_print (hlog, LOG_CRIT, "pthread_create() failed for dvb_feed()");
+      log_print (hlog, LOG_CRIT, "g_thread_create() failed for dvb_feed()");
     }
 }
 
@@ -357,22 +354,18 @@ dvb_stop (InputPlayback * playback)
     {
       playing = 0;
       paused = 0;
+      epg_running = 0;
 
-      pthread_join (pt, NULL);
-      memset (&pt, 0x00, sizeof (pt));
-
-      if (config->info_mmusic)
-	{
-	  pthread_join (ptd, NULL);
-	  memset (&ptd, 0x00, sizeof (ptd));
-	}
-
-      if (epg_running && config->info_epg)
-	{
-	  pthread_join (pte, NULL);
-	  memset (&ptd, 0x00, sizeof (pte));
-	  epg_running = 0;
-	}
+      // Stop all threads
+      if (gt_feed != NULL)
+	g_thread_join (gt_feed);
+      if (gt_get_name != NULL)
+	g_thread_join (gt_get_name);
+      if (gt_mmusic != NULL)
+	g_thread_join (gt_mmusic);
+      if (gt_epg != NULL)
+	g_thread_join (gt_epg);
+      gt_feed = gt_get_name = gt_mmusic = gt_epg = NULL;
 
       playback->output->close_audio ();
 
@@ -389,14 +382,14 @@ dvb_stop (InputPlayback * playback)
 
 
 static void
-dvb_pause (InputPlayback * playback, short i)
+dvb_pause (InputPlayback * playback, gshort i)
 {
   if (playing)
     paused = i;
 }
 
 
-static int
+static gint
 dvb_gettime (InputPlayback * playback)
 {
   if (playing)
@@ -415,12 +408,12 @@ dvb_cleanup (void)
 }
 
 
-static int
-dvb_parse_url (char *url, SVC * svc)
+static gint
+dvb_parse_url (gchar * url, SVC * svc)
 {
-  int i, a_num, fec1, fec2, sr, qrg, fec, spid;
-  char *p, *q, fn[MAXPATHLEN], pol;
-  char *sdlv, *sqrg, *sfec1, *sfec2;
+  gint i, a_num, fec1, fec2, sr, qrg, fec, spid;
+  gchar *p, *q, fn[MAXPATHLEN], pol;
+  gchar *sdlv, *sqrg, *sfec1, *sfec2;
 
   if ((strlen (url) + 1) > sizeof (fn))
     return RC_PARSE_URL_TOO_LONG;
@@ -488,9 +481,7 @@ dvb_parse_url (char *url, SVC * svc)
   else
     {
       if (strcasecmp (sfec1, "none") == 0)
-	{
-	  fec = 0;
-	}
+	fec = 0;
       else
 	{
 	  if (strcasecmp (sfec1, "auto") != 0)
@@ -546,17 +537,19 @@ dvb_parse_url (char *url, SVC * svc)
 }
 
 
-static void *
-dvb_feed (void *args)
+static gpointer
+dvb_feed (gpointer args)
 {
-  int rc, ar, toctr;
-  unsigned char pkt[3840];
+  gint rc, ar, toctr;
+  guchar pkt[3840];
   InputPlayback *playback;
 
   playback = (InputPlayback *) args;
-  log_print (hlog, LOG_INFO, "dvb_feed() thread started");
+  log_print (hlog, LOG_INFO, "dvb_feed() thread starting");
 
-  pthread_mutex_lock (&mutex);
+  if (gmt_feed == NULL)
+    gmt_feed = g_mutex_new ();
+  g_mutex_lock (gmt_feed);
 
   dvb_pes_pkt (playback, NULL, 0, 1);
   dvb_payload (playback, NULL, 0, 1);
@@ -580,9 +573,7 @@ dvb_feed (void *args)
 	    {
 	      toctr++;
 	      if (toctr > 12)
-		{
-//          playing = 0;
-		}
+		playing = 0;
 	      log_print (hlog, LOG_DEBUG, "dvb_apkt() timeout", rc);
 	    }
 	  else
@@ -608,18 +599,19 @@ dvb_feed (void *args)
 
   log_print (hlog, LOG_INFO, "dvb_feed() thread stopping");
 
-  pthread_mutex_unlock (&mutex);
-  pthread_exit (NULL);
+  g_mutex_unlock (gmt_feed);
+  gmt_feed = NULL;
+  g_thread_exit (0);
 }
 
 
 static void
-dvb_pes_pkt (InputPlayback * playback, unsigned char *buf, int len, int reset)
+dvb_pes_pkt (InputPlayback * playback, guchar * buf, gint len, gint reset)
 {
-  int i, stream_id, PES_packet_length, j, pp_len;
-  static int pbh, pbl;
-  unsigned char *p, *pp;
-  static unsigned char pesbuf[128 * 1024];
+  gint i, stream_id, PES_packet_length, j, pp_len;
+  static gint pbh, pbl;
+  guchar *p, *pp;
+  static guchar pesbuf[128 * 1024];
 
   if (reset)
     {
@@ -684,11 +676,7 @@ dvb_pes_pkt (InputPlayback * playback, unsigned char *buf, int len, int reset)
 			    return;
 			}
 
-		      if ((pbh - pbl) <= (PES_packet_length + 6))
-			{
-			  return;
-			}
-		      else
+		      if ((pbh - pbl) > (PES_packet_length + 6))
 			{
 			  /* Uhmmmm, complete? */
 			  p = &pesbuf[i];
@@ -702,6 +690,8 @@ dvb_pes_pkt (InputPlayback * playback, unsigned char *buf, int len, int reset)
 			  pbl = 0;
 			  pbh -= (i + 6 + PES_packet_length);
 			}
+		      else
+			return;
 		    }
 		}
 	      else
@@ -726,12 +716,12 @@ dvb_pes_pkt (InputPlayback * playback, unsigned char *buf, int len, int reset)
 
 
 static void
-dvb_payload (InputPlayback * playback, unsigned char *buf, int len, int reset)
+dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 {
-  int br, sf, fl, num_samples;
-  int i, mpv, mpl, crc, bri, tlu, sfi, pad;
-  static int bph = 0;
-  static unsigned char mpbuf[128 * 1024];
+  gint br, sf, fl, num_samples;
+  gint i, mpv, mpl, crc, bri, tlu, sfi, pad;
+  static gint bph = 0;
+  static guchar mpbuf[128 * 1024];
 
   if (reset)
     {
@@ -806,10 +796,8 @@ dvb_payload (InputPlayback * playback, unsigned char *buf, int len, int reset)
 		}
 	    }
 	  else
-	    {
-	      /* whoops, that sucks */
-	      return;
-	    }
+	    /* whoops, that sucks */
+	    return;
 	}
       else
 	{
@@ -825,25 +813,22 @@ dvb_payload (InputPlayback * playback, unsigned char *buf, int len, int reset)
 	      bph -= i;
 	    }
 	  else
-	    {
-	      /* No sync in buffer yet, that hurts */
-	      return;
-	    }
+	    /* No sync in buffer yet, that hurts */
+	    return;
 	}
     }
 }
 
 
 static void
-dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
-		int smp)
+dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 {
-  int nout, i, vu, ms;
-  char info[4096];
-  float dB;
+  gint nout, i, vu, ms;
+  gchar info[4096];
+  gfloat dB;
   time_t t;
-  static short left[34560], right[34560];
-  static short stereo[sizeof (left) + sizeof (right)];
+  static gshort left[34560], right[34560];
+  static gshort stereo[sizeof (left) + sizeof (right)];
   mp3data_struct mp3d;
 
   frm_ctr++;
@@ -864,9 +849,9 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
       if (rec_file == NULL)
 	{
 	  if (config->isplit || config->vsplit)
-	    sprintf (erfn, config->rec_fname, file_index);
+	    g_sprintf (erfn, config->rec_fname, file_index);
 	  else
-	    sprintf (erfn, config->rec_fname, 0);
+	    g_sprintf (erfn, config->rec_fname, 0);
 
 	  if (config->rec_append)
 	    {
@@ -913,7 +898,7 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 	      si_previous = si_update;
 	      if (config->info_epg && epg_running && (strlen (epg_desc) > 0))
 		{
-		  sprintf (info, "%s: %s", service_name, epg_desc);
+		  g_sprintf (info, "%s: %s", service_name, epg_desc);
 		  dvb_ip->set_info ((gchar *) str_to_utf8 (info), -1,
 				    mp3d.bitrate * 1000, mp3d.samplerate,
 				    mp3d.stereo);
@@ -996,7 +981,7 @@ dvb_mpeg_frame (InputPlayback * playback, unsigned char *frame, int len,
 
 
 void
-dvb_close_record ()
+dvb_close_record (void)
 {
   if (rec_file != NULL)
     {
@@ -1009,39 +994,30 @@ dvb_close_record ()
       if (strlen (title) > 0)
 	{
 	  if ((mad_time > 0) && (t_start <= mad_time))
-	    {
-	      log_print (hlog, LOG_INFO, "%d,%s,%s,%s", trnum, album, artist,
-			 title);
-	      /*
-	       * One idea would be to attach an ID3 tag to the just recorded
-	       * file at this point. If I find as some decent code for it I
-	       * will probably do just that. But ID3Lib SUCKS!
-	       */
-	    }
+	    log_print (hlog, LOG_INFO, "%d,%s,%s,%s", trnum, album, artist,
+		       title);
 	  else
-	    {
-	      log_print (hlog, LOG_INFO, "Track info %d:%02d too old",
-			 (t_start - mad_time) / 60,
-			 (t_start - mad_time) % 60);
-	    }
+	    log_print (hlog, LOG_INFO, "Track info %d:%02d too old",
+		       (t_start - mad_time) / 60, (t_start - mad_time) % 60);
 	}
     }
 }
 
 
-void *
-dvb_get_name (void *arg)
+static gpointer
+dvb_get_name (gpointer arg)
 {
-  int sct, rc, len, sid, dt, dl, svc_sid;
-  char prov[256], name[256];
-  unsigned char s[4096], *p, *q, *pp, *qq;
+  gint sct, rc, len, sid, dt, dl, svc_sid;
+  gchar prov[256], name[256];
+  guchar s[4096], *p, *q, *pp, *qq;
 
-  svc_sid = *(int *) arg;
-
-  pthread_mutex_lock (&mutex);
+  if (gmt_get_name == NULL)
+    gmt_get_name = g_mutex_new ();
+  g_mutex_lock (gmt_get_name);
 
   log_print (hlog, LOG_INFO, "dvb_get_name(%d) thread starting", svc_sid);
 
+  svc_sid = *(gint *) arg;
   sct = 0;
 
   while (playing)
@@ -1069,6 +1045,7 @@ dvb_get_name (void *arg)
 	    {
 	      pp = p;
 	      qq = pp + len;
+
 	      while ((pp < qq) && playing)
 		{
 		  dt = *pp++;
@@ -1090,16 +1067,18 @@ dvb_get_name (void *arg)
 		      dvb_info_update (prov, name);
 
 		      if (strlen (prov) > 0)
-			sprintf (service_name, "%s - %s", prov, name);
+			g_sprintf (service_name, "%s - %s", prov, name);
 		      else
-			sprintf (service_name, "%s", name);
+			g_sprintf (service_name, "%s", name);
 		      si_update++;
 
 		      log_print (hlog, LOG_INFO,
 				 "dvb_get_name() thread stopping");
 
-		      pthread_mutex_unlock (&mutex);
-		      pthread_exit (NULL);
+		      g_mutex_unlock (gmt_get_name);
+		      gmt_get_name = NULL;
+		      g_thread_exit (0);
+
 		      return NULL;
 		    }
 
@@ -1121,21 +1100,25 @@ dvb_get_name (void *arg)
 
   log_print (hlog, LOG_INFO, "dvb_get_name() thread stopping");
 
-  pthread_mutex_unlock (&mutex);
-  pthread_exit (NULL);
+  g_mutex_unlock (gmt_get_name);
+  gmt_get_name = NULL;
+  g_thread_exit (0);
+
   return NULL;
 }
 
 
-static void *
-dvb_madmusic (void *arg)
+static gpointer
+dvb_madmusic (gpointer arg)
 {
-  int rc, dr, slen, blen, off, fbf;
-  unsigned char sect[5120], rtxt[32768];
+  gint rc, dr, slen, blen, off, fbf;
+  guchar sect[5120], rtxt[32768];
 
-  log_print (hlog, LOG_INFO, "dvb_madmusic() thread started");
+  log_print (hlog, LOG_INFO, "dvb_madmusic() thread starting");
 
-  pthread_mutex_lock (&data_mutex);
+  if (gmt_mmusic == NULL)
+    gmt_mmusic = g_mutex_new ();
+  g_mutex_lock (gmt_mmusic);
 
   fbf = off = 0;
 
@@ -1152,9 +1135,7 @@ dvb_madmusic (void *arg)
 	      break;
 	    }
 	  else
-	    {
-	      log_print (hlog, LOG_INFO, "data reception stalling ...", rc);
-	    }
+	    log_print (hlog, LOG_INFO, "data reception stalling ...", rc);
 	}
       else
 	{
@@ -1177,9 +1158,7 @@ dvb_madmusic (void *arg)
 		      fbf = 0;
 		    }
 		  else
-		    {
-		      fbf += (slen - 21 - 4);
-		    }
+		    fbf += (slen - 21 - 4);
 		}
 	      else
 		{
@@ -1194,17 +1173,18 @@ dvb_madmusic (void *arg)
 
   log_print (hlog, LOG_INFO, "dvb_madmusic() thread stopping");
 
-  pthread_mutex_unlock (&data_mutex);
-  pthread_exit (NULL);
+  g_mutex_unlock (gmt_mmusic);
+  gmt_mmusic = NULL;
+  g_thread_exit (0);
 }
 
 
 static void
-dvb_parse_text (unsigned char *buf, int len)
+dvb_parse_text (guchar * buf, gint len)
 {
-  int field, ftna, toai;
-  char toan[32];
-  unsigned char *p, *q, *r, *rr, wbuf[8192];
+  gint field, ftna, toai;
+  gchar toan[32];
+  guchar *p, *q, *r, *rr, wbuf[8192];
 
   if (len == mad_len)
     {
@@ -1297,15 +1277,15 @@ dvb_parse_text (unsigned char *buf, int len)
   log_print (hlog, LOG_INFO, "Title : %s", title);
 
   if (strlen (artist) > 0)
-    sprintf (service_name, "%s - %s", artist, title);
+    g_sprintf (service_name, "%s - %s", artist, title);
   else
-    sprintf (service_name, "%s", title);
+    g_sprintf (service_name, "%s", title);
   si_update++;
 }
 
 
 static void
-dvb_fixbillshit (unsigned char *s)
+dvb_fixbillshit (guchar * s)
 {
   while (*s)
     {
@@ -1324,7 +1304,7 @@ dvb_fixbillshit (unsigned char *s)
 
 
 static void
-dvb_xlt (unsigned char *s)
+dvb_xlt (guchar * s)
 {
   while (*s)
     {
