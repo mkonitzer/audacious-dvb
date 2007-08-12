@@ -29,6 +29,9 @@
 #include <string.h>
 #include <time.h>
 #include "rtxt.h"
+#include "log.h"
+
+extern gpointer hlog;
 
 
 const gchar *pty_string[] = {
@@ -122,7 +125,8 @@ radiotext_decode (guchar * mtext, gint len)
 	   */
 	  if (mtext[8] == 0 || mtext[8] > RT_MEL || mtext[8] > leninfo - 4)
 	    {
-	      printf ("RT-Error: Length = 0 or not correct !");
+	      log_print (hlog, LOG_DEBUG,
+			 "RT-Error: Length = 0 or not correct !");
 	      return;
 	    }
 	  memset (temptext, 0, RT_MEL - 1);
@@ -134,7 +138,7 @@ radiotext_decode (guchar * mtext, gint len)
 		   0x80) ? rds_addchar[mtext[9 + i] - 0x80] : mtext[9 + i];
 	    }
 	  memcpy (plustext, temptext, RT_MEL - 1);
-	  printf ("Decoded Radiotext: %s\n", plustext);
+	  log_print (hlog, LOG_INFO, "Radiotext: %s", plustext);
 	}
       else if (mtext[5] == 0x46)
 	{
@@ -156,7 +160,7 @@ radiotext_decode (guchar * mtext, gint len)
 
 	  if (mtext[6] > leninfo - 2 || mtext[6] != 8)
 	    {
-	      printf ("RTp-Error: Length not correct !");
+	      log_print (hlog, LOG_DEBUG, "RTp-Error: Length not correct !");
 	      return;
 	    }
 
@@ -168,24 +172,25 @@ radiotext_decode (guchar * mtext, gint len)
 	  rtp_typ[1] = (0x20 & mtext[12] << 5) | mtext[13] >> 3;
 	  rtp_start[1] = (0x38 & mtext[13] << 3) | mtext[14] >> 5;
 	  rtp_len[1] = 0x1f & mtext[14];
-	  printf ("RTplus (tag=Typ/Start/Len):  Toggle/Run = %d/%d,"
-		  "tag#1 = %d/%d/%d, tag#2 = %d/%d/%d\n",
-		  (mtext[10] & 0x10) > 0, (mtext[10] & 0x08) > 0, rtp_typ[0],
-		  rtp_start[0], rtp_len[0], rtp_typ[1], rtp_start[1],
-		  rtp_len[1]);
+	  log_print (hlog, LOG_DEBUG,
+		     "RTplus (tag=Typ/Start/Len):  Toggle/Run = %d/%d,"
+		     "tag#1 = %d/%d/%d, tag#2 = %d/%d/%d",
+		     (mtext[10] & 0x10) > 0, (mtext[10] & 0x08) > 0,
+		     rtp_typ[0], rtp_start[0], rtp_len[0], rtp_typ[1],
+		     rtp_start[1], rtp_len[1]);
 	  for (i = 0; i < 2; i++)
 	    {
 	      if (rtp_start[i] + rtp_len[i] + 1 < RT_MEL)
 		{
 		  memset (temptext, 0, RT_MEL - 1);
 		  memmove (temptext, plustext + rtp_start[i], rtp_len[i] + 1);
-		  printf ("Decoded Radiotext: %s\n", temptext);
+		  log_print (hlog, LOG_INFO, "RTplus[%d]: %s", i, temptext);
 		}
 	    }
 	}
     }
   else
-    printf ("RDS-Error: [RTDecode] Length not correct !\n");
+    log_print (hlog, LOG_DEBUG, "RDS-Error: [RTDecode] Length not correct !");
 }
 
 
@@ -216,13 +221,13 @@ radiotext_read_frame (const guchar * data, gint len)
 	      index = -1;
 	      rt_start = 1;
 	      rt_bstuff = 0;
-	      printf ("\nRDS-Start: ");
+	      log_print (hlog, LOG_DEBUG, "RDS-Start: ");
 	    }
 
 	  // "Middle" of RDS-data
 	  if (rt_start)
 	    {
-	      printf ("%02x ", val);
+	      log_print (hlog, LOG_DEBUG, "%02x ", val);
 
 	      // Bytestuffing reverse: 0xfd00->0xfd, 0xfd01->0xfe, 0xfd02->0xff
 	      if (rt_bstuff)
@@ -243,7 +248,8 @@ radiotext_read_frame (const guchar * data, gint len)
 		      mtext[++index] = val;
 		    }
 		  rt_bstuff = 0;
-		  printf ("(Bytestuffing -> %02x) ", mtext[index]);
+		  log_print (hlog, LOG_DEBUG, "(Bytestuffing -> %02x) ",
+			     mtext[index]);
 		}
 	      else
 		mtext[++index] = val;
@@ -264,14 +270,16 @@ radiotext_read_frame (const guchar * data, gint len)
 		      break;
 		    default:
 		      rt_start = 0;
-		      printf ("(RDS-MEC '%02x' not used -> End)\n", val);
+		      log_print (hlog, LOG_DEBUG,
+				 "(RDS-MEC '%02x' not used -> End)", val);
 		    }
 		}
 
 	      // max. rdslength, garbage ?
 	      if (index >= mframel)
 		{
-		  printf ("RDS-Error: too long, garbage ?\n");
+		  log_print (hlog, LOG_DEBUG,
+			     "RDS-Error: too long, garbage ?");
 		  rt_start = 0;
 		}
 	    }
@@ -279,42 +287,46 @@ radiotext_read_frame (const guchar * data, gint len)
 	  // End of RDS-data
 	  if (rt_start && val == 0xff)
 	    {
-	      printf ("(RDS-End)\n");
+	      log_print (hlog, LOG_DEBUG, "(RDS-End)");
 	      rt_start = 0;
 
 	      //  min. rdslength, garbage ?
 	      if (index < 9)
-		printf ("RDS-Error: too short -> garbage ?\n");
+		log_print (hlog, LOG_DEBUG,
+			   "RDS-Error: too short -> garbage ?");
 	      else
 		{
 		  // crc16-check
 		  unsigned short crc16 = crc16_ccitt (mtext, index - 3, 1);
 		  if (crc16 != (mtext[index - 2] << 8) + mtext[index - 1])
 		    printf
-		      ("RDS-Error: CRC # calc = %04x <--> transmit = %02x%02x\n",
+		      ("RDS-Error: CRC # calc = %04x <--> transmit = %02x%02x",
 		       crc16, mtext[index - 2], mtext[index - 1]);
 		  else
 		    {
 		      switch (mec)
 			{
 			case 0x07:	// PTY
-			  printf ("mec %d: PTY\n", mec);
+			  log_print (hlog, LOG_DEBUG, "mec %d: PTY", mec);
 			  if (mtext[8] <= 15)
-			    printf ("RDS-PTY set to '%s'\n",
-				    pty_string[mtext[8]]);
+			    log_print (hlog, LOG_DEBUG, "RDS-PTY set to '%s'",
+				       pty_string[mtext[8]]);
 			  else
-			    printf ("RDS-PTY has unknown value '%d'\n",
-				    mtext[8]);
+			    log_print (hlog, LOG_DEBUG,
+				       "RDS-PTY has unknown value '%d'",
+				       mtext[8]);
 			  break;
 			case 0x0a:	// Radiotext
-			  printf ("mec %d: Radiotext\n", mec);
+			  log_print (hlog, LOG_DEBUG, "mec %d: Radiotext",
+				     mec);
 			  radiotext_decode (mtext, index);
 			  break;
 			case 0x46:	// ODA-Data
-			  printf ("mec %d: ODA-Data\n", mec);
+			  log_print (hlog, LOG_DEBUG, "mec %d: ODA-Data",
+				     mec);
 			  if ((mtext[7] << 8) + mtext[8] == 0x4bd7)
 			    {
-			      printf ("mec %d: RT+\n", mec);
+			      log_print (hlog, LOG_DEBUG, "mec %d: RT+", mec);
 			      radiotext_decode (mtext, index);
 			    }
 			  break;
