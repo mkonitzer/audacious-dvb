@@ -64,7 +64,7 @@ typedef struct _Widgets
 void dvb_about (void);
 void dvb_configure (void);
 void dvb_getinfo (gchar *);
-void dvb_info_update (gchar *, gchar *);
+void infobox_update_service (gchar *, gchar *);
 
 static void recordClicked (GtkWidget * w, gpointer user_data);
 static void isplitClicked (GtkWidget * w, gpointer user_data);

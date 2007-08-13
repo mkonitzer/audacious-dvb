@@ -39,6 +39,7 @@
 #include "log.h"
 #include "cfg.h"
 #include "rtxt.h"
+#include "mmusic.h"
 #include "config.h"
 
 
@@ -86,10 +87,6 @@ static void dvb_payload (InputPlayback *, guchar *, gint, gint);
 static void dvb_mpeg_frame (InputPlayback *, guchar *, gint, gint);
 static gpointer dvb_get_name (gpointer);
 static gpointer dvb_madmusic (gpointer);
-static void dvb_parse_text (guchar *, gint);
-static void dvb_fixbillshit (guchar *);
-static void dvb_xlt (guchar *);
-
 gint dvb_read_conf (gchar *, gchar *, gchar *, gchar *, gint, gchar *);
 
 
@@ -99,25 +96,26 @@ gint si_update;			// This is used in EPG retrieval
 gpointer hlog;			// This is used everywhere :)
 gpointer hdvb;			// EPG retrieval uses this
 gint epg_running;
+
 cfgstruct *config = NULL;
+mmstruct *mmusic = NULL;
 
 extern gchar epg_desc[4096];
 
 static gint si_previous;
-static gint paused, audio, file_index, mad_len, trnum, frm_ctr;
-static gchar erfn[MAXPATHLEN], album[256], artist[256], title[256];
+static gint paused, audio, file_index, frm_ctr;
+static gchar erfn[MAXPATHLEN];
 static gchar service_name[MAXPATHLEN];
 static VFSFile *rec_file;
-static time_t t_start, isplit_last, mad_time;
+time_t t_start;
+static time_t isplit_last;
 static GThread *gt_feed = NULL;
 static GThread *gt_get_name = NULL;
 static GThread *gt_epg = NULL;
 static GThread *gt_mmusic = NULL;
 static GMutex *gmt_feed = NULL;
 static GMutex *gmt_get_name = NULL;
-static GMutex *gmt_svc = NULL;
 static GMutex *gmt_mmusic = NULL;
-static guchar mad_buf[8192];
 
 static gint sap;
 static gint sumarr[512];
@@ -238,11 +236,6 @@ dvb_play (InputPlayback * playback)
   // Initialize Service Information counters
   si_update = si_previous = 0;
 
-  // Make sure information retrieval is initialized
-  mad_len = 0;
-  mad_time = 0;
-  memset (mad_buf, 0x00, sizeof (mad_buf));
-
   if (rec_file == NULL)
     memset (erfn, 0x00, sizeof (erfn));
 
@@ -277,7 +270,7 @@ dvb_play (InputPlayback * playback)
     }
 
   strcpy (service_name, s);
-  dvb_info_update ("", "");
+  infobox_update_service ("", "");
 
   if ((rc = dvb_get_pid (hdvb, svc.spid, &apid, &dpid)) != RC_OK)
     {
@@ -322,17 +315,11 @@ dvb_play (InputPlayback * playback)
       else
 	log_print (hlog, LOG_ERR, "dvb_dpid() returned %d.", rc);
     }
-  else
-    {
-      memset (title, 0x00, sizeof (title));
-      memset (artist, 0x00, sizeof (artist));
-      memset (album, 0x00, sizeof (album));
-    }
 
   if (config->info_epg)
     {
       if ((gt_epg =
-	   g_thread_create (dvb_epg, (gpointer) svc.spid, TRUE,
+	   g_thread_create (dvb_epg, (gpointer) & svc.spid, TRUE,
 			    NULL)) == NULL)
 	log_print (hlog, LOG_ERR, "g_thread_create() failed for dvb_epg()");
       else
@@ -786,6 +773,7 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 	      if ((mpbuf[fl] == 0xff) && ((mpbuf[fl + 1] & 0xf0) == 0xf0))
 		{
 		  dvb_mpeg_frame (playback, mpbuf, fl, num_samples);
+		  radiotext_read_frame (mpbuf, fl);
 		  memcpy (mpbuf, &mpbuf[fl], bph - fl);
 		  bph -= fl;
 		}
@@ -991,15 +979,8 @@ dvb_close_record (void)
       sap = 0;
       memset (sumarr, 0x00, sizeof (sumarr));
 
-      if (strlen (title) > 0)
-	{
-	  if ((mad_time > 0) && (t_start <= mad_time))
-	    log_print (hlog, LOG_INFO, "%d,%s,%s,%s", trnum, album, artist,
-		       title);
-	  else
-	    log_print (hlog, LOG_INFO, "Track info %d:%02d too old",
-		       (t_start - mad_time) / 60, (t_start - mad_time) % 60);
-	}
+      if (mmusic != NULL)
+	madmusic_exit (mmusic);
     }
 }
 
@@ -1011,13 +992,14 @@ dvb_get_name (gpointer arg)
   gchar prov[256], name[256];
   guchar s[4096], *p, *q, *pp, *qq;
 
+  svc_sid = *((gint *) arg);
+
+  log_print (hlog, LOG_INFO, "dvb_get_name(%d) thread starting", svc_sid);
+
   if (gmt_get_name == NULL)
     gmt_get_name = g_mutex_new ();
   g_mutex_lock (gmt_get_name);
 
-  log_print (hlog, LOG_INFO, "dvb_get_name(%d) thread starting", svc_sid);
-
-  svc_sid = *(gint *) arg;
   sct = 0;
 
   while (playing)
@@ -1064,7 +1046,7 @@ dvb_get_name (gpointer arg)
 		      log_print (hlog, LOG_INFO,
 				 "Service name: \"%s\", \"%s\"", prov, name);
 
-		      dvb_info_update (prov, name);
+		      infobox_update_service (prov, name);
 
 		      if (strlen (prov) > 0)
 			g_sprintf (service_name, "%s - %s", prov, name);
@@ -1120,6 +1102,15 @@ dvb_madmusic (gpointer arg)
     gmt_mmusic = g_mutex_new ();
   g_mutex_lock (gmt_mmusic);
 
+  // Make sure information retrieval is initialized
+  if ((mmusic = madmusic_init ()) == NULL)
+    {
+      g_mutex_unlock (gmt_mmusic);
+      gmt_mmusic = NULL;
+      g_thread_exit (0);
+      return NULL;
+    }
+
   fbf = off = 0;
 
   while (playing && config->info_mmusic)
@@ -1143,7 +1134,7 @@ dvb_madmusic (gpointer arg)
 	  blen = ((sect[22] << 8) | sect[23]) & 0xfff;
 	  if (blen <= (slen - 21))
 	    {
-	      dvb_parse_text (&sect[24], blen - 2);
+	      madmusic_decode (mmusic, &sect[24], blen - 2);
 	      fbf = 0;
 	    }
 	  else
@@ -1154,7 +1145,7 @@ dvb_madmusic (gpointer arg)
 		  memcpy (&rtxt[off], &sect[24], slen - 21);
 		  if ((off + (slen - 21)) >= blen)
 		    {
-		      dvb_parse_text (rtxt, blen - 2);
+		      madmusic_decode (mmusic, rtxt, blen - 2);
 		      fbf = 0;
 		    }
 		  else
@@ -1171,145 +1162,10 @@ dvb_madmusic (gpointer arg)
 	}
     }
 
+  madmusic_exit (mmusic);
   log_print (hlog, LOG_INFO, "dvb_madmusic() thread stopping");
 
   g_mutex_unlock (gmt_mmusic);
   gmt_mmusic = NULL;
   g_thread_exit (0);
-}
-
-
-static void
-dvb_parse_text (guchar * buf, gint len)
-{
-  gint field, ftna, toai;
-  gchar toan[32];
-  guchar *p, *q, *r, *rr, wbuf[8192];
-
-  if (len == mad_len)
-    {
-      if (memcmp (mad_buf, buf, len) == 0)
-	return;
-    }
-
-  memcpy (mad_buf, buf, len);
-  mad_len = len;
-  time (&mad_time);
-
-  toai = 0;
-  toan[toai] = '\0';
-
-  trnum = 0;
-  memset (artist, 0x00, sizeof (artist));
-  memset (title, 0x00, sizeof (title));
-  memset (album, 0x00, sizeof (album));
-
-  memset (wbuf, 0x00, sizeof (wbuf));
-  memcpy (wbuf, buf, len);
-  dvb_fixbillshit (wbuf);
-  p = wbuf;
-  field = 0;
-
-  ftna = 0;
-
-  while (1)
-    {
-      q = index (p, '|');
-      if (q == NULL)
-	break;
-
-      *q = '\0';
-      q++;
-
-      switch (field)
-	{
-	case 3:
-	  strcpy (artist, p);
-	  dvb_xlt (artist);
-	  break;
-	case 4:
-	  strcpy (title, p);
-	  dvb_xlt (title);
-	  ftna = 1;
-	  break;
-	case 5:
-	  strcpy (album, p);
-	  dvb_xlt (album);
-	  break;
-	default:
-	  break;
-	}
-
-      if (ftna)
-	{
-	  if ((r = strstr (p, title)) != NULL)
-	    {
-	      rr = r - 4;
-	      if (rr < p)
-		rr = p;
-
-	      toai = 0;
-	      toan[toai] = '\0';
-	      while (rr < r)
-		{
-		  if ((*rr >= '0') && (*rr <= '9'))
-		    toan[toai++] = *rr;
-		  rr++;
-		}
-	      toan[toai] = '\0';
-	      trnum = atoi (toan);
-	    }
-	}
-
-      p = q;
-      field++;
-
-      if (p >= (wbuf + len))
-	break;
-
-      if (*p == '^')
-	ftna = 0;
-    }
-
-  log_print (hlog, LOG_INFO, "Album : %s", album);
-  log_print (hlog, LOG_INFO, "Track : %d", trnum);
-  log_print (hlog, LOG_INFO, "Artist: %s", artist);
-  log_print (hlog, LOG_INFO, "Title : %s", title);
-
-  if (strlen (artist) > 0)
-    g_sprintf (service_name, "%s - %s", artist, title);
-  else
-    g_sprintf (service_name, "%s", title);
-  si_update++;
-}
-
-
-static void
-dvb_fixbillshit (guchar * s)
-{
-  while (*s)
-    {
-      switch (*s)
-	{
-	case 0xa1:
-	  *s = 0xb5;
-	  break;
-	case 0xa2:
-	  *s = 0xb6;
-	  break;
-	}
-      s++;
-    }
-}
-
-
-static void
-dvb_xlt (guchar * s)
-{
-  while (*s)
-    {
-      if ((*s == '\n') || (*s == '\r'))
-	*s = ' ';
-      s++;
-    }
 }

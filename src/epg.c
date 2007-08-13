@@ -49,7 +49,7 @@ dvb_epg (gpointer arg)
     gmt_epg = g_mutex_new ();
   g_mutex_lock (gmt_epg);
 
-  sid = (int) arg;
+  sid = *((gint *) arg);
   log_print (hlog, LOG_DEBUG, "EPG SID: %d (0x%04x)", sid, sid);
 
   sct = 0;

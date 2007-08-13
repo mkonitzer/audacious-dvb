@@ -499,7 +499,7 @@ dvb_getinfo (gchar * s)
 
 
 void
-dvb_info_update (gchar * prov, gchar * station)
+infobox_update_service (gchar * prov, gchar * station)
 {
   strcpy (si_prov, prov);
   strcpy (si_station, station);
