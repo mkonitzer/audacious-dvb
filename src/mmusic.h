@@ -26,10 +26,11 @@
 
 typedef struct _mmstruct
 {
-  gchar title[256];
-  gchar artist[256];
-  gchar album[256];
+  gchar *title;
+  gchar *artist;
+  gchar *album;
   gint trnum;
+  gboolean refresh;
   /* Don't touch the following! */
   gint mad_len;
   time_t mad_time;
@@ -37,7 +38,7 @@ typedef struct _mmstruct
 } mmstruct;
 
 mmstruct *madmusic_init ();
-void madmusic_decode (mmstruct *mm, guchar * buf, gint len);
-void madmusic_exit (mmstruct *mm);
+void madmusic_read_data (mmstruct *, const guchar *, gint);
+void madmusic_exit (mmstruct *);
 
 #endif // __AUDACIOUS_DVB_MMUSIC_H__

@@ -97,8 +97,15 @@ crc16_ccitt (guchar * daten, gint len, gint skipfirst)
 }
 
 
-void
-radiotext_decode (guchar * mtext, gint len)
+rtstruct *
+radiotext_init ()
+{
+  return g_malloc0(sizeof(rtstruct));
+}
+
+
+static void
+radiotext_decode (rtstruct *rt, guchar * mtext, gint len)
 {
   gint i, ii;
   gchar temptext[RT_MEL];
@@ -138,6 +145,8 @@ radiotext_decode (guchar * mtext, gint len)
 		   0x80) ? rds_addchar[mtext[9 + i] - 0x80] : mtext[9 + i];
 	    }
 	  memcpy (plustext, temptext, RT_MEL - 1);
+	  if (is_updated (plustext, &rt->radiotext))
+	    rt->refresh = TRUE;
 	  log_print (hlog, LOG_INFO, "Radiotext: %s", plustext);
 	}
       else if (mtext[5] == 0x46)
@@ -184,6 +193,11 @@ radiotext_decode (guchar * mtext, gint len)
 		{
 		  memset (temptext, 0, RT_MEL - 1);
 		  memmove (temptext, plustext + rtp_start[i], rtp_len[i] + 1);
+		  //temptext[RT_MEL - 1] = '\0';
+		  // FIXME: this is just a quick hack to make it work!
+		  if (is_updated (temptext, (rtp_typ[i] == 4 ?
+					     &rt->artist : &rt->title)))
+		    rt->refresh = TRUE;
 		  log_print (hlog, LOG_INFO, "RTplus[%d]: %s", i, temptext);
 		}
 	    }
@@ -195,7 +209,7 @@ radiotext_decode (guchar * mtext, gint len)
 
 
 void
-radiotext_read_frame (const guchar * data, gint len)
+radiotext_read_data (rtstruct *rt, const guchar * data, gint len)
 {
   gint i, val;
   const gint mframel = 263;	// max. 255(MSG)+4(ADD/SQC/MFL)+2(CRC)+2(Start/Stop) of RDS-data
@@ -319,7 +333,7 @@ radiotext_read_frame (const guchar * data, gint len)
 			case 0x0a:	// Radiotext
 			  log_print (hlog, LOG_DEBUG, "mec %d: Radiotext",
 				     mec);
-			  radiotext_decode (mtext, index);
+			  radiotext_decode (rt, mtext, index);
 			  break;
 			case 0x46:	// ODA-Data
 			  log_print (hlog, LOG_DEBUG, "mec %d: ODA-Data",
@@ -327,7 +341,7 @@ radiotext_read_frame (const guchar * data, gint len)
 			  if ((mtext[7] << 8) + mtext[8] == 0x4bd7)
 			    {
 			      log_print (hlog, LOG_DEBUG, "mec %d: RT+", mec);
-			      radiotext_decode (mtext, index);
+			      radiotext_decode (rt, mtext, index);
 			    }
 			  break;
 			}
@@ -336,4 +350,11 @@ radiotext_read_frame (const guchar * data, gint len)
 	    }
 	}
     }
+}
+
+
+void
+radiotext_exit (rtstruct *rt)
+{
+  g_free(rt);
 }

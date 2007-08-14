@@ -31,13 +31,15 @@
 
 typedef struct _rtstruct
 {
-  gchar title[RT_MEL + 1];
-  gchar artist[RT_MEL + 1];
-  gchar radiotext[RT_MEL + 10];
-  gchar pty[21];
+  gchar *title;
+  gchar *artist;
+  gchar *radiotext;
+  gchar *pty;
   gboolean refresh;
 } rtstruct;
 
-void radiotext_read_frame (const guchar * data, gint len);
+rtstruct *radiotext_init ();
+void radiotext_read_data (rtstruct *, const guchar *, gint);
+void radiotext_exit (rtstruct *);
 
 #endif // __AUDACIOUS_DVB_RTXT_H__

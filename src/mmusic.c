@@ -70,12 +70,14 @@ replace_crlf (guchar * s)
 
 
 void
-madmusic_decode (mmstruct *mm, guchar * buf, gint len)
+madmusic_read_data (mmstruct *mm, const guchar * buf, gint len)
 {
-  gint field, ftna, toai;
+  gint field, ftna, toai, trnum;
   gchar toan[32];
   guchar *p, *q, *r, *rr, wbuf[8192];
+  gchar title[256], artist[256], album[256];
 
+  // Anything changed?
   if (len == mm->mad_len && memcmp (mm->mad_buf, buf, len) == 0)
     return;
 
@@ -87,9 +89,9 @@ madmusic_decode (mmstruct *mm, guchar * buf, gint len)
   toan[toai] = '\0';
 
   mm->trnum = 0;
-  memset (mm->artist, 0x00, sizeof (mm->artist));
-  memset (mm->title, 0x00, sizeof (mm->title));
-  memset (mm->album, 0x00, sizeof (mm->album));
+  memset (artist, 0x00, sizeof (artist));
+  memset (title, 0x00, sizeof (title));
+  memset (album, 0x00, sizeof (album));
 
   memset (wbuf, 0x00, sizeof (wbuf));
   memcpy (wbuf, buf, len);
@@ -111,23 +113,23 @@ madmusic_decode (mmstruct *mm, guchar * buf, gint len)
       switch (field)
 	{
 	case 3:
-	  strcpy (mm->artist, p);
-	  replace_crlf (mm->artist);
+	  strcpy (artist, p);
+	  replace_crlf (artist);
 	  break;
 	case 4:
-	  strcpy (mm->title, p);
-	  replace_crlf (mm->title);
+	  strcpy (title, p);
+	  replace_crlf (title);
 	  ftna = 1;
 	  break;
 	case 5:
-	  strcpy (mm->album, p);
-	  replace_crlf (mm->album);
+	  strcpy (album, p);
+	  replace_crlf (album);
 	  break;
 	}
 
       if (ftna)
 	{
-	  if ((r = strstr (p, mm->title)) != NULL)
+	  if ((r = strstr (p, title)) != NULL)
 	    {
 	      rr = r - 4;
 	      if (rr < p)
@@ -156,16 +158,20 @@ madmusic_decode (mmstruct *mm, guchar * buf, gint len)
 	ftna = 0;
     }
 
-  log_print (hlog, LOG_INFO, "MadMusic Album : %s", mm->album);
-  log_print (hlog, LOG_INFO, "MadMusic Track : %d", mm->trnum);
-  log_print (hlog, LOG_INFO, "MadMusic Artist: %s", mm->artist);
-  log_print (hlog, LOG_INFO, "MadMusic Title : %s", mm->title);
-
-  /*if (strlen (artist) > 0)
-     g_sprintf (service_name, "%s - %s", artist, title);
-     else
-     g_sprintf (service_name, "%s", title);
-     si_update++; */
+  if (is_updated (artist, &mm->artist))
+    mm->refresh = TRUE;
+  
+  if (is_updated (title, &mm->title))
+    mm->refresh = TRUE;
+  
+  if (is_updated (album, &mm->album))
+    mm->refresh = TRUE;
+  
+  if (mm->trnum != trnum)
+    {
+      mm->trnum = trnum;
+      mm->refresh = TRUE;
+    }
 }
 
 

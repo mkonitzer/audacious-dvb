@@ -69,6 +69,12 @@ typedef struct _SVC
   gint spid;
 } SVC;
 
+typedef struct _statstruct
+{
+  gchar *svc_name;
+  gchar *prov_name;
+  gboolean refresh;
+} statstruct;
 
 void dvb_close_record (void);
 
@@ -81,40 +87,45 @@ static gint dvb_gettime (InputPlayback *);
 static void dvb_cleanup (void);
 
 static gint dvb_parse_url (gchar *, SVC *);
-static gpointer dvb_feed (gpointer);
 static void dvb_pes_pkt (InputPlayback *, guchar *, gint, gint);
 static void dvb_payload (InputPlayback *, guchar *, gint, gint);
 static void dvb_mpeg_frame (InputPlayback *, guchar *, gint, gint);
-static gpointer dvb_get_name (gpointer);
-static gpointer dvb_madmusic (gpointer);
 gint dvb_read_conf (gchar *, gchar *, gchar *, gchar *, gint, gchar *);
+
+// Threads
+static gpointer feed_thread (gpointer);
+static gpointer get_name_thread (gpointer);
+static gpointer epg_thread (gpointer);
+static gpointer mmusic_thread (gpointer);
 
 
 // Miscellaneous globals
 gint playing;			// This is also used in the GUI
-gint si_update;			// This is used in EPG retrieval
 gpointer hlog;			// This is used everywhere :)
 gpointer hdvb;			// EPG retrieval uses this
 gint epg_running;
 
+// Internal interfaces
 cfgstruct *config = NULL;
 mmstruct *mmusic = NULL;
+rtstruct *rt = NULL;
+epgstruct *epg = NULL;
+statstruct *station = NULL;
 
-extern gchar epg_desc[4096];
-
-static gint si_previous;
 static gint paused, audio, file_index, frm_ctr;
 static gchar erfn[MAXPATHLEN];
-static gchar service_name[MAXPATHLEN];
 static VFSFile *rec_file;
 time_t t_start;
 static time_t isplit_last;
+
 static GThread *gt_feed = NULL;
 static GThread *gt_get_name = NULL;
 static GThread *gt_epg = NULL;
 static GThread *gt_mmusic = NULL;
+
 static GMutex *gmt_feed = NULL;
 static GMutex *gmt_get_name = NULL;
+static GMutex *gmt_epg = NULL;
 static GMutex *gmt_mmusic = NULL;
 
 static gint sap;
@@ -211,16 +222,13 @@ dvb_play (InputPlayback * playback)
   SVC svc;
   gchar tfn[MAXPATHLEN];
   struct stat st;
-  gchar *s;
 
-  s = playback->filename;
-
-  log_print (hlog, LOG_DEBUG, "dvb_play(\"%s\");", s);
+  log_print (hlog, LOG_DEBUG, "dvb_play(\"%s\");", playback->filename);
 
   if (playing)
     return;
 
-  if ((rc = dvb_parse_url (s, &svc)) != RC_OK)
+  if ((rc = dvb_parse_url (playback->filename, &svc)) != RC_OK)
     {
       log_print (hlog, LOG_INFO, "dvb_parse_url() returned rc = %d", rc);
       return;
@@ -233,8 +241,9 @@ dvb_play (InputPlayback * playback)
   sap = 0;
   memset (sumarr, 0x00, sizeof (sumarr));
 
-  // Initialize Service Information counters
-  si_update = si_previous = 0;
+  if (station == NULL)
+    station = g_malloc0(sizeof(statstruct));
+  // TODO: initialize statstruct->name with playlist entry
 
   if (rec_file == NULL)
     memset (erfn, 0x00, sizeof (erfn));
@@ -269,7 +278,9 @@ dvb_play (InputPlayback * playback)
       return;
     }
 
-  strcpy (service_name, s);
+  g_free(station->svc_name);
+  station->svc_name = g_strdup(playback->filename);
+
   infobox_update_service ("", "");
 
   if ((rc = dvb_get_pid (hdvb, svc.spid, &apid, &dpid)) != RC_OK)
@@ -282,7 +293,7 @@ dvb_play (InputPlayback * playback)
     }
 
   if ((gt_get_name =
-       g_thread_create (dvb_get_name, (gpointer) & svc.spid, TRUE,
+       g_thread_create (get_name_thread, (gpointer) & svc.spid, TRUE,
 			NULL)) == NULL)
     log_print (hlog, LOG_WARNING, "Failed to start dvb_get_name() thread");
 
@@ -308,7 +319,7 @@ dvb_play (InputPlayback * playback)
       if ((rc = dvb_dpid (hdvb, dpid)) == RC_OK)
 	{
 	  if ((gt_mmusic =
-	       g_thread_create (dvb_madmusic, 0, TRUE, NULL)) == NULL)
+	       g_thread_create (mmusic_thread, 0, TRUE, NULL)) == NULL)
 	    log_print (hlog, LOG_ERR,
 		       "g_thread_create() failed for dvb_madmusic()");
 	}
@@ -319,14 +330,14 @@ dvb_play (InputPlayback * playback)
   if (config->info_epg)
     {
       if ((gt_epg =
-	   g_thread_create (dvb_epg, (gpointer) & svc.spid, TRUE,
+	   g_thread_create (epg_thread, (gpointer) & svc.spid, TRUE,
 			    NULL)) == NULL)
 	log_print (hlog, LOG_ERR, "g_thread_create() failed for dvb_epg()");
       else
 	epg_running = 1;
     }
 
-  if ((gt_feed = g_thread_create (dvb_feed, playback, TRUE, NULL)) == NULL)
+  if ((gt_feed = g_thread_create (feed_thread, playback, TRUE, NULL)) == NULL)
     {
       playing = 0;
       log_print (hlog, LOG_CRIT, "g_thread_create() failed for dvb_feed()");
@@ -355,6 +366,9 @@ dvb_stop (InputPlayback * playback)
       gt_feed = gt_get_name = gt_mmusic = gt_epg = NULL;
 
       playback->output->close_audio ();
+      
+      g_free(station);
+      station = NULL;
 
       if (hdvb)
 	{
@@ -525,18 +539,20 @@ dvb_parse_url (gchar * url, SVC * svc)
 
 
 static gpointer
-dvb_feed (gpointer args)
+feed_thread (gpointer args)
 {
   gint rc, ar, toctr;
   guchar pkt[3840];
   InputPlayback *playback;
 
   playback = (InputPlayback *) args;
-  log_print (hlog, LOG_INFO, "dvb_feed() thread starting");
+  log_print (hlog, LOG_INFO, "dvb_feed_thread() starting");
 
   if (gmt_feed == NULL)
     gmt_feed = g_mutex_new ();
   g_mutex_lock (gmt_feed);
+  
+  rt = radiotext_init();
 
   dvb_pes_pkt (playback, NULL, 0, 1);
   dvb_payload (playback, NULL, 0, 1);
@@ -584,7 +600,10 @@ dvb_feed (gpointer args)
       audio = 0;
     }
 
-  log_print (hlog, LOG_INFO, "dvb_feed() thread stopping");
+  radiotext_exit(rt);
+
+  
+  log_print (hlog, LOG_INFO, "dvb_feed_thread() stopping");
 
   g_mutex_unlock (gmt_feed);
   gmt_feed = NULL;
@@ -773,7 +792,7 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 	      if ((mpbuf[fl] == 0xff) && ((mpbuf[fl + 1] & 0xf0) == 0xf0))
 		{
 		  dvb_mpeg_frame (playback, mpbuf, fl, num_samples);
-		  radiotext_read_frame (mpbuf, fl);
+		  radiotext_read_data (rt, mpbuf, fl);
 		  memcpy (mpbuf, &mpbuf[fl], bph - fl);
 		  bph -= fl;
 		}
@@ -875,28 +894,34 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 	    audio =
 	      playback->output->open_audio (FMT_S16_NE, mp3d.samplerate, 2);
 
-	  /* 
-	   * This is just a quick fix -- we now update the info only
-	   * every 120 frames since it's so computationally expensive.
-	   * Eventually it should be updated whenever it changes, which
-	   * shouldn't be too often in Real World conditions.
-	   */
-	  if (si_update > si_previous)
+	  if (mmusic != NULL && mmusic->refresh)
 	    {
-	      si_previous = si_update;
-	      if (config->info_epg && epg_running && (strlen (epg_desc) > 0))
-		{
-		  g_sprintf (info, "%s: %s", service_name, epg_desc);
-		  dvb_ip->set_info ((gchar *) str_to_utf8 (info), -1,
-				    mp3d.bitrate * 1000, mp3d.samplerate,
-				    mp3d.stereo);
-		}
-	      else
-		{
-		  dvb_ip->set_info ((gchar *) str_to_utf8 (service_name), -1,
-				    mp3d.bitrate * 1000, mp3d.samplerate,
-				    mp3d.stereo);
-		}
+	      log_print (hlog, LOG_INFO, "MadMusic info changed!");
+	      mmusic->refresh = FALSE;
+	    }
+	  if (rt != NULL && rt->refresh)
+	    {
+	      gchar *title = g_strdup_printf("%s: %s - %s", station->svc_name,
+					     rt->artist, rt->title);
+	      log_print (hlog, LOG_INFO, "Radiotext info changed!");
+	      dvb_ip->set_info ((gchar *) str_to_utf8 (title), -1,
+				mp3d.bitrate * 1000, mp3d.samplerate,
+				mp3d.stereo);
+	      g_free(title);
+	      rt->refresh = FALSE;
+	    }
+	  if (epg != NULL && epg->refresh)
+	    {
+	      log_print (hlog, LOG_INFO, "EPG info changed!");
+	      epg->refresh = FALSE;
+	    }
+	  if (station != NULL && station->refresh)
+	    {
+	      log_print (hlog, LOG_INFO, "Station info changed!");
+	      dvb_ip->set_info ((gchar *) str_to_utf8 (station->svc_name), -1,
+				mp3d.bitrate * 1000, mp3d.samplerate,
+				mp3d.stereo);
+	      station->refresh = FALSE;
 	    }
 	}
 
@@ -986,7 +1011,7 @@ dvb_close_record (void)
 
 
 static gpointer
-dvb_get_name (gpointer arg)
+get_name_thread (gpointer arg)
 {
   gint sct, rc, len, sid, dt, dl, svc_sid;
   gchar prov[256], name[256];
@@ -994,7 +1019,7 @@ dvb_get_name (gpointer arg)
 
   svc_sid = *((gint *) arg);
 
-  log_print (hlog, LOG_INFO, "dvb_get_name(%d) thread starting", svc_sid);
+  log_print (hlog, LOG_INFO, "get_name_thread(%d) starting", svc_sid);
 
   if (gmt_get_name == NULL)
     gmt_get_name = g_mutex_new ();
@@ -1037,25 +1062,27 @@ dvb_get_name (gpointer arg)
 		    {
 		      memcpy (prov, &pp[2], pp[1]);
 		      prov[pp[1]] = '\0';
-		      dvb_clean_string (prov);
+		      clean_string (prov);
 
 		      memcpy (name, &pp[3 + pp[1]], pp[2 + pp[1]]);
 		      name[pp[2 + pp[1]]] = '\0';
-		      dvb_clean_string (name);
+		      clean_string (name);
+
+		      if (is_updated (prov, &station->prov_name))
+			station->refresh = TRUE;
+
+		      if (is_updated (name, &station->svc_name))
+			station->refresh = TRUE;
+
+		      if (station->refresh)
+			{
+			  log_print (hlog, LOG_INFO,
+				     "Service name: \"%s\", \"%s\"", prov, name);
+			  infobox_update_service (prov, name);
+			}
 
 		      log_print (hlog, LOG_INFO,
-				 "Service name: \"%s\", \"%s\"", prov, name);
-
-		      infobox_update_service (prov, name);
-
-		      if (strlen (prov) > 0)
-			g_sprintf (service_name, "%s - %s", prov, name);
-		      else
-			g_sprintf (service_name, "%s", name);
-		      si_update++;
-
-		      log_print (hlog, LOG_INFO,
-				 "dvb_get_name() thread stopping");
+				 "get_name_thread() stopping");
 
 		      g_mutex_unlock (gmt_get_name);
 		      gmt_get_name = NULL;
@@ -1073,14 +1100,14 @@ dvb_get_name (gpointer arg)
 
       if ((s[6] == s[7]) && (s[6] == sct))
 	{
-	  log_print (hlog, LOG_INFO, "dvb_get_name() last section");
+	  log_print (hlog, LOG_INFO, "get_name_thread() last section");
 	  break;
 	}
 
       sct++;
     }
 
-  log_print (hlog, LOG_INFO, "dvb_get_name() thread stopping");
+  log_print (hlog, LOG_INFO, "get_name_thread() stopping");
 
   g_mutex_unlock (gmt_get_name);
   gmt_get_name = NULL;
@@ -1091,12 +1118,73 @@ dvb_get_name (gpointer arg)
 
 
 static gpointer
-dvb_madmusic (gpointer arg)
+epg_thread (gpointer arg)
+{
+  gint sid, rc, len, sct;
+  guchar s[4096];
+
+  log_print (hlog, LOG_INFO, "epg_thread() started");
+
+  if (gmt_epg == NULL)
+    gmt_epg = g_mutex_new ();
+  g_mutex_lock (gmt_epg);
+
+  sid = *((gint *) arg);
+  log_print (hlog, LOG_DEBUG, "EPG SID: %d (0x%04x)", sid, sid);
+  
+  // Make sure EPG retrieval is initialized
+  if ((epg = epg_init ()) == NULL)
+    {
+      g_mutex_unlock (gmt_epg);
+      gmt_epg = NULL;
+      g_thread_exit (0);
+      return NULL;
+    }
+
+  sct = 0;
+
+  epg_read_data (epg, NULL, 0);
+
+  while (playing)
+    {
+      if ((rc = dvb_section (hdvb, 0x0012, 0x4e, sid, sct, s, 1000)) != RC_OK)
+	{
+	  if (rc != RC_DVB_SECTION_SELECT_TIMEOUT)
+	    break;
+	}
+      else
+	{
+	  len = 3 + (((s[1] << 8) | s[2]) & 0xfff);
+
+	  log_print (hlog, LOG_DEBUG, "EPG section lenght = %d", len);
+
+	  rc = epg_read_data (epg, s, len);
+
+	  if (s[6] != s[7])
+	    sct++;
+	  else
+	    sct = 0;
+	}
+    }
+
+  epg_exit(epg);
+  epg = NULL;
+  
+  log_print (hlog, LOG_INFO, "epg_thread() stopping");
+
+  g_mutex_unlock (gmt_epg);
+  gmt_epg = NULL;
+  g_thread_exit (0);
+}
+
+
+static gpointer
+mmusic_thread (gpointer arg)
 {
   gint rc, dr, slen, blen, off, fbf;
   guchar sect[5120], rtxt[32768];
 
-  log_print (hlog, LOG_INFO, "dvb_madmusic() thread starting");
+  log_print (hlog, LOG_INFO, "mmusic_thread() starting");
 
   if (gmt_mmusic == NULL)
     gmt_mmusic = g_mutex_new ();
@@ -1134,7 +1222,7 @@ dvb_madmusic (gpointer arg)
 	  blen = ((sect[22] << 8) | sect[23]) & 0xfff;
 	  if (blen <= (slen - 21))
 	    {
-	      madmusic_decode (mmusic, &sect[24], blen - 2);
+	      madmusic_read_data (mmusic, &sect[24], blen - 2);
 	      fbf = 0;
 	    }
 	  else
@@ -1145,7 +1233,7 @@ dvb_madmusic (gpointer arg)
 		  memcpy (&rtxt[off], &sect[24], slen - 21);
 		  if ((off + (slen - 21)) >= blen)
 		    {
-		      madmusic_decode (mmusic, rtxt, blen - 2);
+		      madmusic_read_data (mmusic, rtxt, blen - 2);
 		      fbf = 0;
 		    }
 		  else
@@ -1163,7 +1251,9 @@ dvb_madmusic (gpointer arg)
     }
 
   madmusic_exit (mmusic);
-  log_print (hlog, LOG_INFO, "dvb_madmusic() thread stopping");
+  mmusic = NULL;
+  
+  log_print (hlog, LOG_INFO, "mmusic_thread() stopping");
 
   g_mutex_unlock (gmt_mmusic);
   gmt_mmusic = NULL;

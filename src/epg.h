@@ -26,10 +26,17 @@
 
 #include <glib.h>
 
-gpointer dvb_epg (gpointer);
-void dvb_clean_string (gchar *);
+typedef struct _epgstruct
+{
+  gchar *short_ev_name;
+  gchar *short_ev_text;
+  gboolean refresh;
+} epgstruct;
 
-static gint dvb_parse_eit (guchar *, gint);
-static gint dvb_eit_desc (guchar *, gint);
+epgstruct *epg_init ();
+gint epg_read_data (epgstruct *, const guchar *, gint);
+void epg_exit (epgstruct *);
+
+void clean_string (gchar * s);
 
 #endif // __AUDACIOUS_DVB_EPG_H__
