@@ -26,11 +26,11 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/param.h>
-
+#include <linux/dvb/dmx.h>
+#include <linux/dvb/frontend.h>
 #include <audacious/plugin.h>
 #include <audacious/util.h>
 #include <audacious/vfs.h>
-
 #include <lame/lame.h>
 
 #include "gui.h"
@@ -58,25 +58,12 @@
 #define RC_PARSE_URL_POLARIZATION_MISSING 1012
 
 
-typedef struct _SVC
-{
-  gint adapter;
-  gint frequency;
-  gint symbolrate;
-  gint viterbi;
-  gchar polarisation;
-  gchar delivery[256];
-  gint spid;
-} SVC;
-
 typedef struct _statstruct
 {
   gchar *svc_name;
   gchar *prov_name;
   gboolean refresh;
 } statstruct;
-
-void dvb_close_record (void);
 
 static void dvb_init (void);
 static gint dvb_is_our_file (gchar *);
@@ -86,11 +73,12 @@ static void dvb_pause (InputPlayback *, gshort);
 static gint dvb_gettime (InputPlayback *);
 static void dvb_cleanup (void);
 
-static gint dvb_parse_url (gchar *, SVC *);
+static gint dvb_parse_url (gchar *, tunestruct *);
 static void dvb_pes_pkt (InputPlayback *, guchar *, gint, gint);
 static void dvb_payload (InputPlayback *, guchar *, gint, gint);
 static void dvb_mpeg_frame (InputPlayback *, guchar *, gint, gint);
-gint dvb_read_conf (gchar *, gchar *, gchar *, gchar *, gint, gchar *);
+static void dvb_close_record (void);
+//gint dvb_read_conf (gchar *, gchar *, gchar *, gchar *, gint, gchar *);
 
 // Threads
 static gpointer feed_thread (gpointer);
@@ -111,12 +99,12 @@ mmstruct *mmusic = NULL;
 rtstruct *rt = NULL;
 epgstruct *epg = NULL;
 statstruct *station = NULL;
+tunestruct *tune = NULL;
 
 static gint paused, audio, file_index, frm_ctr;
 static gchar erfn[MAXPATHLEN];
 static VFSFile *rec_file;
-time_t t_start;
-static time_t isplit_last;
+static time_t t_start, isplit_last;
 
 static GThread *gt_feed = NULL;
 static GThread *gt_get_name = NULL;
@@ -219,16 +207,19 @@ static void
 dvb_play (InputPlayback * playback)
 {
   gint rc, apid, dpid;
-  SVC svc;
   gchar tfn[MAXPATHLEN];
   struct stat st;
-
-  log_print (hlog, LOG_DEBUG, "dvb_play(\"%s\");", playback->filename);
 
   if (playing)
     return;
 
-  if ((rc = dvb_parse_url (playback->filename, &svc)) != RC_OK)
+  log_print (hlog, LOG_DEBUG, "dvb_play(\"%s\");", playback->filename);
+
+  // Initialize tuning information
+  g_free (tune);
+  tune = g_malloc0 (sizeof(tunestruct));
+  tune->adapter = 0;		// FIXME: should be 'config->devnum'
+  if ((rc = dvb_parse_url (playback->filename, tune)) != RC_OK)
     {
       log_print (hlog, LOG_INFO, "dvb_parse_url() returned rc = %d", rc);
       return;
@@ -240,10 +231,6 @@ dvb_play (InputPlayback * playback)
 
   sap = 0;
   memset (sumarr, 0x00, sizeof (sumarr));
-
-  if (station == NULL)
-    station = g_malloc0(sizeof(statstruct));
-  // TODO: initialize statstruct->name with playlist entry
 
   if (rec_file == NULL)
     memset (erfn, 0x00, sizeof (erfn));
@@ -263,14 +250,15 @@ dvb_play (InputPlayback * playback)
 	}
     }
 
-  if ((rc = dvb_open (svc.adapter, &hdvb)) != RC_OK)
+  // Open DVB device
+  if ((hdvb = dvb_open (tune->adapter)) == NULL)
     {
       playing = 0;
       return;
     }
-
-  if ((rc = dvb_tune_qpsk (hdvb, svc.delivery[1] - 'A', svc.frequency,
-			   svc.polarisation, svc.symbolrate, 0)) != RC_OK)
+  
+  // Tune DVB device to stations's frequency
+  if ((rc = dvb_tune (hdvb, tune)) != RC_OK)
     {
       dvb_close (hdvb);
       playing = 0;
@@ -278,12 +266,15 @@ dvb_play (InputPlayback * playback)
       return;
     }
 
-  g_free(station->svc_name);
-  station->svc_name = g_strdup(playback->filename);
-
+  // Initialize service info
+  if (station == NULL)
+    station = g_malloc0 (sizeof (statstruct));
+  g_free (station->svc_name);
+  station->svc_name = g_strdup (playback->filename);
   infobox_update_service ("", "");
 
-  if ((rc = dvb_get_pid (hdvb, svc.spid, &apid, &dpid)) != RC_OK)
+  // Get audio PIDs from SID
+  if ((rc = dvb_get_pid (hdvb, tune->sid, &apid, &dpid)) != RC_OK)
     {
       log_print (hlog, LOG_WARNING, "dvb_get_pid() returned %d.", rc);
       dvb_close (hdvb);
@@ -292,14 +283,13 @@ dvb_play (InputPlayback * playback)
       return;
     }
 
+  // Get station and provider name
   if ((gt_get_name =
-       g_thread_create (get_name_thread, (gpointer) & svc.spid, TRUE,
+       g_thread_create (get_name_thread, (gpointer) & tune->sid, TRUE,
 			NULL)) == NULL)
     log_print (hlog, LOG_WARNING, "Failed to start dvb_get_name() thread");
 
-  if ((rc = dvb_volume (hdvb, 0)) != RC_OK)
-    log_print (hlog, LOG_WARNING, "dvb_volume() returned %d.", rc);
-
+  // Set audio PES-filter
   if ((rc = dvb_apid (hdvb, apid)) != RC_OK)
     {
       log_print (hlog, LOG_ERR, "dvb_apid() returned %d.", rc);
@@ -309,8 +299,10 @@ dvb_play (InputPlayback * playback)
       return;
     }
 
+  // Initialize MPEG decoder
   lame_decode_init ();
 
+  // Initialize MadMusic info retrieval
   if ((dpid > 0) && config->info_mmusic)
     {
       log_print (hlog, LOG_INFO,
@@ -327,16 +319,18 @@ dvb_play (InputPlayback * playback)
 	log_print (hlog, LOG_ERR, "dvb_dpid() returned %d.", rc);
     }
 
+  // Initialize EPG info retrieval
   if (config->info_epg)
     {
       if ((gt_epg =
-	   g_thread_create (epg_thread, (gpointer) & svc.spid, TRUE,
+	   g_thread_create (epg_thread, (gpointer) & tune->sid, TRUE,
 			    NULL)) == NULL)
 	log_print (hlog, LOG_ERR, "g_thread_create() failed for dvb_epg()");
       else
 	epg_running = 1;
     }
 
+  // Start receiving audio packets and playback
   if ((gt_feed = g_thread_create (feed_thread, playback, TRUE, NULL)) == NULL)
     {
       playing = 0;
@@ -366,8 +360,8 @@ dvb_stop (InputPlayback * playback)
       gt_feed = gt_get_name = gt_mmusic = gt_epg = NULL;
 
       playback->output->close_audio ();
-      
-      g_free(station);
+
+      g_free (station);
       station = NULL;
 
       if (hdvb)
@@ -410,129 +404,293 @@ dvb_cleanup (void)
 
 
 static gint
-dvb_parse_url (gchar * url, SVC * svc)
+dvb_parse_url (gchar * url, tunestruct *tune)
 {
-  gint i, a_num, fec1, fec2, sr, qrg, fec, spid;
-  gchar *p, *q, fn[MAXPATHLEN], pol;
-  gchar *sdlv, *sqrg, *sfec1, *sfec2;
+  gint i;
+  tunestruct t;
+  gchar **args, **pair;
+  guchar *par, *val, ch;
 
-  if ((strlen (url) + 1) > sizeof (fn))
-    return RC_PARSE_URL_TOO_LONG;
-  strcpy (fn, url);
+  if (!g_str_has_prefix (url, "dvb://audio?"))
+    return -1;
 
-  if (strncasecmp (fn, "dvb", 3) != 0)
-    return RC_PARSE_URL_NOT_DVB_URL;
+  // Fill in frontend defaults
+  dvb_tune_defaults (&t);
+  if (tune != NULL)
+    t.adapter = tune->adapter;
+  
+  args = g_strsplit(&url[12], ":", 0);
 
-  if ((p = index (fn, ':')) == NULL)
-    return RC_PARSE_URL_COLON_MISSING;
-
-  *p++ = '\0';
-
-  if (strlen (&fn[3]) > 0)
+  // Parse each (parameter=value)-pair
+  i = 0;
+  while (args[i])
     {
-      for (i = 0; i < strlen (&fn[3]); i++)
+      pair = g_strsplit(args[i++], "=", 2);
+      par = pair[0];
+      val = pair[1];
+      
+      if (par == NULL || val == NULL)
 	{
-	  if (!isdigit (fn[3 + i]))
-	    return RC_PARSE_URL_ADAPTER_NOT_NUMERIC;
+	  g_strfreev(pair);
+	  g_strfreev(args);
+	  return 0;
 	}
-    }
-  a_num = atoi (&fn[3]);
-
-  if (strncmp (p, "//", 2) != 0)
-    return RC_PARSE_URL_SEPARATOR_MISSING;
-
-  p += 2;
-
-  if ((q = index (p, '/')) == NULL)
-    return RC_PARSE_URL_DLVRY_SYS_MISSING;
-  *q++ = '\0';
-  sdlv = p;
-
-  if ((p = index (q, '/')) == NULL)
-    return RC_PARSE_URL_POLARIZATION_MISSING;
-  *p++ = '\0';
-  sqrg = q;
-
-  if ((q = index (p, '/')) == NULL)
-    return RC_PARSE_URL_SYMBOLRATE_MISSING;
-  *q++ = '\0';
-  sr = 1000 * atoi (p);
-
-  if ((p = index (q, '/')) == NULL)
-    return RC_PARSE_URL_FEC_DIVIDEND_MISSING;
-  *p++ = '\0';
-  sfec1 = q;
-  fec1 = atoi (sfec1);
-
-  fec = 0;
-
-  if ((fec1 > 0) && (fec1 < 9))
-    {
-      if ((q = index (p, '/')) == NULL)
-	return RC_PARSE_URL_FEC_DIVISOR_MISSING;
-      *q++ = '\0';
-      sfec2 = p;
-      fec2 = atoi (sfec2);
-
-      if ((fec1 + 1) != fec2)
-	return RC_PARSE_URL_FEC_IMPLAUSIBLE;
-
-      fec = fec1;
-    }
-  else
-    {
-      if (strcasecmp (sfec1, "none") == 0)
-	fec = 0;
+      
+      if (g_ascii_strcasecmp (par, "sid") == 0)
+	{
+	  // Service ID
+	  t.sid = atol (val);
+	}
+      else if (g_ascii_strcasecmp (par, "freq") == 0)
+	{
+	  // Frequency of transponder (DVB-T/-C: in Hz, DVB-S: in kHz)
+	  t.freq = atol (val);
+	}
+      else if (g_ascii_strcasecmp (par, "pol") == 0)
+	{
+	  // Polarisation (DVB-S)
+	  if (val[1] == 0)
+	    {
+	      ch = g_ascii_toupper (val[0]);
+	      switch (ch)
+		{
+		case 'H':
+		case 'V':
+		  t.pol = ch;
+		  break;
+		default:
+		  log_print (hlog, LOG_ERR, "Invalid polarisation value '%c'",
+			     ch);
+		}
+	    }
+	}
+      else if (g_ascii_strcasecmp (par, "slof") == 0)
+	{
+	  // Switch frequency of LNB (DVB-S)
+	  t.slof = atol (val) * 1000UL;
+	}
+      else if (g_ascii_strcasecmp (par, "lof1") == 0)
+	{
+	  // Local frequency of lower LNB band (DVB-S)
+	  t.lof1 = atol (val) * 1000UL;
+	}
+      else if (g_ascii_strcasecmp (par, "lof2") == 0)
+	{
+	  // Local frequency of upper LNB band (DVB-S)
+	  t.lof2 = atol (val) * 1000UL;
+	}
+      else if (g_ascii_strcasecmp (par, "srate") == 0)
+	{
+	  // Symbol rate in symbols per second (DVB-S/-T/-C)
+	  t.srate = atol (val) * 1000UL;
+	}
+      else if (g_ascii_strcasecmp (par, "diseqc") == 0)
+	{
+	  // DiSEqC address of the used LNB (DVB-S)
+	  if (val[1] == 0)
+	    {
+	      ch = g_ascii_toupper (val[0]);
+	      switch (ch)
+		{
+		case 'A':
+		case 'B':
+		  t.diseqc = ch;
+		  break;
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		  t.diseqc = g_ascii_digit_value (ch);
+		  break;
+		default:
+		  log_print (hlog, LOG_ERR, "Invalid DiSEqC address '%c'",
+			     ch);
+		}
+	    }
+	}
+      else if (g_ascii_strcasecmp (par, "sinv") == 0)
+	{
+	  // Spectral inversion (DVB-S)
+	  switch (atol (val))
+	    {
+	    case 0:
+	      t.sinv = INVERSION_OFF;
+	      break;
+	    case 1:
+	      t.sinv = INVERSION_ON;
+	      break;
+	    default:
+	      log_print (hlog, LOG_ERR, "Invalid spectral inversion '%s'",
+			 val);
+	    }
+	}
+      else if (g_ascii_strcasecmp (par, "qam") == 0)
+	{
+	  // Quadrature modulation (DVB-T/-C)
+	  switch (atol (val))
+	    {
+	    case 16:
+	      t.mod = QAM_16;
+	      break;
+	    case 32:
+	      t.mod = QAM_32;
+	      break;
+	    case 64:
+	      t.mod = QAM_64;
+	      break;
+	    case 128:
+	      t.mod = QAM_128;
+	      break;
+	    case 256:
+	      t.mod = QAM_256;
+	      break;
+	    default:
+	      log_print (hlog, LOG_ERR, "Invalid QAM value '%s'", val);
+	    }
+	}
+#ifdef DVB_ATSC
+      else if (g_ascii_strcasecmp (par, "vsb") == 0)
+	{
+	  // Vestigial sideband modulation (ATSC)
+	  switch (atol (val))
+	    {
+	    case 8:
+	      t.mod = VSB_8;
+	      break;
+	    case 16:
+	      t.mod = VSB_16;
+	      break;
+	    default:
+	      log_print (hlog, LOG_ERR, "Invalid ATSC VSB modulation '%s'",
+			 val);
+	    }
+	}
+#endif
+      else if (g_ascii_strcasecmp (par, "gival") == 0)
+	{
+	  // Guard interval (DVB-T)
+	  switch (atol (val))
+	    {
+	    case 32:
+	      t.gival = GUARD_INTERVAL_1_32;
+	      break;
+	    case 16:
+	      t.gival = GUARD_INTERVAL_1_16;
+	      break;
+	    case 8:
+	      t.gival = GUARD_INTERVAL_1_8;
+	      break;
+	    case 4:
+	      t.gival = GUARD_INTERVAL_1_4;
+	      break;
+	    default:
+	      log_print (hlog, LOG_ERR, "Invalid guard interval '%s'", val);
+	    }
+	}
+      else if (g_ascii_strcasecmp (par, "tmode") == 0)
+	{
+	  // Transmission mode (DVB-T)
+	  switch (atol (val))
+	    {
+	    case 8:
+	      t.tmode = TRANSMISSION_MODE_8K;
+	      break;
+	    case 2:
+	      t.tmode = TRANSMISSION_MODE_2K;
+	      break;
+	    default:
+	      log_print (hlog, LOG_ERR, "Invalid transmission mode '%s'",
+			 val);
+	    }
+	}
+      else if (g_ascii_strcasecmp (par, "bandw") == 0)
+	{
+	  // Bandwidth (DVB-T)
+	  switch (atol (val))
+	    {
+	    case 8:
+	      t.bandw = BANDWIDTH_8_MHZ;
+	      break;
+	    case 7:
+	      t.bandw = BANDWIDTH_7_MHZ;
+	      break;
+	    case 6:
+	      t.bandw = BANDWIDTH_6_MHZ;
+	      break;
+	    default:
+	      log_print (hlog, LOG_ERR, "Invalid DVB-T bandwidth '%s'", val);
+	    }
+	}
+      else if (g_ascii_strcasecmp (par, "hpcr") == 0)
+	{
+	  // (High priority) Stream code rate (DVB-S/-T/-C)
+	  if (g_ascii_strcasecmp (val, "NONE") == 0)
+	    t.hpcr = FEC_NONE;
+	  else if (g_ascii_strcasecmp (val, "AUTO") == 0)
+	    t.hpcr = FEC_AUTO;
+	  else if (g_ascii_strcasecmp (val, "1_2") == 0)
+	    t.hpcr = FEC_1_2;
+	  else if (g_ascii_strcasecmp (val, "2_3") == 0)
+	    t.hpcr = FEC_2_3;
+	  else if (g_ascii_strcasecmp (val, "3_4") == 0)
+	    t.hpcr = FEC_3_4;
+	  else if (g_ascii_strcasecmp (val, "5_6") == 0)
+	    t.hpcr = FEC_5_6;
+	  else if (g_ascii_strcasecmp (val, "7_8") == 0)
+	    t.hpcr = FEC_7_8;
+	  else
+	    log_print (hlog, LOG_ERR, "Invalid code rate '%s'", val);
+	}
+      else if (g_ascii_strcasecmp (par, "lpcr") == 0)
+	{
+	  // Low priority stream code rate (DVB-T)
+	  if (g_ascii_strcasecmp (val, "NONE") == 0)
+	    t.lpcr = FEC_NONE;
+	  else if (g_ascii_strcasecmp (val, "AUTO") == 0)
+	    t.lpcr = FEC_AUTO;
+	  else if (g_ascii_strcasecmp (val, "1_2") == 0)
+	    t.lpcr = FEC_1_2;
+	  else if (g_ascii_strcasecmp (val, "2_3") == 0)
+	    t.lpcr = FEC_2_3;
+	  else if (g_ascii_strcasecmp (val, "3_4") == 0)
+	    t.lpcr = FEC_3_4;
+	  else if (g_ascii_strcasecmp (val, "5_6") == 0)
+	    t.lpcr = FEC_5_6;
+	  else if (g_ascii_strcasecmp (val, "7_8") == 0)
+	    t.lpcr = FEC_7_8;
+	  else
+	    log_print (hlog, LOG_ERR, "Invalid LP code rate '%s'", val);
+	}
+      else if (g_ascii_strcasecmp (par, "hier") == 0)
+	{
+	  // Hierarchy (DVB-T)
+	  if (g_ascii_strcasecmp (val, "NONE") == 0)
+	    t.hier = HIERARCHY_NONE;
+	  else if (g_ascii_strcasecmp (val, "AUTO") == 0)
+	    t.hier = HIERARCHY_AUTO;
+	  else if (g_ascii_strcasecmp (val, "1") == 0)
+	    t.hier = HIERARCHY_1;
+	  else if (g_ascii_strcasecmp (val, "2") == 0)
+	    t.hier = HIERARCHY_2;
+	  else if (g_ascii_strcasecmp (val, "4") == 0)
+	    t.hier = HIERARCHY_4;
+	  else
+	    log_print (hlog, LOG_ERR, "Invalid hierarchy value '%s'", val);
+	}
       else
-	{
-	  if (strcasecmp (sfec1, "auto") != 0)
-	    return RC_PARSE_URL_FEC_NOT_RECOGNIZED;
-
-	  fec = 9;
-	}
-      q = p;
+	log_print (hlog, LOG_ERR, "Unknown parameter '%s' (with value '%s')",
+		   par, val);
+      
+      g_strfreev(pair);
     }
-
-  pol = ' ';
-
-  if (toupper (sdlv[0]) == 'S')
-    {
-      switch (toupper (sqrg[strlen (sqrg) - 1]))
-	{
-	case 'H':
-	  pol = 'H';
-	  break;
-	case 'V':
-	  pol = 'V';
-	  break;
-	default:
-	  return RC_PARSE_URL_UNK_POLARIZATION;
-	  break;
-	}
-
-      sqrg[strlen (sqrg) - 1] = '\0';
-    }
-
-  qrg = 1000 * atoi (sqrg);
-
-  if (strncasecmp (q, "0x", 2) == 0)
-    {
-      q += 2;
-      sscanf ((char *) &q, "%x", &spid);
-    }
-  else
-    spid = atoi (q);
-
-  if (svc != NULL)
-    {
-      svc->adapter = a_num;
-      svc->frequency = qrg;
-      svc->viterbi = fec;
-      svc->symbolrate = sr;
-      svc->polarisation = pol;
-      strcpy (svc->delivery, sdlv);
-      svc->spid = spid;
-    }
+  g_strfreev(args);
+  
+  if (t.freq == 0)
+      return RC_DVB_TUNE_QPSK_DISEQC_FAILED;	// FIXME: wrong return value
+  
+  if (tune != NULL)
+    memcpy(tune, &t, sizeof(tunestruct));
 
   return RC_OK;
 }
@@ -551,8 +709,8 @@ feed_thread (gpointer args)
   if (gmt_feed == NULL)
     gmt_feed = g_mutex_new ();
   g_mutex_lock (gmt_feed);
-  
-  rt = radiotext_init();
+
+  rt = radiotext_init ();
 
   dvb_pes_pkt (playback, NULL, 0, 1);
   dvb_payload (playback, NULL, 0, 1);
@@ -600,9 +758,8 @@ feed_thread (gpointer args)
       audio = 0;
     }
 
-  radiotext_exit(rt);
+  radiotext_exit (rt);
 
-  
   log_print (hlog, LOG_INFO, "dvb_feed_thread() stopping");
 
   g_mutex_unlock (gmt_feed);
@@ -901,13 +1058,14 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 	    }
 	  if (rt != NULL && rt->refresh)
 	    {
-	      gchar *title = g_strdup_printf("%s: %s - %s", station->svc_name,
-					     rt->artist, rt->title);
+	      gchar *title =
+		g_strdup_printf ("%s: %s - %s", station->svc_name,
+				 rt->artist, rt->title);
 	      log_print (hlog, LOG_INFO, "Radiotext info changed!");
 	      dvb_ip->set_info ((gchar *) str_to_utf8 (title), -1,
 				mp3d.bitrate * 1000, mp3d.samplerate,
 				mp3d.stereo);
-	      g_free(title);
+	      g_free (title);
 	      rt->refresh = FALSE;
 	    }
 	  if (epg != NULL && epg->refresh)
@@ -1077,7 +1235,8 @@ get_name_thread (gpointer arg)
 		      if (station->refresh)
 			{
 			  log_print (hlog, LOG_INFO,
-				     "Service name: \"%s\", \"%s\"", prov, name);
+				     "Service name: \"%s\", \"%s\"", prov,
+				     name);
 			  infobox_update_service (prov, name);
 			}
 
@@ -1131,7 +1290,7 @@ epg_thread (gpointer arg)
 
   sid = *((gint *) arg);
   log_print (hlog, LOG_DEBUG, "EPG SID: %d (0x%04x)", sid, sid);
-  
+
   // Make sure EPG retrieval is initialized
   if ((epg = epg_init ()) == NULL)
     {
@@ -1167,9 +1326,9 @@ epg_thread (gpointer arg)
 	}
     }
 
-  epg_exit(epg);
+  epg_exit (epg);
   epg = NULL;
-  
+
   log_print (hlog, LOG_INFO, "epg_thread() stopping");
 
   g_mutex_unlock (gmt_epg);
@@ -1252,7 +1411,7 @@ mmusic_thread (gpointer arg)
 
   madmusic_exit (mmusic);
   mmusic = NULL;
-  
+
   log_print (hlog, LOG_INFO, "mmusic_thread() stopping");
 
   g_mutex_unlock (gmt_mmusic);

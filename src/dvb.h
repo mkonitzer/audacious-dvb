@@ -24,7 +24,40 @@
 #ifndef __AUDACIOUS_DVB_DVB_H__
 #define __AUDACIOUS_DVB_DVB_H__
 
+#include <linux/dvb/frontend.h>
+#include <linux/dvb/version.h>
 #include <glib.h>
+
+#undef DVB_ATSC
+#if defined(DVB_API_VERSION_MINOR)
+#if DVB_API_VERSION == 3 && DVB_API_VERSION_MINOR >= 1
+#define DVB_ATSC 1
+#endif
+#endif
+
+typedef struct _tunestruct
+{
+  gint adapter;
+  
+  gulong freq;
+  gchar pol;
+  gulong srate;
+  guchar diseqc;
+  guint slof;
+  guint lof1;
+  guint lof2;
+  fe_modulation_t mod;
+  fe_spectral_inversion_t sinv;
+  fe_transmit_mode_t tmode;
+  fe_bandwidth_t bandw;
+  fe_guard_interval_t gival;
+  fe_code_rate_t hpcr;
+  fe_code_rate_t lpcr;
+  fe_hierarchy_t hier;
+  
+  guint sid;
+} tunestruct;
+
 
 #ifndef RC_OK
 #define RC_OK                           0
@@ -77,19 +110,21 @@
 
 #define RC_DVB_GET_PID_SID_NOT_IN_PAT   2120
 
-int dvb_open (gint, gpointer *);
-int dvb_close (gpointer);
-int dvb_tune_qpsk (gpointer, gint, gint, gchar, gint, gint);
-/*int dvb_status (gpointer);*/
-int dvb_filter (gpointer, gint);
-int dvb_packet (gpointer, guchar *, gint);
-int dvb_unfilter (gpointer);
-int dvb_section (gpointer, gint, gint, gint, gint, guchar *, gint);
-int dvb_apid (gpointer, gint);
-int dvb_apkt (gpointer, guchar *, gint, gint, gint *);
-int dvb_dpid (gpointer, gint);
-int dvb_dpkt (gpointer, guchar *, gint, gint, gint *);
-int dvb_volume (gpointer, gint);
-int dvb_get_pid (gpointer, gint, gint *, gint *);
+gpointer *dvb_open (gint);
+gint dvb_close (gpointer);
+/*gint dvb_status (gpointer);*/
+gint dvb_filter (gpointer, gint);
+gint dvb_packet (gpointer, guchar *, gint);
+gint dvb_unfilter (gpointer);
+gint dvb_section (gpointer, gint, gint, gint, gint, guchar *, gint);
+gint dvb_apid (gpointer, gint);
+gint dvb_apkt (gpointer, guchar *, gint, gint, gint *);
+gint dvb_dpid (gpointer, gint);
+gint dvb_dpkt (gpointer, guchar *, gint, gint, gint *);
+gint dvb_volume (gpointer, gint);
+gint dvb_get_pid (gpointer, gint, gint *, gint *);
+
+void dvb_tune_defaults (tunestruct *);
+gint dvb_tune (gpointer, tunestruct *);
 
 #endif // __AUDACIOUS_DVB_DVB_H__
