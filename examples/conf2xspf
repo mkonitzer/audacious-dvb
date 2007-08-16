@@ -6,17 +6,22 @@ use XML::Writer;
 # conf2xspf
 #
 # Description:
-#   Convert 'zap'-style channels.conf (scan) to .xspf-playlist (Audacious)
+#   Convert channels.conf (scan, VDR) to .xspf-playlist (Audacious)
 #
 # Dependencies:
 #   XML::Writer (see http://search.cpan.org/dist/XML-Writer/ for details)
 #
 # Usage:
-#   scan -t 2 -x 0 -s 0 /path/to/Astra-19.2E > dvb-radio.conf
-#   scan -t 2 -x 0 -s 1 /path/to/Astra-19.2E >> dvb-radio.conf
-#   [...]
+#   For DVB-S (using 2 LNBs via DiSEqC) you could type:
+#
+#   scan -t 2 -o vdr -s 0 /path/to/Astra-19.2E > dvb-radio.conf
+#   scan -t 2 -o vdr -s 1 /path/to/Hotbird-13.0E >> dvb-radio.conf
 #   ./conf2xspf < dvb-radio.conf > dvb-radio.xspf
 
+my %tr_diseqc = (
+    'S19.2E' => '0',
+    'S13.0E' => '1' 
+);
 
 my $writer = new XML::Writer(DATA_MODE => '1', DATA_INDENT => '2');
 $writer->xmlDecl('iso-8859-1');
@@ -29,22 +34,58 @@ $writer->emptyTag('options', 'staticlist' => 'true');
 $writer->endTag('extension');
 
 $writer->startTag('trackList');
+
+my @input;
 while ( <> ) {
-    # only process valid channels.conf-lines
-    if (/^([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):(.*)$/) {
-	my $sname = $1;
-	my $freq = $2;
-	my $pol = $3;
-	my $satnr = $4;
-	$satnr =~ tr/[0-9]/[A-J]/;
-	my $srate = $5;
-	my $vpid = $6;
-	my $apid = $7;
-	my $spid = $8;
+    chomp;
+    @input = split(/:/);
+    # Skip separator lines
+    if ($input[0]) {
+	my %output;
+
+	# Get station name (w/o provider crap)
+	my $sname = $input[0];
+	$sname =~ s/[,;].*$//;
+
+	# Tuning values
+	$output{'freq'} = $input[1];
+	if ($input[3] =~ /^S/) {
+	    # DVB-S
+	    $output{'pol'} = lc($input[2]);
+	    $output{'diseqc'} = $tr_diseqc{$input[3]};
+	    if (!$output{'diseqc'}) {
+		$output{'diseqc'} = '0';
+	    }
+	} elsif ($input[3] =~ /^T/) {
+	    # DVB-T
+	    # TODO: parse $input[2], $input[4]
+	} elsif ($input[3] =~ /^C/) {
+	    # DVB-C
+	    # TODO: parse $input[2], $input[4]
+	} else {
+	    # Should never happen!
+	    next;
+	}
+
+	# Service values
+	$output{'srate'} = $input[4];
+	# Omit VPID ($input[5]), APIDs ($input[6]),
+	#      TPID ($input[7]), scrambled ($input[8])
+	$output{'sid'} = $input[9];
+
+	# Output .xspf entry
 	$writer->startTag('track');
-	$writer->dataElement('location', "dvb://S$satnr/$freq$pol/$srate/Auto/$spid");
+	my $url;
+	while ((my $par, my $val) = each(%output))
+	{
+	    $url .= ($url ? ":" : "" ) . "$par=$val"; 
+	}
+	$writer->dataElement('location', "dvb://audio?$url");
 	$writer->dataElement('title', "$sname");
 	$writer->endTag('track');
+    } elsif ($input[1]) {
+	# Separator
+	$writer->comment($input[1]);
     }
 }
 $writer->endTag('trackList');
