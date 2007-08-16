@@ -40,7 +40,7 @@ while ( <> ) {
     chomp;
     @input = split(/:/);
     # Skip separator lines
-    if ($input[0]) {
+    if ($input[0] && $#input >= 9) {
 	my %output;
 
 	# Get station name (w/o provider crap)
