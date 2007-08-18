@@ -35,7 +35,14 @@ typedef struct _rtstruct
   gchar *artist;
   gchar *radiotext;
   gchar *pty;
+  gint runtoggle;
   gboolean refresh;
+  /* Don't touch the following! */
+  guchar mtext[263 + 1];
+  gchar plustext[RT_MEL];
+  gint rt_start, rt_bstuff;
+  gint index;
+  gint mec;  
 } rtstruct;
 
 rtstruct *radiotext_init ();

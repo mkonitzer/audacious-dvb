@@ -175,8 +175,8 @@ dvb_filter (gpointer hdvb, gint pid)
 
   if ((h->dvb_dmxdh = open (h->dvb_dmxdn, O_RDWR)) < 0)
     {
-      log_print (hlog, LOG_ERR, "open() failed in dvb_filter(), errno = %d",
-		 errno);
+      log_print (hlog, LOG_ERR, "open() failed in dvb_filter(), errno = %d (%s)",
+		 errno, g_strerror(errno));
       return RC_DVB_FILTER_OPEN_DEMUX;
     }
 
@@ -195,8 +195,8 @@ dvb_filter (gpointer hdvb, gint pid)
   if (ioctl (h->dvb_dmxdh, DMX_SET_PES_FILTER, &h->dvb_dmx) < 0)
     {
       log_print (hlog, LOG_ERR,
-		 "DMX_SET_PES_FILTER failed in dvb_filter(), errno = %d",
-		 errno);
+		 "DMX_SET_PES_FILTER failed in dvb_filter(), errno = %d (%s)",
+		 errno, g_strerror(errno));
       close (h->dvb_dmxdh);
       return RC_DVB_FILTER_SET_FAILED;
     }
@@ -273,8 +273,8 @@ dvb_section (gpointer hdvb, gint pid, gint sect, gint sid, gint sct,
 
   if ((fd = open (h->dvb_dmxdn, O_RDWR)) < 0)
     {
-      log_print (hlog, LOG_ERR, "open failed in dvb_section(), errno = %d",
-		 errno);
+      log_print (hlog, LOG_ERR, "open failed in dvb_section(), errno = %d (%s)",
+		 errno, g_strerror(errno));
       return RC_DVB_SECTION_OPEN_DEMUX;
     }
 
@@ -350,7 +350,7 @@ dvb_section (gpointer hdvb, gint pid, gint sect, gint sid, gint sct,
       if (sel < 0)
 	{
 	  log_print (hlog, LOG_WARNING,
-		     "select() failed in dvb_section(), errno = %d", errno);
+		     "select() failed in dvb_section(), errno = %d (%s)", errno, g_strerror(errno));
 	  log_print (hlog, LOG_DEBUG, "%04x %04x %02x %d", pid, sect, sct, t);
 	  return RC_DVB_SECTION_SELECT_FAILED;
 	}
@@ -380,8 +380,8 @@ dvb_apid (gpointer hdvb, gint pid)
 
   if ((h->dvb_admx = open (h->dvb_dmxdn, O_RDWR)) < 0)
     {
-      log_print (hlog, LOG_ERR, "open() failed in dvb_apid(), errno = %d",
-		 errno);
+      log_print (hlog, LOG_ERR, "open() failed in dvb_apid(), errno = %d (%s)",
+		 errno, g_strerror(errno));
       return RC_DVB_APID_OPEN_DEMUX;
     }
 
@@ -435,7 +435,7 @@ dvb_apkt (gpointer hdvb, guchar * pkt, gint len, gint t, gint * rcvd)
 
   if (r <= 0)
     {
-      log_print (hlog, LOG_ERR, "read() failed, errno = %d.", errno);
+      log_print (hlog, LOG_ERR, "read() failed, errno = %d (%s)", errno, g_strerror(errno));
       return RC_DVB_APKT_READ_FAILED;
     }
 
@@ -458,8 +458,8 @@ dvb_dpid (gpointer hdvb, gint pid)
 
   if ((h->dvb_ddmx = open (h->dvb_dmxdn, O_RDWR)) < 0)
     {
-      log_print (hlog, LOG_ERR, "open() failed in dvb_dpid(), errno = %d",
-		 errno);
+      log_print (hlog, LOG_ERR, "open() failed in dvb_dpid(), errno = %d (%s)",
+		 errno, g_strerror(errno));
       return RC_DVB_DPID_OPEN_DEMUX;
     }
 
@@ -527,8 +527,8 @@ dvb_dpkt (void *hdvb, guchar * s, gint len, gint t, gint * rcvd)
     {
       if ((r = read (h->dvb_ddmx, s, len)) < 0)
 	{
-	  log_print (hlog, LOG_ERR, "Fuck, data read failed, errno = %d",
-		     errno);
+	  log_print (hlog, LOG_ERR, "Fuck, data read failed, errno = %d (%s)",
+		     errno, g_strerror(errno));
 	  return RC_DVB_DPKT_READ_FAILED;
 	}
 
@@ -734,7 +734,7 @@ check_status (gpointer hdvb, int type,
   if (ioctl (h->dvb_fedh, FE_SET_FRONTEND, feparams) < 0)
     {
       log_print (hlog, LOG_ERR, "FE_SET_FRONTEND failed in check_status(),"
-		 " errno = %d", errno);
+		 " errno = %d (%s)", errno, g_strerror(errno));
       return -1;
     }
 
@@ -769,7 +769,7 @@ check_status (gpointer hdvb, int type,
 	  switch (type)
 	    {
 	    case FE_OFDM:
-	      log_print(hlog, LOG_INFO, "Event:  Frequency: %d\n",
+	      log_print(hlog, LOG_INFO, "Event:  Frequency: %d",
 		       feparams->frequency);
 	      break;
 	    case FE_QPSK:
@@ -800,13 +800,13 @@ check_status (gpointer hdvb, int type,
 	}
 
       if (ioctl (h->dvb_fedh, FE_READ_BER, &strength) >= 0)
-	log_print(hlog, LOG_DEBUG, "Bit error rate: %d\n", strength);
+	log_print(hlog, LOG_DEBUG, "Bit error rate: %d", strength);
       if (ioctl (h->dvb_fedh, FE_READ_SIGNAL_STRENGTH, &strength) >= 0)
-	log_print(hlog, LOG_DEBUG, "Signal strength: %d\n", strength);
+	log_print(hlog, LOG_DEBUG, "Signal strength: %d", strength);
       if (ioctl (h->dvb_fedh, FE_READ_SNR, &strength) >= 0)
-	log_print(hlog, LOG_DEBUG, "SNR: %d\n", strength);
+	log_print(hlog, LOG_DEBUG, "SNR: %d", strength);
       if (ioctl (h->dvb_fedh, FE_READ_UNCORRECTED_BLOCKS, &strength) >= 0)
-	log_print(hlog, LOG_DEBUG, "UNC: %d\n", strength);
+	log_print(hlog, LOG_DEBUG, "UNC: %d", strength);
 
       log_print(hlog, LOG_DEBUG, "FE_STATUS:%s%s%s%s%s%s",
 		(festatus & FE_HAS_SIGNAL ? " FE_HAS_SIGNAL" : ""),
@@ -840,7 +840,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
   if ((res = ioctl (h->dvb_fedh, FE_GET_INFO, &fe_info) < 0))
     {
       log_print (hlog, LOG_ERR, "FE_GET_INFO failed in dvb_tune(),"
-		 " errno = %d", errno);
+		 " errno = %d (%s)", errno, g_strerror(errno));
       return -1;
     }
 
@@ -890,7 +890,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
 
       log_print (hlog, LOG_INFO, 
 		 "tuning DVB-S to Freq: %u, Pol:%c Srate=%d, 22kHz tone=%s, "
-		 "LNB: %d, SLOF %d, LOF1: %d, LOF2: %d\n",
+		 "LNB: %d, SLOF %d, LOF1: %d, LOF2: %d",
 		 feparams.frequency, t->pol, t->srate,
 		 hi_lo == 1 ? "ON" : "OFF", t->diseqc, t->slof / 1000UL,
 		 t->lof1 / 1000UL, t->lof2 / 1000UL);
@@ -917,7 +917,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
       break;
 #ifdef DVB_ATSC
     case FE_ATSC:
-      log_print (hlog, LOG_INFO, "tuning ATSC to %d, modulation=%d\n", t->freq,
+      log_print (hlog, LOG_INFO, "tuning ATSC to %d, modulation=%d", t->freq,
 	       t->mod);
       feparams.frequency = t->freq;
       feparams.u.vsb.modulation = t->mod;

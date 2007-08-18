@@ -26,7 +26,8 @@
 
 #include <glib.h>
 
-void clean_string (gchar * s);
+void str_remove_non_ascii (gchar * s);
+gchar *str_beautify (gchar * s);
 gboolean is_updated (gchar *oldtext, gchar **newtextptr);
 
 #endif // __AUDACIOUS_DVB_UTIL_H__

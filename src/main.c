@@ -78,7 +78,7 @@ static void dvb_pes_pkt (InputPlayback *, guchar *, gint, gint);
 static void dvb_payload (InputPlayback *, guchar *, gint, gint);
 static void dvb_mpeg_frame (InputPlayback *, guchar *, gint, gint);
 static void dvb_close_record (void);
-//gint dvb_read_conf (gchar *, gchar *, gchar *, gchar *, gint, gchar *);
+static gchar* dvb_build_file_title (void);
 
 // Threads
 static gpointer feed_thread (gpointer);
@@ -984,6 +984,72 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 }
 
 
+static gchar*
+dvb_build_file_title (void)
+{
+  gchar *title = NULL;
+  gboolean refreshed = FALSE;
+  
+  if (station == NULL)
+    return NULL;
+  
+  //title = str_to_utf8 (station->svc_name);
+  title = g_strdup (station->svc_name);
+  
+  if (station->refresh)
+    {
+      log_print (hlog, LOG_DEBUG, "Station info changed!");
+      station->refresh = FALSE;
+      refreshed = TRUE;
+    }
+  if (rt != NULL && rt->refresh)
+    {
+      if (rt->title != NULL)
+	{
+	  if (rt->artist != NULL)
+	    {
+	      gchar *tmp;
+	      tmp = g_strjoin(": ", title, rt->artist, NULL);
+	      g_free(title);
+	      title = g_strjoin(" - ", tmp, rt->title, NULL);
+	      g_free(tmp);
+	    }
+	  else
+	    {
+	      gchar *tmp = title;
+	      title = g_strjoin(": ", title, rt->title, NULL);
+	      g_free(tmp);
+	    }
+	}
+      log_print (hlog, LOG_DEBUG, "Radiotext info changed!");
+      rt->refresh = FALSE;
+      refreshed = TRUE;
+    }
+  if (epg != NULL && epg->refresh)
+    {
+      // TODO: implement me!
+      log_print (hlog, LOG_DEBUG, "EPG info changed!");
+      epg->refresh = FALSE;
+      refreshed = TRUE;
+    }
+  if (mmusic != NULL && mmusic->refresh)
+    {
+      // TODO: implement me!
+      log_print (hlog, LOG_DEBUG, "MadMusic info changed!");
+      mmusic->refresh = FALSE;
+      refreshed = TRUE;
+    }
+  
+  if (!refreshed)
+    {
+      g_free(title);
+      return NULL;
+    }
+  
+  return title;
+}
+
+
 static void
 dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 {
@@ -1042,7 +1108,7 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
       if (rec_file != NULL)
 	vfs_fwrite (frame, sizeof (unsigned char), len, rec_file);
     }
-
+  
   if ((nout = lame_decode_headers (frame, len, left, right, &mp3d)) > 0)
     {
       if (mp3d.header_parsed == 1)
@@ -1050,36 +1116,14 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 	  if (!audio)
 	    audio =
 	      playback->output->open_audio (FMT_S16_NE, mp3d.samplerate, 2);
-
-	  if (mmusic != NULL && mmusic->refresh)
+	  
+	  gchar *title;
+	  if ((title = dvb_build_file_title ()) != NULL)
 	    {
-	      log_print (hlog, LOG_INFO, "MadMusic info changed!");
-	      mmusic->refresh = FALSE;
-	    }
-	  if (rt != NULL && rt->refresh)
-	    {
-	      gchar *title =
-		g_strdup_printf ("%s: %s - %s", station->svc_name,
-				 rt->artist, rt->title);
-	      log_print (hlog, LOG_INFO, "Radiotext info changed!");
 	      dvb_ip->set_info ((gchar *) str_to_utf8 (title), -1,
 				mp3d.bitrate * 1000, mp3d.samplerate,
 				mp3d.stereo);
-	      g_free (title);
-	      rt->refresh = FALSE;
-	    }
-	  if (epg != NULL && epg->refresh)
-	    {
-	      log_print (hlog, LOG_INFO, "EPG info changed!");
-	      epg->refresh = FALSE;
-	    }
-	  if (station != NULL && station->refresh)
-	    {
-	      log_print (hlog, LOG_INFO, "Station info changed!");
-	      dvb_ip->set_info ((gchar *) str_to_utf8 (station->svc_name), -1,
-				mp3d.bitrate * 1000, mp3d.samplerate,
-				mp3d.stereo);
-	      station->refresh = FALSE;
+	      g_free(title);
 	    }
 	}
 
@@ -1218,28 +1262,30 @@ get_name_thread (gpointer arg)
 
 		  if (dt == 0x48)
 		    {
+		      gchar *prov_final;
 		      memcpy (prov, &pp[2], pp[1]);
 		      prov[pp[1]] = '\0';
-		      clean_string (prov);
-
-		      memcpy (name, &pp[3 + pp[1]], pp[2 + pp[1]]);
-		      name[pp[2 + pp[1]]] = '\0';
-		      clean_string (name);
-
-		      if (is_updated (prov, &station->prov_name))
+		      prov_final = str_beautify (prov);
+		      if (is_updated (prov_final, &station->prov_name))
 			station->refresh = TRUE;
 
-		      if (is_updated (name, &station->svc_name))
+		      gchar *name_final;
+		      memcpy (name, &pp[3 + pp[1]], pp[2 + pp[1]]);
+		      name[pp[2 + pp[1]]] = '\0';
+		      name_final = str_beautify (name);
+		      if (is_updated (name_final, &station->svc_name))
 			station->refresh = TRUE;
 
 		      if (station->refresh)
 			{
 			  log_print (hlog, LOG_INFO,
-				     "Service name: \"%s\", \"%s\"", prov,
-				     name);
-			  infobox_update_service (prov, name);
+				     "Service name: \"%s\", \"%s\"", prov_final,
+				     name_final);
+			  infobox_update_service (prov_final, name_final);
 			}
 
+		      g_free(prov_final);
+		      g_free(name_final);
 		      log_print (hlog, LOG_INFO,
 				 "get_name_thread() stopping");
 

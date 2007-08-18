@@ -70,7 +70,7 @@ dvb_eit_desc (epgstruct *epg, const guchar * d, gint l)
 		name[i] = *q++;
 	    }
 	  name[j] = '\0';	// event_name_char
-	  clean_string (name);
+	  str_remove_non_ascii (name);
 
 	  j = *q++;		// text_length
 	  if (j > 0)
@@ -79,7 +79,7 @@ dvb_eit_desc (epgstruct *epg, const guchar * d, gint l)
 		text[i] = *q++;
 	    }
 	  text[j] = '\0';	// text_char
-	  clean_string (text);
+	  str_remove_non_ascii (text);
 	  
 	  if (is_updated (name, &epg->short_ev_name))
 	    epg->refresh = TRUE;
@@ -92,28 +92,25 @@ dvb_eit_desc (epgstruct *epg, const guchar * d, gint l)
 	  break;
 
 	case 0x4e:
-	  cdn = q[0] >> 4;
-	  ldn = q[0] & 0xf;
+	  cdn = q[0] >> 4;	// descriptor_number
+	  ldn = q[0] & 0xf;	// last_descriptor_number
 	  q++;
-	  memcpy (lg, q, 3);
+	  
+	  memcpy (lg, q, 3);	// ISO_639_language_code
 	  lg[3] = '\0';
 	  q += 3;
-	  loi = *q++;
-	  if (loi > 0)
-	    {
-	      ;
-	    }
+
+	  loi = *q++;		// length_of_items
 	  q += loi;
 
-	  j = *q++;
+	  j = *q++;			// text_length
 	  if (j > 0)
 	    {
 	      for (i = 0; i < j; i++)
-		text[i] = *q++;
+		text[i] = *q++;		// text_char
 	    }
 	  text[j] = '\0';
-
-	  clean_string (text);
+	  str_remove_non_ascii (text);
 
 	  log_print (hlog, LOG_INFO, "EIT: %d/%d,%s,\"%s\"", cdn, ldn, lg,
 		     text);

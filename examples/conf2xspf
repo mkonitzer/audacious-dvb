@@ -45,7 +45,7 @@ while ( <> ) {
 
 	# Get station name (w/o provider crap)
 	my $sname = $input[0];
-	$sname =~ s/[,;].*$//;
+	$sname =~ s/;.*$//;
 
 	# Tuning values
 	$output{'freq'} = $input[1];

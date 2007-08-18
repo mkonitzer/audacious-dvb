@@ -31,7 +31,7 @@ extern gpointer hlog;
 
 
 void
-clean_string (gchar * s)
+str_remove_non_ascii (gchar * s)
 {
   gint i, l;
   gchar *ws;
@@ -53,21 +53,49 @@ clean_string (gchar * s)
 }
 
 
+gchar *str_beautify (gchar * s)
+{
+  gchar *newstr;
+  newstr = g_strdup(s);
+  str_remove_non_ascii(newstr);
+  newstr = g_strstrip(newstr);
+  if (newstr[0] == '\0')
+    {
+      g_free(newstr);
+      return NULL;
+    }
+  return newstr;
+}
+
+
 gboolean
 is_updated (gchar *oldtext, gchar **newtextptr)
 {
   gboolean refresh = FALSE;
-  if (*newtextptr != NULL)
+  
+  // FIXME: This can probably be done easyer
+  if (oldtext != NULL)
     {
-      if (strcmp (*newtextptr, oldtext) != 0)
+      if (*newtextptr != NULL)
+	{
+	  if (strcmp (*newtextptr, oldtext) != 0)
+	    refresh = TRUE;
+	}
+      else
 	refresh = TRUE;
+      
     }
   else
-    refresh = TRUE;
+    {
+      if (*newtextptr != NULL)
+	refresh = TRUE;
+    }
   
   if (refresh)
     {
       g_free(*newtextptr);
-      *newtextptr = g_strdup(oldtext);
+      *newtextptr = str_beautify(oldtext);
     }
+  
+  return refresh;
 }
