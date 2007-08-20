@@ -42,10 +42,10 @@ typedef struct _rtstruct
   gchar plustext[RT_MEL];
   gint rt_start, rt_bstuff;
   gint index;
-  gint mec;  
+  gint mec;
 } rtstruct;
 
-rtstruct *radiotext_init ();
+rtstruct *radiotext_init (void);
 void radiotext_read_data (rtstruct *, const guchar *, gint);
 void radiotext_exit (rtstruct *);
 

@@ -99,16 +99,16 @@ crc16_ccitt (guchar * daten, gint len, gint skipfirst)
 
 
 rtstruct *
-radiotext_init ()
+radiotext_init (void)
 {
-  rtstruct *rt = g_malloc0(sizeof(rtstruct));
+  rtstruct *rt = g_malloc0 (sizeof (rtstruct));
   rt->runtoggle = 0xff;
   return rt;
 }
 
 
 static void
-radiotext_decode (rtstruct *rt)
+radiotext_decode (rtstruct * rt)
 {
   gint i, ii;
   gchar temptext[RT_MEL];
@@ -149,11 +149,11 @@ radiotext_decode (rtstruct *rt)
 		   0x80) ? rds_addchar[mtext[9 + i] - 0x80] : mtext[9 + i];
 	    }
 	  memcpy (rt->plustext, temptext, RT_MEL - 1);
-	  rt_final = str_beautify ((gchar *)rt->plustext);
+	  rt_final = str_beautify ((gchar *) rt->plustext);
 	  if (is_updated (rt_final, &rt->radiotext))
 	    rt->refresh = TRUE;
 	  log_print (hlog, LOG_INFO, "Radiotext: %s", rt_final);
-	  g_free(rt_final);
+	  g_free (rt_final);
 	}
       else if (mtext[5] == 0x46)
 	{
@@ -199,8 +199,8 @@ radiotext_decode (rtstruct *rt)
 	    {
 	      rt->runtoggle = (mtext[10] & 0x18);
 	      // Reset title/artist fields
-	      g_free(rt->title);
-	      g_free(rt->artist);
+	      g_free (rt->title);
+	      g_free (rt->artist);
 	      rt->title = NULL;
 	      rt->artist = NULL;
 	      rt->refresh = TRUE;
@@ -213,21 +213,23 @@ radiotext_decode (rtstruct *rt)
 		    {
 		      gchar *rtp_final;
 		      memset (temptext, 0, RT_MEL - 1);
-		      memmove (temptext, rt->plustext + rtp_start[i], rtp_len[i] + 1);
+		      memmove (temptext, rt->plustext + rtp_start[i],
+			       rtp_len[i] + 1);
 		      rtp_final = str_beautify (temptext);
 		      switch (rtp_typ[i])
 			{
-			  case 1:	// title
-			    if (is_updated (rtp_final, &rt->title))
-			      rt->refresh = TRUE;
-			    break;
-			  case 4:	// artist
-			    if (is_updated (rtp_final, &rt->artist))
-			      rt->refresh = TRUE;
-			    break;
+			case 1:	// title
+			  if (is_updated (rtp_final, &rt->title))
+			    rt->refresh = TRUE;
+			  break;
+			case 4:	// artist
+			  if (is_updated (rtp_final, &rt->artist))
+			    rt->refresh = TRUE;
+			  break;
 			}
-		      log_print (hlog, LOG_INFO, "RTplus[%d]: %s (type %d)", i, rtp_final, rtp_typ[i]);
-		      g_free(rtp_final);
+		      log_print (hlog, LOG_INFO, "RTplus[%d]: %s (type %d)",
+				 i, rtp_final, rtp_typ[i]);
+		      g_free (rtp_final);
 		    }
 		}
 	    }
@@ -239,7 +241,7 @@ radiotext_decode (rtstruct *rt)
 
 
 void
-radiotext_read_data (rtstruct *rt, const guchar * data, gint len)
+radiotext_read_data (rtstruct * rt, const guchar * data, gint len)
 {
   gint i, val;
   const gint mframel = 263;	// max. 255(MSG)+4(ADD/SQC/MFL)+2(CRC)+2(Start/Stop) of RDS-data
@@ -288,7 +290,7 @@ radiotext_read_data (rtstruct *rt, const guchar * data, gint len)
 		    }
 		  rt->rt_bstuff = 0;
 		  log_print (hlog, LOG_DEBUG, "(Bytestuffing -> %02x) ",
-		  	     rt->mtext[rt->index]);
+			     rt->mtext[rt->index]);
 		}
 	      else
 		rt->mtext[++rt->index] = val;
@@ -336,11 +338,15 @@ radiotext_read_data (rtstruct *rt, const guchar * data, gint len)
 	      else
 		{
 		  // crc16-check
-		  unsigned short crc16 = crc16_ccitt (rt->mtext, rt->index - 3, 1);
-		  if (crc16 != (rt->mtext[rt->index - 2] << 8) + rt->mtext[rt->index - 1])
+		  unsigned short crc16 =
+		    crc16_ccitt (rt->mtext, rt->index - 3, 1);
+		  if (crc16 !=
+		      (rt->mtext[rt->index - 2] << 8) + rt->mtext[rt->index -
+								  1])
 		    printf
 		      ("RDS-Error: CRC # calc = %04x <--> transmit = %02x%02x",
-		       crc16, rt->mtext[rt->index - 2], rt->mtext[rt->index - 1]);
+		       crc16, rt->mtext[rt->index - 2],
+		       rt->mtext[rt->index - 1]);
 		  else
 		    {
 		      switch (rt->mec)
@@ -349,9 +355,10 @@ radiotext_read_data (rtstruct *rt, const guchar * data, gint len)
 			  log_print (hlog, LOG_DEBUG, "mec %d: PTY", rt->mec);
 			  if (rt->mtext[8] <= 15)
 			    {
-			      log_print (hlog, LOG_DEBUG, "RDS-PTY set to '%s'",
+			      log_print (hlog, LOG_DEBUG,
+					 "RDS-PTY set to '%s'",
 					 pty_string[rt->mtext[8]]);
-			      g_free(rt->pty);
+			      g_free (rt->pty);
 			      rt->pty = g_strdup (pty_string[rt->mtext[8]]);
 			      rt->refresh = TRUE;
 			    }
@@ -370,7 +377,8 @@ radiotext_read_data (rtstruct *rt, const guchar * data, gint len)
 				     rt->mec);
 			  if ((rt->mtext[7] << 8) + rt->mtext[8] == 0x4bd7)
 			    {
-			      log_print (hlog, LOG_DEBUG, "mec %d: RT+", rt->mec);
+			      log_print (hlog, LOG_DEBUG, "mec %d: RT+",
+					 rt->mec);
 			      radiotext_decode (rt);
 			    }
 			  break;
@@ -384,7 +392,7 @@ radiotext_read_data (rtstruct *rt, const guchar * data, gint len)
 
 
 void
-radiotext_exit (rtstruct *rt)
+radiotext_exit (rtstruct * rt)
 {
-  g_free(rt);
+  g_free (rt);
 }

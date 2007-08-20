@@ -36,6 +36,6 @@ typedef struct _statstruct
 
 void str_remove_non_ascii (gchar * s);
 gchar *str_beautify (const gchar * s);
-gboolean is_updated (const gchar *oldtext, gchar **newtextptr);
+gboolean is_updated (const gchar * oldtext, gchar ** newtextptr);
 
 #endif // __AUDACIOUS_DVB_UTIL_H__

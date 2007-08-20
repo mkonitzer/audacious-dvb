@@ -33,7 +33,7 @@ typedef struct _epgstruct
   gboolean refresh;
 } epgstruct;
 
-epgstruct *epg_init ();
+epgstruct *epg_init (void);
 gint epg_read_data (epgstruct *, const guchar *, gint);
 void epg_exit (epgstruct *);
 

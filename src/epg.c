@@ -34,14 +34,14 @@ extern gpointer hlog;
 
 
 epgstruct *
-epg_init ()
+epg_init (void)
 {
-  return g_malloc0(sizeof(epgstruct));
+  return g_malloc0 (sizeof (epgstruct));
 }
 
 
 static gint
-dvb_eit_desc (epgstruct *epg, const guchar * d, gint l)
+dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 {
   gint dt, dl, i, j, cdn, ldn, loi;
   gchar ll[1024], hex[16], lg[4], name[256], text[256];
@@ -57,11 +57,11 @@ dvb_eit_desc (epgstruct *epg, const guchar * d, gint l)
 
       switch (dt)
 	{
-	case 0x4d:	// short_event_descriptor
+	case 0x4d:		// short_event_descriptor
 	  memcpy (lg, q, 3);	// ISO_639_language_code
 	  lg[3] = '\0';
 	  q += 3;
-	  
+
 	  j = *q++;		// event_name_length
 	  if (j > 0)
 	    {
@@ -79,7 +79,7 @@ dvb_eit_desc (epgstruct *epg, const guchar * d, gint l)
 	    }
 	  text[j] = '\0';	// text_char
 	  str_remove_non_ascii (text);
-	  
+
 	  if (is_updated (name, &epg->short_ev_name))
 	    epg->refresh = TRUE;
 
@@ -87,14 +87,15 @@ dvb_eit_desc (epgstruct *epg, const guchar * d, gint l)
 	    epg->refresh = TRUE;
 
 	  if (epg->refresh)
-	    log_print (hlog, LOG_INFO, "EIT: %s,\"%s\",\"%s\"", lg, name, text);
+	    log_print (hlog, LOG_INFO, "EIT: %s,\"%s\",\"%s\"", lg, name,
+		       text);
 	  break;
 
 	case 0x4e:
 	  cdn = q[0] >> 4;	// descriptor_number
 	  ldn = q[0] & 0xf;	// last_descriptor_number
 	  q++;
-	  
+
 	  memcpy (lg, q, 3);	// ISO_639_language_code
 	  lg[3] = '\0';
 	  q += 3;
@@ -102,11 +103,11 @@ dvb_eit_desc (epgstruct *epg, const guchar * d, gint l)
 	  loi = *q++;		// length_of_items
 	  q += loi;
 
-	  j = *q++;			// text_length
+	  j = *q++;		// text_length
 	  if (j > 0)
 	    {
 	      for (i = 0; i < j; i++)
-		text[i] = *q++;		// text_char
+		text[i] = *q++;	// text_char
 	    }
 	  text[j] = '\0';
 	  str_remove_non_ascii (text);
@@ -184,7 +185,7 @@ epg_read_data (epgstruct * epg, const guchar * sect, gint len)
 
 
 void
-epg_exit (epgstruct *epg)
+epg_exit (epgstruct * epg)
 {
-  g_free(epg);
+  g_free (epg);
 }

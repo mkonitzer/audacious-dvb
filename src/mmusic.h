@@ -37,7 +37,7 @@ typedef struct _mmstruct
   guchar mad_buf[8192];
 } mmstruct;
 
-mmstruct *madmusic_init ();
+mmstruct *madmusic_init (void);
 void madmusic_read_data (mmstruct *, const guchar *, gint);
 void madmusic_exit (mmstruct *);
 

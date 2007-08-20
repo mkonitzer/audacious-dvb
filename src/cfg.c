@@ -30,7 +30,7 @@ cfgstruct *
 config_init (void)
 {
   cfgstruct *config;
-  config = g_malloc0(sizeof(cfgstruct));
+  config = g_malloc0 (sizeof (cfgstruct));
   config->devno = 0;
   config->loglvl = 0;
 
@@ -49,7 +49,7 @@ config_init (void)
   config->info_rt = TRUE;
   config->info_epg = TRUE;
   config->info_mmusic = FALSE;
-  
+
   return config;
 }
 
@@ -125,7 +125,7 @@ config_to_db (cfgstruct * config)
 
 
 void
-config_exit (cfgstruct *cfg)
+config_exit (cfgstruct * cfg)
 {
-  g_free(cfg);
+  g_free (cfg);
 }

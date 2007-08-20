@@ -53,15 +53,16 @@ str_remove_non_ascii (gchar * s)
 }
 
 
-gchar *str_beautify (const gchar * s)
+gchar *
+str_beautify (const gchar * s)
 {
   gchar *newstr;
-  newstr = g_strdup(s);
-  str_remove_non_ascii(newstr);
-  newstr = g_strstrip(newstr);
+  newstr = g_strdup (s);
+  str_remove_non_ascii (newstr);
+  newstr = g_strstrip (newstr);
   if (newstr[0] == '\0')
     {
-      g_free(newstr);
+      g_free (newstr);
       return NULL;
     }
   return newstr;
@@ -69,10 +70,10 @@ gchar *str_beautify (const gchar * s)
 
 
 gboolean
-is_updated (const gchar *oldtext, gchar **newtextptr)
+is_updated (const gchar * oldtext, gchar ** newtextptr)
 {
   gboolean refresh = FALSE;
-  
+
   // FIXME: This can probably be done easyer
   if (oldtext != NULL)
     {
@@ -89,12 +90,12 @@ is_updated (const gchar *oldtext, gchar **newtextptr)
       if (*newtextptr != NULL)
 	refresh = TRUE;
     }
-  
+
   if (refresh)
     {
-      g_free(*newtextptr);
-      *newtextptr = str_beautify(oldtext);
+      g_free (*newtextptr);
+      *newtextptr = str_beautify (oldtext);
     }
-  
+
   return refresh;
 }

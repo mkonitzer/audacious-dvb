@@ -34,7 +34,7 @@ extern gpointer hlog;
 mmstruct *
 madmusic_init (void)
 {
-  return g_malloc0(sizeof(mmstruct));
+  return g_malloc0 (sizeof (mmstruct));
 }
 
 
@@ -70,7 +70,7 @@ replace_crlf (guchar * s)
 
 
 void
-madmusic_read_data (mmstruct *mm, const guchar * buf, gint len)
+madmusic_read_data (mmstruct * mm, const guchar * buf, gint len)
 {
   gint field, ftna, toai, trnum;
   gchar toan[32];
@@ -160,13 +160,13 @@ madmusic_read_data (mmstruct *mm, const guchar * buf, gint len)
 
   if (is_updated (artist, &mm->artist))
     mm->refresh = TRUE;
-  
+
   if (is_updated (title, &mm->title))
     mm->refresh = TRUE;
-  
+
   if (is_updated (album, &mm->album))
     mm->refresh = TRUE;
-  
+
   if (mm->trnum != trnum)
     {
       mm->trnum = trnum;
@@ -176,7 +176,7 @@ madmusic_read_data (mmstruct *mm, const guchar * buf, gint len)
 
 
 void
-madmusic_exit (mmstruct *mm)
+madmusic_exit (mmstruct * mm)
 {
 /*  if (strlen (title) > 0)
     {
@@ -187,5 +187,5 @@ madmusic_exit (mmstruct *mm)
 	log_print (hlog, LOG_INFO, "Track info %d:%02d too old",
 		   (t_start - mad_time) / 60, (t_start - mad_time) % 60);
     }*/
-  g_free(mm);
+  g_free (mm);
 }
