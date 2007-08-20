@@ -300,8 +300,8 @@ dvb_play (InputPlayback * playback)
   // Tune DVB device to stations's frequency
   if ((rc = dvb_tune (hdvb, tune)) != RC_OK)
     {
-      dvb_close (hdvb);
       playing = FALSE;
+      dvb_close (hdvb);
       hdvb = NULL;
       return;
     }
@@ -322,8 +322,8 @@ dvb_play (InputPlayback * playback)
   if ((rc = dvb_get_pid (hdvb, tune->sid, &apid, &dpid)) != RC_OK)
     {
       log_print (hlog, LOG_WARNING, "dvb_get_pid() returned %d.", rc);
-      dvb_close (hdvb);
       playing = FALSE;
+      dvb_close (hdvb);
       hdvb = NULL;
       return;
     }
@@ -338,8 +338,8 @@ dvb_play (InputPlayback * playback)
   if ((rc = dvb_apid (hdvb, apid)) != RC_OK)
     {
       log_print (hlog, LOG_ERR, "dvb_apid() returned %d.", rc);
-      dvb_close (hdvb);
       playing = FALSE;
+      dvb_close (hdvb);
       hdvb = NULL;
       return;
     }
@@ -405,10 +405,11 @@ dvb_stop (InputPlayback * playback)
       g_free (station);
       station = NULL;
 
-      if (hdvb)
+      if (hdvb != NULL)
 	{
 	  dvb_unfilter (hdvb);
 	  dvb_close (hdvb);
+	  hdvb = NULL;
 	}
 
       if (rec_file)
@@ -1045,20 +1046,13 @@ dvb_build_file_title (void)
     {
       if (rt->title != NULL)
 	{
+	  gchar *tmp = title;
 	  if (rt->artist != NULL)
-	    {
-	      gchar *tmp;
-	      tmp = g_strjoin (": ", title, rt->artist, NULL);
-	      g_free (title);
-	      title = g_strjoin (" - ", tmp, rt->title, NULL);
-	      g_free (tmp);
-	    }
+	    title =
+	      g_strconcat (title, ": ", rt->artist, " - ", rt->title, NULL);
 	  else
-	    {
-	      gchar *tmp = title;
-	      title = g_strjoin (": ", title, rt->title, NULL);
-	      g_free (tmp);
-	    }
+	    title = g_strconcat (title, ": ", rt->title, NULL);
+	  g_free (tmp);
 	}
       log_print (hlog, LOG_DEBUG, "Radiotext info changed!");
       infobox_update_radiotext (rt);
