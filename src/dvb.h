@@ -37,8 +37,6 @@
 
 typedef struct _tunestruct
 {
-  gint adapter;
-  
   gulong freq;
   gchar pol;
   gulong srate;

@@ -53,7 +53,7 @@ str_remove_non_ascii (gchar * s)
 }
 
 
-gchar *str_beautify (gchar * s)
+gchar *str_beautify (const gchar * s)
 {
   gchar *newstr;
   newstr = g_strdup(s);
@@ -69,7 +69,7 @@ gchar *str_beautify (gchar * s)
 
 
 gboolean
-is_updated (gchar *oldtext, gchar **newtextptr)
+is_updated (const gchar *oldtext, gchar **newtextptr)
 {
   gboolean refresh = FALSE;
   
@@ -83,7 +83,6 @@ is_updated (gchar *oldtext, gchar **newtextptr)
 	}
       else
 	refresh = TRUE;
-      
     }
   else
     {

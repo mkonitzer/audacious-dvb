@@ -104,66 +104,6 @@ dvb_close (gpointer hdvb)
 }
 
 
-/*gint
-dvb_status (gpointer hdvb)
-{
-  gint qual;
-  HDVB *h;
-  glong sstr, snr;
-  fe_status_t fest;
-  gulong ber;
-
-  h = (HDVB *) hdvb;
-
-  sstr = snr = ber = 0;
-
-  if (ioctl (h->dvb_fedh, FE_READ_STATUS, &fest) < 0)
-    return -1;
-
-  if (ioctl (h->dvb_fedh, FE_READ_BER, &ber) < 0)
-    return -1;
-
-  if (ioctl (h->dvb_fedh, FE_READ_SIGNAL_STRENGTH, &sstr) < 0)
-    return -1;
-
-  if (ioctl (h->dvb_fedh, FE_READ_SNR, &snr) < 0)
-    return -1;
-
-  qual = 2097152 - ber;
-  if (qual < 0)
-    qual = 0;
-
-  qual /= 20971;
-
-  if (fest & FE_HAS_SIGNAL)
-    printf ("S");
-  else
-    printf (" ");
-
-  if (fest & FE_HAS_CARRIER)
-    printf ("C");
-  else
-    printf (" ");
-
-  if (fest & FE_HAS_VITERBI)
-    printf ("V");
-  else
-    printf (" ");
-
-  if (fest & FE_HAS_SYNC)
-    printf ("Y");
-  else
-    printf (" ");
-
-  if (fest & FE_HAS_LOCK)
-    printf ("L");
-  else
-    printf (" ");
-
-  return RC_OK;
-}*/
-
-
 gint
 dvb_filter (gpointer hdvb, gint pid)
 {

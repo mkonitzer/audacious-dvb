@@ -31,13 +31,15 @@
 #include "gui.h"
 #include "log.h"
 #include "cfg.h"
+#include "epg.h"
+#include "rtxt.h"
+#include "mmusic.h"
 #include "config.h"
 
 extern gint playing;
 extern gpointer hlog;
 extern cfgstruct *config;
 
-static gchar si_prov[256], si_station[256];
 static Widgets widgets = { 0 };
 
 
@@ -125,9 +127,9 @@ dvb_configure (void)
   hbox = gtk_hbox_new (FALSE, 5);
   GtkWidget *devLabel = gtk_label_new ("DVB device:");
   gtk_box_pack_start (GTK_BOX (hbox), devLabel, FALSE, FALSE, 0);
-  GtkWidget *devpathEntry = gtk_entry_new_with_max_length (20);
-  widgets.devpathEntry = devpathEntry;
-  gtk_box_pack_start (GTK_BOX (hbox), devpathEntry, TRUE, TRUE, 0);
+  GtkWidget *devnoSpin = gtk_spin_button_new_with_range (0, 9, 1);
+  widgets.devnoSpin = devnoSpin;
+  gtk_box_pack_start (GTK_BOX (hbox), devnoSpin, TRUE, TRUE, 0);
   gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
 
   hbox = gtk_hbox_new (FALSE, 5);
@@ -322,7 +324,8 @@ vsplitClicked (GtkWidget * w, gpointer user_data)
 static void
 config_to_gui (cfgstruct * config)
 {
-  gtk_entry_set_text (GTK_ENTRY (widgets.devpathEntry), config->devpath);
+  gtk_spin_button_set_value (GTK_SPIN_BUTTON (widgets.devnoSpin),
+			     config->devno);
   gtk_combo_box_set_active (GTK_COMBO_BOX (widgets.loggingCombo),
 			    config->loglvl);
 
@@ -359,10 +362,8 @@ config_to_gui (cfgstruct * config)
 static void
 config_from_gui (cfgstruct * config)
 {
-  if (config->devpath != NULL)
-    g_free (config->devpath);
-  config->devpath =
-    g_strdup (gtk_entry_get_text (GTK_ENTRY (widgets.devpathEntry)));
+  config->devno =
+    gtk_spin_button_get_value (GTK_SPIN_BUTTON (widgets.devnoSpin));
   config->loglvl =
     gtk_combo_box_get_active (GTK_COMBO_BOX (widgets.loggingCombo));
 
@@ -396,10 +397,9 @@ config_from_gui (cfgstruct * config)
 }
 
 void
-dvb_getinfo (gchar * s)
+dvb_infobox (statstruct *station, rtstruct *rt, epgstruct *epg, mmstruct *mmusic)
 {
-  GtkWidget *fr, *lbl, *tbl;
-  GtkWidget *box1, *box2, *box3;
+  GtkWidget *hbox, *vbox, *mainvbox, *label;
 
   if (widgets.infoBox)
     {
@@ -407,106 +407,216 @@ dvb_getinfo (gchar * s)
       return;
     }
 
-  gint i;
-  GtkWidget *hbox, *vbox;
-
   GtkWidget *infoBox = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   widgets.infoBox = infoBox;
   g_signal_connect (G_OBJECT (infoBox), "destroy",
 		    G_CALLBACK (gtk_widget_destroyed), &widgets.infoBox);
-  gtk_window_set_title (GTK_WINDOW (infoBox), "Service Information");
+  gtk_window_set_title (GTK_WINDOW (infoBox), "DVB Stream Information");
+  
+  mainvbox = gtk_vbox_new (FALSE, 10);
+  gtk_container_add (GTK_CONTAINER (infoBox), mainvbox);
 
-  box1 = gtk_hbox_new (FALSE, 0);
-  gtk_widget_show (box1);
-  gtk_container_add (GTK_CONTAINER (infoBox), box1);
+  // Service information
+  GtkWidget *serviceFrame = gtk_frame_new ("Service Information");
+  gtk_box_pack_start (GTK_BOX (mainvbox), serviceFrame, TRUE, TRUE, 0);
+  gtk_container_border_width (GTK_CONTAINER (serviceFrame), 5);
+  vbox = gtk_vbox_new (FALSE, 10);
+  gtk_container_border_width (GTK_CONTAINER (vbox), 5);
+  gtk_container_add (GTK_CONTAINER (serviceFrame), vbox);
+    {
+      GtkWidget *table;
+      table = gtk_table_new (2, 2, FALSE);
+      gtk_box_pack_start (GTK_BOX (vbox), table, TRUE, TRUE, 0);
+      // Station
+      label = gtk_label_new ("Station:");
+      gtk_table_attach (GTK_TABLE (table), label, 0, 1, 0, 1,
+			GTK_FILL | GTK_SHRINK, GTK_FILL | GTK_SHRINK, 2, 2);
+      GtkWidget *statEntry = gtk_entry_new ();
+      widgets.statEntry = statEntry;
+      gtk_editable_set_editable (GTK_EDITABLE (statEntry), FALSE);
+      gtk_widget_show (statEntry);
+      gtk_table_attach_defaults (GTK_TABLE (table), statEntry, 1, 2, 0, 1);
+      // Provider
+      label = gtk_label_new ("Provider:");
+      gtk_table_attach (GTK_TABLE (table), label, 0, 1, 1, 2,
+			GTK_FILL | GTK_SHRINK, GTK_FILL | GTK_EXPAND, 2, 2);
+      gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_LEFT);
+      GtkWidget *provEntry = gtk_entry_new ();
+      widgets.provEntry = provEntry;
+      gtk_editable_set_editable (GTK_EDITABLE (provEntry), FALSE);
+      gtk_widget_show (provEntry);
+      gtk_table_attach_defaults (GTK_TABLE (table), provEntry, 1, 2, 1, 2);
+    }
+  
+  // Notebook (Radiotext/EPG/MadMusic/DVB)
+  GtkWidget *notebook = gtk_notebook_new ();
+  gtk_box_pack_start (GTK_BOX (mainvbox), notebook, TRUE, TRUE, 0);
+    {
+      // Radiotext information
+      GtkWidget *rtFrame = gtk_frame_new ("Radiotext information");
+      gtk_container_border_width (GTK_CONTAINER (rtFrame), 5);
+      vbox = gtk_vbox_new (FALSE, 10);
+      gtk_container_border_width (GTK_CONTAINER (vbox), 5);
+      gtk_container_add (GTK_CONTAINER (rtFrame), vbox);
+      
+      GtkWidget *table;
+      table = gtk_table_new (4, 2, FALSE);
+      gtk_container_add (GTK_CONTAINER (vbox), table);
+      // Title
+      label = gtk_label_new ("Title:");
+      gtk_table_attach (GTK_TABLE (table), label, 0, 1, 0, 1,
+			GTK_FILL | GTK_SHRINK, GTK_FILL | GTK_SHRINK, 2, 2);
+      GtkWidget *rtptitleEntry = gtk_entry_new ();
+      widgets.rtptitleEntry = rtptitleEntry;
+      gtk_editable_set_editable (GTK_EDITABLE (rtptitleEntry), FALSE);
+      gtk_widget_show (rtptitleEntry);
 
-  box2 = gtk_vbox_new (FALSE, 0);
-  gtk_widget_show (box2);
-  gtk_box_pack_start (GTK_BOX (box1), box2, TRUE, TRUE, 5);
+      gtk_table_attach_defaults (GTK_TABLE (table), rtptitleEntry, 1, 2, 0, 1);
+      // Artist
+      label = gtk_label_new ("Artist:");
+      gtk_table_attach (GTK_TABLE (table), label, 0, 1, 1, 2,
+			GTK_FILL | GTK_SHRINK, GTK_FILL | GTK_EXPAND, 2, 2);
+      gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_LEFT);
+      GtkWidget *rtpartistEntry = gtk_entry_new ();
+      widgets.rtpartistEntry = rtpartistEntry;
+      gtk_editable_set_editable (GTK_EDITABLE (rtpartistEntry), FALSE);
+      gtk_widget_show (rtpartistEntry);
+      gtk_table_attach_defaults (GTK_TABLE (table), rtpartistEntry, 1, 2, 1, 2);
+      // Program Type
+      label = gtk_label_new ("Program type:");
+      gtk_table_attach (GTK_TABLE (table), label, 0, 1, 2, 3,
+			GTK_FILL | GTK_SHRINK, GTK_FILL | GTK_EXPAND, 2, 2);
+      gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_LEFT);
+      GtkWidget *rtpptyEntry = gtk_entry_new ();
+      widgets.rtpptyEntry = rtpptyEntry;
+      gtk_editable_set_editable (GTK_EDITABLE (rtpptyEntry), FALSE);
+      gtk_widget_show (rtpptyEntry);
+      gtk_table_attach_defaults (GTK_TABLE (table), rtpptyEntry, 1, 2, 2, 3);
+      // Radiotext events
+      GtkWidget *scrtextview = NULL;
+      scrtextview = gtk_scrolled_window_new (NULL, NULL);
+      gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrtextview),
+				      GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+      gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrtextview), 
+					   GTK_SHADOW_ETCHED_IN);
+      GtkWidget *textview;
+      textview = gtk_text_view_new ();
+      /*gtk_table_attach (GTK_TABLE (table), scrtextview, 0, 2, 3, 4,
+			GTK_FILL | GTK_SHRINK, GTK_FILL | GTK_SHRINK, 2, 2);*/
+      gtk_table_attach_defaults (GTK_TABLE (table), scrtextview, 0, 2, 3, 4);
+      gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (textview), GTK_WRAP_WORD_CHAR);
+      gtk_container_add (GTK_CONTAINER (scrtextview), textview);
+      
+      GtkTextBuffer *textbuf;
+      textbuf = gtk_text_view_get_buffer (GTK_TEXT_VIEW (textview));
+      gtk_text_buffer_set_text (textbuf, "", -1);
+      gtk_notebook_append_page (GTK_NOTEBOOK (notebook), rtFrame,
+				gtk_label_new ("Radiotext"));
 
-  fr = gtk_frame_new ("Service");
-  gtk_widget_show (fr);
-  gtk_box_pack_start (GTK_BOX (box2), fr, TRUE, TRUE, 5);
+      // EPG information
+      GtkWidget *epgFrame = gtk_frame_new ("EPG information");
+      gtk_container_border_width (GTK_CONTAINER (epgFrame), 5);
+      vbox = gtk_vbox_new (FALSE, 10);
+      gtk_container_border_width (GTK_CONTAINER (vbox), 5);
+      gtk_container_add (GTK_CONTAINER (epgFrame), vbox);
+      gtk_notebook_append_page (GTK_NOTEBOOK (notebook), epgFrame,
+				gtk_label_new ("EPG"));
 
-  box1 = gtk_hbox_new (FALSE, 0);
-  gtk_widget_show (box1);
-  gtk_container_add (GTK_CONTAINER (fr), box1);
+      // MadMusic information
+      GtkWidget *mmFrame = gtk_frame_new ("MadMusic information");
+      gtk_container_border_width (GTK_CONTAINER (mmFrame), 5);
+      vbox = gtk_vbox_new (FALSE, 10);
+      gtk_container_border_width (GTK_CONTAINER (vbox), 5);
+      gtk_container_add (GTK_CONTAINER (mmFrame), vbox);
+      gtk_notebook_append_page (GTK_NOTEBOOK (notebook), mmFrame,
+				gtk_label_new ("MadMusic"));
 
-  box3 = gtk_vbox_new (FALSE, -5);
-  gtk_widget_show (box3);
-  gtk_box_pack_start (GTK_BOX (box1), box3, TRUE, TRUE, 5);
+      // DVB information
+      GtkWidget *dvbFrame = gtk_frame_new ("DVB information");
+      gtk_container_border_width (GTK_CONTAINER (dvbFrame), 5);
+      vbox = gtk_vbox_new (FALSE, 10);
+      gtk_container_border_width (GTK_CONTAINER (vbox), 5);
+      gtk_container_add (GTK_CONTAINER (dvbFrame), vbox);
+      gtk_notebook_append_page (GTK_NOTEBOOK (notebook), dvbFrame,
+				gtk_label_new ("DVB"));
 
-  tbl = gtk_table_new (2, 2, FALSE);
-  gtk_widget_show (tbl);
-  gtk_box_pack_start (GTK_BOX (box3), tbl, TRUE, TRUE, 5);
+    }
 
-  lbl = gtk_label_new ("Provider:");
-  gtk_widget_show (lbl);
-  gtk_table_attach (GTK_TABLE (tbl), lbl, 0, 1, 0, 1,
-		    GTK_FILL | GTK_EXPAND, GTK_FILL | GTK_EXPAND, 2, 2);
-  gtk_label_set_justify (GTK_LABEL (lbl), GTK_JUSTIFY_LEFT);
-
-  GtkWidget *if_ef1 = gtk_entry_new ();
-  widgets.provEntry = if_ef1;
-  gtk_widget_show (if_ef1);
-  gtk_table_attach (GTK_TABLE (tbl), if_ef1, 1, 2, 0, 1,
-		    GTK_FILL | GTK_EXPAND, GTK_FILL | GTK_EXPAND, 2, 2);
-  gtk_entry_set_text (GTK_ENTRY (if_ef1), si_prov);
-
-  lbl = gtk_label_new ("Name:");
-  gtk_widget_show (lbl);
-  gtk_table_attach (GTK_TABLE (tbl), lbl, 0, 1, 1, 2,
-		    GTK_FILL | GTK_EXPAND, GTK_FILL | GTK_EXPAND, 2, 2);
-  gtk_label_set_justify (GTK_LABEL (lbl), GTK_JUSTIFY_LEFT);
-
-  GtkWidget *if_ef2 = gtk_entry_new ();
-  widgets.provEntry = if_ef2;
-  gtk_widget_show (if_ef2);
-  gtk_table_attach (GTK_TABLE (tbl), if_ef2, 1, 2, 1, 2,
-		    GTK_FILL | GTK_EXPAND, GTK_FILL | GTK_EXPAND, 2, 2);
-  gtk_entry_set_text (GTK_ENTRY (if_ef2), si_station);
-
-  fr = gtk_frame_new ("Track");
-  gtk_widget_show (fr);
-  gtk_box_pack_start (GTK_BOX (box2), fr, TRUE, TRUE, 5);
-
-  box1 = gtk_hbox_new (FALSE, 0);
-  gtk_widget_show (box1);
-  gtk_container_add (GTK_CONTAINER (fr), box1);
-
-  box3 = gtk_vbox_new (FALSE, -5);
-  gtk_widget_show (box3);
-  gtk_box_pack_start (GTK_BOX (box1), box3, TRUE, TRUE, 5);
-
-  tbl = gtk_table_new (2, 2, FALSE);
-  gtk_widget_show (tbl);
-  gtk_box_pack_start (GTK_BOX (box3), tbl, TRUE, TRUE, 5);
-
-  lbl = gtk_label_new ("Title:");
-  gtk_widget_show (lbl);
-  gtk_table_attach (GTK_TABLE (tbl), lbl, 0, 1, 0, 1,
-		    GTK_FILL | GTK_EXPAND, GTK_FILL | GTK_EXPAND, 2, 2);
-  gtk_label_set_justify (GTK_LABEL (lbl), GTK_JUSTIFY_LEFT);
-
-  GtkWidget *if_tx1 = gtk_text_view_new ();
-  gtk_widget_show (if_tx1);
-  gtk_table_attach (GTK_TABLE (tbl), if_tx1, 1, 2, 0, 1,
-		    GTK_FILL | GTK_EXPAND, GTK_FILL | GTK_EXPAND, 2, 2);
-  gtk_widget_set_usize (if_tx1, 300, 24);
-
-  gtk_widget_show (infoBox);
+  // Fill in stream information
+  infobox_update_service (station);
+  infobox_update_radiotext (rt);
+  infobox_update_epg (epg);
+  infobox_update_mmusic (mmusic);
+  
+  gtk_widget_show_all (infoBox);
 }
 
 
 void
-infobox_update_service (gchar * prov, gchar * station)
+infobox_update_service (statstruct *st)
 {
-  strcpy (si_prov, prov);
-  strcpy (si_station, station);
-
   if (widgets.infoBox)
     {
-      gtk_entry_set_text (GTK_ENTRY (widgets.provEntry), si_prov);
-      gtk_entry_set_text (GTK_ENTRY (widgets.statEntry), si_station);
+      if (st != NULL)
+	{
+	  gtk_entry_set_text (GTK_ENTRY (widgets.provEntry), st->prov_name);
+	  gtk_entry_set_text (GTK_ENTRY (widgets.statEntry), st->svc_name);
+	}
+      else
+	{
+	  gtk_entry_set_text (GTK_ENTRY (widgets.provEntry), "");
+	  gtk_entry_set_text (GTK_ENTRY (widgets.statEntry), "");
+	}   
+    }
+}
+
+
+void
+infobox_update_radiotext (rtstruct *rt)
+{
+  if (widgets.infoBox)
+    {
+      if (rt != NULL)
+	{
+	  gtk_entry_set_text (GTK_ENTRY (widgets.rtptitleEntry), rt->title);
+	  gtk_entry_set_text (GTK_ENTRY (widgets.rtpartistEntry), rt->artist);
+	  gtk_entry_set_text (GTK_ENTRY (widgets.rtpptyEntry), rt->pty);
+	}
+      else
+	{
+	  gtk_entry_set_text (GTK_ENTRY (widgets.rtptitleEntry), "");
+	  gtk_entry_set_text (GTK_ENTRY (widgets.rtpartistEntry), "");
+	  gtk_entry_set_text (GTK_ENTRY (widgets.rtpptyEntry), "");
+	}
+    }
+}
+
+
+void
+infobox_update_epg (epgstruct *epg)
+{
+  if (widgets.infoBox)
+    {
+      if (epg != NULL)
+	{
+	}
+      else
+	{
+	}
+    }
+}
+
+
+void
+infobox_update_mmusic (mmstruct *mmusic)
+{
+  if (widgets.infoBox)
+    {
+      if (mmusic != NULL)
+	{
+	}
+      else
+	{
+	}
     }
 }

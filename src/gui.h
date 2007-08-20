@@ -29,13 +29,17 @@
 #include <gdk/gdk.h>
 
 #include "cfg.h"
+#include "epg.h"
+#include "rtxt.h"
+#include "util.h"
+#include "mmusic.h"
 
 typedef struct _Widgets
 {
   // Configuration Window
   GtkWidget *configBox;
   GtkWidget *loggingCombo;
-  GtkWidget *devpathEntry;
+  GtkWidget *devnoSpin;
   GtkWidget *recordCheck;
   GtkWidget *fnameEntry;
   GtkWidget *fnameLabel;
@@ -59,12 +63,19 @@ typedef struct _Widgets
   GtkWidget *infoBox;
   GtkWidget *provEntry;
   GtkWidget *statEntry;
+  GtkWidget *rtptitleEntry;
+  GtkWidget *rtpartistEntry;
+  GtkWidget *rtpptyEntry;
 } Widgets;
 
 void dvb_about (void);
 void dvb_configure (void);
-void dvb_getinfo (gchar *);
-void infobox_update_service (gchar *, gchar *);
+void dvb_infobox (statstruct *, rtstruct *, epgstruct *, mmstruct *);
+
+void infobox_update_service (statstruct *);
+void infobox_update_radiotext (rtstruct *);
+void infobox_update_epg (epgstruct *);
+void infobox_update_mmusic (mmstruct *);
 
 static void recordClicked (GtkWidget * w, gpointer user_data);
 static void isplitClicked (GtkWidget * w, gpointer user_data);

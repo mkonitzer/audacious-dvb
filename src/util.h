@@ -26,8 +26,16 @@
 
 #include <glib.h>
 
+typedef struct _statstruct
+{
+  gchar *svc_name;
+  gchar *prov_name;
+  gboolean refresh;
+} statstruct;
+
+
 void str_remove_non_ascii (gchar * s);
-gchar *str_beautify (gchar * s);
-gboolean is_updated (gchar *oldtext, gchar **newtextptr);
+gchar *str_beautify (const gchar * s);
+gboolean is_updated (const gchar *oldtext, gchar **newtextptr);
 
 #endif // __AUDACIOUS_DVB_UTIL_H__

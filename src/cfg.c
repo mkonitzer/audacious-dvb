@@ -29,7 +29,7 @@
 void
 config_init (cfgstruct * config)
 {
-  config->devpath = g_strdup ("/dev/dvb/adapter0");
+  config->devno = 0;
   config->loglvl = 0;
 
   config->rec = FALSE;
@@ -59,15 +59,7 @@ config_from_db (cfgstruct * config)
   if ((db = bmp_cfg_db_open ()) == NULL)
     return FALSE;
 
-  if (config->devpath != NULL)
-    {
-      g_free (config->devpath);
-      config->devpath = NULL;
-    }
-  bmp_cfg_db_get_string (db, "dvb", "devpath", &config->devpath);
-  if (config->devpath == NULL)
-    config->devpath = g_strdup ("/dev/dvb/adapter0");
-
+  bmp_cfg_db_get_int (db, "dvb", "devno", &config->devno);
   bmp_cfg_db_get_int (db, "dvb", "loglevel", &config->loglvl);
 
   bmp_cfg_db_get_bool (db, "dvb", "rec", &config->rec);
@@ -105,7 +97,7 @@ config_to_db (cfgstruct * config)
   if ((db = bmp_cfg_db_open ()) == NULL)
     return FALSE;
 
-  bmp_cfg_db_set_string (db, "dvb", "devpath", config->devpath);
+  bmp_cfg_db_set_int (db, "dvb", "devno", config->devno);
   bmp_cfg_db_set_int (db, "dvb", "loglevel", config->loglvl);
 
   bmp_cfg_db_set_bool (db, "dvb", "rec", config->rec);

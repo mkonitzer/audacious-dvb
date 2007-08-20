@@ -28,7 +28,7 @@
 
 typedef struct _cfgstruct
 {
-  gchar *devpath;		/* DVB device path */
+  gint devno;			/* DVB device number */
   gint loglvl;			/* Log level */
 
   gboolean rec;			/* Activate recording of stream? */

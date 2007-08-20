@@ -30,6 +30,7 @@
 #include <time.h>
 #include "rtxt.h"
 #include "log.h"
+#include "util.h"
 
 extern gpointer hlog;
 
@@ -148,7 +149,7 @@ radiotext_decode (rtstruct *rt)
 		   0x80) ? rds_addchar[mtext[9 + i] - 0x80] : mtext[9 + i];
 	    }
 	  memcpy (rt->plustext, temptext, RT_MEL - 1);
-	  rt_final = str_beautify (rt->plustext);
+	  rt_final = str_beautify ((gchar *)rt->plustext);
 	  if (is_updated (rt_final, &rt->radiotext))
 	    rt->refresh = TRUE;
 	  log_print (hlog, LOG_INFO, "Radiotext: %s", rt_final);
@@ -347,8 +348,13 @@ radiotext_read_data (rtstruct *rt, const guchar * data, gint len)
 			case 0x07:	// PTY
 			  log_print (hlog, LOG_DEBUG, "mec %d: PTY", rt->mec);
 			  if (rt->mtext[8] <= 15)
-			    log_print (hlog, LOG_DEBUG, "RDS-PTY set to '%s'",
-				       pty_string[rt->mtext[8]]);
+			    {
+			      log_print (hlog, LOG_DEBUG, "RDS-PTY set to '%s'",
+					 pty_string[rt->mtext[8]]);
+			      g_free(rt->pty);
+			      rt->pty = g_strdup (pty_string[rt->mtext[8]]);
+			      rt->refresh = TRUE;
+			    }
 			  else
 			    log_print (hlog, LOG_DEBUG,
 				       "RDS-PTY has unknown value '%d'",

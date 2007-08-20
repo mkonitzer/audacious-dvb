@@ -29,7 +29,7 @@
 #include <linux/dvb/dmx.h>
 #include <linux/dvb/frontend.h>
 #include <audacious/plugin.h>
-#include <audacious/util.h>
+#include <audacious/strings.h>
 #include <audacious/vfs.h>
 #include <lame/lame.h>
 
@@ -40,6 +40,7 @@
 #include "cfg.h"
 #include "rtxt.h"
 #include "mmusic.h"
+#include "util.h"
 #include "config.h"
 
 
@@ -57,20 +58,13 @@
 #define RC_PARSE_URL_UNK_POLARIZATION     1011
 #define RC_PARSE_URL_POLARIZATION_MISSING 1012
 
-
-typedef struct _statstruct
-{
-  gchar *svc_name;
-  gchar *prov_name;
-  gboolean refresh;
-} statstruct;
-
 static void dvb_init (void);
 static gint dvb_is_our_file (gchar *);
 static void dvb_play (InputPlayback *);
 static void dvb_stop (InputPlayback *);
 static void dvb_pause (InputPlayback *, gshort);
 static gint dvb_gettime (InputPlayback *);
+static void dvb_file_info_box (gchar * s);
 static void dvb_cleanup (void);
 
 static gint dvb_parse_url (gchar *, tunestruct *);
@@ -153,9 +147,16 @@ get_iplugin_info (void)
       dvb_ip->pause = dvb_pause;
       dvb_ip->get_time = dvb_gettime;
       dvb_ip->cleanup = dvb_cleanup;
-      dvb_ip->file_info_box = dvb_getinfo;
+      dvb_ip->file_info_box = dvb_file_info_box;
     }
   return dvb_ip;
+}
+
+
+static void
+dvb_file_info_box (gchar * s)
+{
+  dvb_infobox(station, rt, epg, mmusic);
 }
 
 
@@ -218,7 +219,6 @@ dvb_play (InputPlayback * playback)
   // Initialize tuning information
   g_free (tune);
   tune = g_malloc0 (sizeof(tunestruct));
-  tune->adapter = 0;		// FIXME: should be 'config->devnum'
   if ((rc = dvb_parse_url (playback->filename, tune)) != RC_OK)
     {
       log_print (hlog, LOG_INFO, "dvb_parse_url() returned rc = %d", rc);
@@ -251,7 +251,7 @@ dvb_play (InputPlayback * playback)
     }
 
   // Open DVB device
-  if ((hdvb = dvb_open (tune->adapter)) == NULL)
+  if ((hdvb = dvb_open (config->devno)) == NULL)
     {
       playing = 0;
       return;
@@ -271,7 +271,12 @@ dvb_play (InputPlayback * playback)
     station = g_malloc0 (sizeof (statstruct));
   g_free (station->svc_name);
   station->svc_name = g_strdup (playback->filename);
-  infobox_update_service ("", "");
+  
+  // Update info box
+  infobox_update_service (NULL);
+  infobox_update_radiotext (NULL);
+  infobox_update_epg (NULL);
+  infobox_update_mmusic (NULL);
 
   // Get audio PIDs from SID
   if ((rc = dvb_get_pid (hdvb, tune->sid, &apid, &dpid)) != RC_OK)
@@ -416,8 +421,6 @@ dvb_parse_url (gchar * url, tunestruct *tune)
 
   // Fill in frontend defaults
   dvb_tune_defaults (&t);
-  if (tune != NULL)
-    t.adapter = tune->adapter;
   
   args = g_strsplit(&url[12], ":", 0);
 
@@ -999,6 +1002,7 @@ dvb_build_file_title (void)
   if (station->refresh)
     {
       log_print (hlog, LOG_DEBUG, "Station info changed!");
+      infobox_update_service (station);
       station->refresh = FALSE;
       refreshed = TRUE;
     }
@@ -1022,6 +1026,7 @@ dvb_build_file_title (void)
 	    }
 	}
       log_print (hlog, LOG_DEBUG, "Radiotext info changed!");
+      infobox_update_radiotext (rt);
       rt->refresh = FALSE;
       refreshed = TRUE;
     }
@@ -1029,6 +1034,7 @@ dvb_build_file_title (void)
     {
       // TODO: implement me!
       log_print (hlog, LOG_DEBUG, "EPG info changed!");
+      infobox_update_epg (epg);
       epg->refresh = FALSE;
       refreshed = TRUE;
     }
@@ -1036,6 +1042,7 @@ dvb_build_file_title (void)
     {
       // TODO: implement me!
       log_print (hlog, LOG_DEBUG, "MadMusic info changed!");
+      infobox_update_mmusic (mmusic);
       mmusic->refresh = FALSE;
       refreshed = TRUE;
     }
@@ -1120,7 +1127,7 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 	  gchar *title;
 	  if ((title = dvb_build_file_title ()) != NULL)
 	    {
-	      dvb_ip->set_info ((gchar *) str_to_utf8 (title), -1,
+	      dvb_ip->set_info (str_to_utf8 (title), -1,
 				mp3d.bitrate * 1000, mp3d.samplerate,
 				mp3d.stereo);
 	      g_free(title);
@@ -1277,12 +1284,9 @@ get_name_thread (gpointer arg)
 			station->refresh = TRUE;
 
 		      if (station->refresh)
-			{
-			  log_print (hlog, LOG_INFO,
-				     "Service name: \"%s\", \"%s\"", prov_final,
-				     name_final);
-			  infobox_update_service (prov_final, name_final);
-			}
+			log_print (hlog, LOG_INFO,
+				   "Service name: \"%s\", \"%s\"", prov_final,
+				   name_final);
 
 		      g_free(prov_final);
 		      g_free(name_final);
