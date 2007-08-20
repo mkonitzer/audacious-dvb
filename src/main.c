@@ -82,7 +82,7 @@ static gpointer mmusic_thread (gpointer);
 
 
 // Miscellaneous globals
-gint playing;			// This is also used in the GUI
+gboolean playing, paused;	
 gpointer hlog = NULL;		// This is used everywhere :)
 gpointer hdvb = NULL;		// EPG retrieval uses this
 
@@ -94,7 +94,7 @@ epgstruct *epg = NULL;
 statstruct *station = NULL;
 tunestruct *tune = NULL;
 
-static gint paused, audio, file_index, frm_ctr;
+static gint audio, file_index, frm_ctr;
 static gchar erfn[MAXPATHLEN];
 static VFSFile *rec_file;
 static time_t t_start, isplit_last;
@@ -173,13 +173,9 @@ dvb_init (void)
 
   log_print (hlog, LOG_INFO, "logging started");
 
-  audio = 0;
-  t_start = 0;
-  playing = 0;
-  paused = 0;
-  frm_ctr = 0;
-  hdvb = NULL;
-  rec_file = NULL;
+  hdvb = rec_file = NULL;
+  playing = paused = FALSE;
+  audio = t_start = frm_ctr = 0;
 
   if (!g_thread_supported ())
     g_thread_init (NULL);
@@ -269,7 +265,7 @@ dvb_play (InputPlayback * playback)
       return;
     }
 
-  playing = 1;
+  playing = TRUE;
   t_start = 0;
   frm_ctr = 0;
 
@@ -297,7 +293,7 @@ dvb_play (InputPlayback * playback)
   // Open DVB device
   if ((hdvb = dvb_open (config->devno)) == NULL)
     {
-      playing = 0;
+      playing = FALSE;
       return;
     }
   
@@ -305,7 +301,7 @@ dvb_play (InputPlayback * playback)
   if ((rc = dvb_tune (hdvb, tune)) != RC_OK)
     {
       dvb_close (hdvb);
-      playing = 0;
+      playing = FALSE;
       hdvb = NULL;
       return;
     }
@@ -327,7 +323,7 @@ dvb_play (InputPlayback * playback)
     {
       log_print (hlog, LOG_WARNING, "dvb_get_pid() returned %d.", rc);
       dvb_close (hdvb);
-      playing = 0;
+      playing = FALSE;
       hdvb = NULL;
       return;
     }
@@ -343,7 +339,7 @@ dvb_play (InputPlayback * playback)
     {
       log_print (hlog, LOG_ERR, "dvb_apid() returned %d.", rc);
       dvb_close (hdvb);
-      playing = 0;
+      playing = FALSE;
       hdvb = NULL;
       return;
     }
@@ -380,7 +376,7 @@ dvb_play (InputPlayback * playback)
   // Start receiving audio packets and playback
   if ((gt_feed = g_thread_create (feed_thread, playback, TRUE, NULL)) == NULL)
     {
-      playing = 0;
+      playing = FALSE;
       log_print (hlog, LOG_CRIT, "g_thread_create() failed for dvb_feed()");
     }
 }
@@ -391,8 +387,7 @@ dvb_stop (InputPlayback * playback)
 {
   if (playing)
     {
-      playing = 0;
-      paused = 0;
+      playing = paused = FALSE;
 
       // Stop all threads
       if (gt_feed != NULL)
@@ -425,8 +420,8 @@ dvb_stop (InputPlayback * playback)
 static void
 dvb_pause (InputPlayback * playback, gshort i)
 {
-  if (playing)
-    paused = i;
+  paused = (i == 0 ? FALSE : TRUE);
+  playback->output->pause (i);
 }
 
 
@@ -771,14 +766,14 @@ feed_thread (gpointer args)
 	      toctr++;
 	      log_print (hlog, LOG_DEBUG, "dvb_apkt() timeout", rc);
 	      if (toctr > 9) {
-		playing = 0;
+		playing = FALSE;
 		log_print (hlog, LOG_DEBUG, "dvb_apkt() timed out too often, giving up", rc);
 	      }
 	    }
 	  else
 	    {
 	      log_print (hlog, LOG_ERR, "dvb_apkt() returned rc = %d, giving up", rc);
-	      playing = 0;
+	      playing = FALSE;
 	    }
 	}
     }
@@ -790,11 +785,8 @@ feed_thread (gpointer args)
   if (rec_file != NULL)
     dvb_close_record ();
 
-  if (audio)
-    {
-      playback->output->close_audio ();
-      audio = 0;
-    }
+  playback->output->close_audio ();
+  audio = 0;
 
   if (rt != NULL)
     {
@@ -1160,7 +1152,7 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
     {
       if (mp3d.header_parsed == 1)
 	{
-	  if (!audio)
+	  if (audio == 0)
 	    audio =
 	      playback->output->open_audio (FMT_S16_NE, mp3d.samplerate, 2);
 	  
@@ -1199,9 +1191,8 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 
       vu /= nout;
 
-      if (audio)
-	produce_audio (playback->output->written_time (), FMT_S16_NE, 2,
-		       nout << 2, stereo, NULL);
+      produce_audio (playback->output->written_time (), FMT_S16_NE, 2,
+		     nout << 2, stereo, NULL);
 
       sumarr[sap++] = vu;
       ms = (sap * nout) / mp3d.bitrate;

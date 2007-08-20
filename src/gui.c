@@ -36,7 +36,6 @@
 #include "mmusic.h"
 #include "config.h"
 
-extern gint playing;
 extern gpointer hlog;
 extern cfgstruct *config;
 

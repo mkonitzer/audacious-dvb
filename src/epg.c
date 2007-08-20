@@ -29,7 +29,6 @@
 #include "dvb.h"
 
 
-extern gint playing;
 extern gpointer hlog;
 
 
