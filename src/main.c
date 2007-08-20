@@ -65,7 +65,7 @@ static void dvb_stop (InputPlayback *);
 static void dvb_pause (InputPlayback *, gshort);
 static gint dvb_gettime (InputPlayback *);
 static void dvb_file_info_box (gchar * s);
-static void dvb_cleanup (void);
+static void dvb_exit (void);
 
 static gint dvb_parse_url (gchar *, tunestruct *);
 static void dvb_pes_pkt (InputPlayback *, guchar *, gint, gint);
@@ -83,9 +83,8 @@ static gpointer mmusic_thread (gpointer);
 
 // Miscellaneous globals
 gint playing;			// This is also used in the GUI
-gpointer hlog;			// This is used everywhere :)
-gpointer hdvb;			// EPG retrieval uses this
-gint epg_running;
+gpointer hlog = NULL;		// This is used everywhere :)
+gpointer hdvb = NULL;		// EPG retrieval uses this
 
 // Internal interfaces
 cfgstruct *config = NULL;
@@ -100,11 +99,11 @@ static gchar erfn[MAXPATHLEN];
 static VFSFile *rec_file;
 static time_t t_start, isplit_last;
 
+// Threads/Mutexes
 static GThread *gt_feed = NULL;
 static GThread *gt_get_name = NULL;
 static GThread *gt_epg = NULL;
 static GThread *gt_mmusic = NULL;
-
 static GMutex *gmt_feed = NULL;
 static GMutex *gmt_get_name = NULL;
 static GMutex *gmt_epg = NULL;
@@ -146,7 +145,7 @@ get_iplugin_info (void)
       dvb_ip->stop = dvb_stop;
       dvb_ip->pause = dvb_pause;
       dvb_ip->get_time = dvb_gettime;
-      dvb_ip->cleanup = dvb_cleanup;
+      dvb_ip->cleanup = dvb_exit;
       dvb_ip->file_info_box = dvb_file_info_box;
     }
   return dvb_ip;
@@ -166,15 +165,13 @@ dvb_init (void)
   gint rc;
 
   if (config == NULL)
-    {
-      config = g_new (cfgstruct, 1);
-      config_from_db (config);
-    }
+    config = config_init ();
+  config_from_db (config);
 
   if (log_open (&hlog, "auddacious-dvb", config->loglvl) != RC_OK)
     hlog = NULL;
 
-  log_print (hlog, LOG_INFO, "logging started.");
+  log_print (hlog, LOG_INFO, "logging started");
 
   audio = 0;
   t_start = 0;
@@ -183,10 +180,57 @@ dvb_init (void)
   frm_ctr = 0;
   hdvb = NULL;
   rec_file = NULL;
-  epg_running = 0;
 
   if (!g_thread_supported ())
     g_thread_init (NULL);
+}
+
+
+static void
+dvb_exit (void)
+{
+  log_print (hlog, LOG_INFO, "shutting down");
+  if (mmusic != NULL)
+    {
+      madmusic_exit (mmusic);
+      mmusic = NULL;
+    }
+  if (rt != NULL)
+    {
+      radiotext_exit (rt);
+      rt = NULL;
+    }
+  if (epg != NULL)
+    {
+      epg_exit (epg);
+      epg = NULL;
+    }
+  if (station != NULL)
+    {
+      g_free (station);
+      station = NULL;
+    }
+  if (tune != NULL)
+    {
+      g_free (tune);
+      tune = NULL;
+    }  
+  if (hdvb != NULL)
+    {
+      dvb_close (hdvb);
+      hdvb = NULL;
+    }
+  if (config != NULL)
+    {
+      config_exit (config);
+      config = NULL;
+    }
+  log_print (hlog, LOG_INFO, "logging stopped");
+  if (hlog != NULL)
+    {
+      log_close(hlog);
+      hlog = NULL;
+    }
 }
 
 
@@ -331,8 +375,6 @@ dvb_play (InputPlayback * playback)
 	   g_thread_create (epg_thread, (gpointer) & tune->sid, TRUE,
 			    NULL)) == NULL)
 	log_print (hlog, LOG_ERR, "g_thread_create() failed for dvb_epg()");
-      else
-	epg_running = 1;
     }
 
   // Start receiving audio packets and playback
@@ -351,7 +393,6 @@ dvb_stop (InputPlayback * playback)
     {
       playing = 0;
       paused = 0;
-      epg_running = 0;
 
       // Stop all threads
       if (gt_feed != NULL)
@@ -396,15 +437,6 @@ dvb_gettime (InputPlayback * playback)
     return (playback->output->output_time ());
 
   return 0;
-}
-
-
-static void
-dvb_cleanup (void)
-{
-  log_print (hlog, LOG_INFO, "logging stopped.");
-  log_close (hlog);
-  hlog = NULL;
 }
 
 
@@ -713,7 +745,8 @@ feed_thread (gpointer args)
     gmt_feed = g_mutex_new ();
   g_mutex_lock (gmt_feed);
 
-  rt = radiotext_init ();
+  if (config->info_rt)
+    rt = radiotext_init ();
 
   dvb_pes_pkt (playback, NULL, 0, 1);
   dvb_payload (playback, NULL, 0, 1);
@@ -736,13 +769,15 @@ feed_thread (gpointer args)
 	  if (rc == RC_DVB_APKT_SELECT_TIMEOUT)
 	    {
 	      toctr++;
-	      if (toctr > 12)
-		playing = 0;
 	      log_print (hlog, LOG_DEBUG, "dvb_apkt() timeout", rc);
+	      if (toctr > 9) {
+		playing = 0;
+		log_print (hlog, LOG_DEBUG, "dvb_apkt() timed out too often, giving up", rc);
+	      }
 	    }
 	  else
 	    {
-	      log_print (hlog, LOG_ERR, "dvb_apkt() returned rc = %d", rc);
+	      log_print (hlog, LOG_ERR, "dvb_apkt() returned rc = %d, giving up", rc);
 	      playing = 0;
 	    }
 	}
@@ -761,7 +796,11 @@ feed_thread (gpointer args)
       audio = 0;
     }
 
-  radiotext_exit (rt);
+  if (rt != NULL)
+    {
+      radiotext_exit (rt);
+      rt = NULL;
+    }
 
   log_print (hlog, LOG_INFO, "dvb_feed_thread() stopping");
 
@@ -952,7 +991,8 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 	      if ((mpbuf[fl] == 0xff) && ((mpbuf[fl + 1] & 0xf0) == 0xf0))
 		{
 		  dvb_mpeg_frame (playback, mpbuf, fl, num_samples);
-		  radiotext_read_data (rt, mpbuf, fl);
+		  if (rt != NULL)
+		    radiotext_read_data (rt, mpbuf, fl);
 		  memcpy (mpbuf, &mpbuf[fl], bph - fl);
 		  bph -= fl;
 		}
@@ -1410,7 +1450,7 @@ mmusic_thread (gpointer arg)
 
   fbf = off = 0;
 
-  while (playing && config->info_mmusic)
+  while (playing)
     {
       memset (sect, 0xff, sizeof (sect));
       rc = dvb_dpkt (hdvb, sect, sizeof (sect), 1000, &dr);

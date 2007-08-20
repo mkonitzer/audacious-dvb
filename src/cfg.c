@@ -26,9 +26,11 @@
 
 #include "cfg.h"
 
-void
-config_init (cfgstruct * config)
+cfgstruct *
+config_init (void)
 {
+  cfgstruct *config;
+  config = g_malloc0(sizeof(cfgstruct));
   config->devno = 0;
   config->loglvl = 0;
 
@@ -44,8 +46,11 @@ config_init (cfgstruct * config)
   config->vsplit_dur = 360;
   config->vsplit_minlen = 15;
 
+  config->info_rt = TRUE;
   config->info_epg = TRUE;
   config->info_mmusic = FALSE;
+  
+  return config;
 }
 
 
@@ -53,8 +58,6 @@ gboolean
 config_from_db (cfgstruct * config)
 {
   ConfigDb *db;
-
-  config_init (config);
 
   if ((db = bmp_cfg_db_open ()) == NULL)
     return FALSE;
@@ -84,6 +87,7 @@ config_from_db (cfgstruct * config)
 
   bmp_cfg_db_get_bool (db, "dvb", "info.mmusic", &config->info_mmusic);
   bmp_cfg_db_get_bool (db, "dvb", "info.epg", &config->info_epg);
+  bmp_cfg_db_get_bool (db, "dvb", "info.rt", &config->info_rt);
 
   bmp_cfg_db_close (db);
 }
@@ -114,6 +118,14 @@ config_to_db (cfgstruct * config)
 
   bmp_cfg_db_set_bool (db, "dvb", "info.mmusic", config->info_mmusic);
   bmp_cfg_db_set_bool (db, "dvb", "info.epg", config->info_epg);
+  bmp_cfg_db_set_bool (db, "dvb", "info.rt", config->info_rt);
 
   bmp_cfg_db_close (db);
+}
+
+
+void
+config_exit (cfgstruct *cfg)
+{
+  g_free(cfg);
 }

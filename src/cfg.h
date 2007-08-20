@@ -43,13 +43,15 @@ typedef struct _cfgstruct
   gint vsplit_dur;		/* ... for at least XYZ ms ... */
   gint vsplit_minlen;		/* ... with minimum length of XYZ s. */
 
+  gboolean info_rt;		/* Receive Radiotext info? */
   gboolean info_epg;		/* Receive EPG info? */
   gboolean info_mmusic;		/* Receive MADMusic info? */
 } cfgstruct;
 
 
-void config_init (cfgstruct *);
+cfgstruct *config_init (void);
 gboolean config_from_db (cfgstruct *);
 gboolean config_to_db (cfgstruct *);
+void config_exit (cfgstruct *);
 
 #endif // __AUDACIOUS_DVB_CFG_H__
