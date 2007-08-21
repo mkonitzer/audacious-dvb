@@ -56,10 +56,23 @@ str_remove_non_ascii (gchar * s)
 gchar *
 str_beautify (const gchar * s)
 {
-  gchar *newstr;
+  int i, skip = 0;
+  gchar *newstr, last = '\0';
   newstr = g_strdup (s);
+  // Remove all non-ASCII characters
   str_remove_non_ascii (newstr);
+  // Remove leading and trailing spaces
   newstr = g_strstrip (newstr);
+  // Replace multiple by single space ('s/[ ]*/ /')
+  for (i = 0; i + skip < strlen(newstr); i++)
+    {
+      while (g_ascii_isspace(last) && g_ascii_isspace(newstr[i + skip]))
+	skip++;
+      if (skip > 0)
+	newstr[i] = newstr[i + skip];
+      last = newstr[i];
+    }
+  newstr[i] = '\0';
   if (newstr[0] == '\0')
     {
       g_free (newstr);
