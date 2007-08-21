@@ -27,6 +27,7 @@
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
+#include <glade/glade.h>
 
 #include "cfg.h"
 #include "epg.h"
@@ -61,12 +62,8 @@ typedef struct _Widgets
   GtkWidget *madCheck;
 
   // Information Window
+  GladeXML *infoXml;
   GtkWidget *infoBox;
-  GtkWidget *provEntry;
-  GtkWidget *statEntry;
-  GtkWidget *rtptitleEntry;
-  GtkWidget *rtpartistEntry;
-  GtkWidget *rtpptyEntry;
 } Widgets;
 
 void dvb_about (void);
@@ -77,12 +74,5 @@ void infobox_update_service (statstruct *);
 void infobox_update_radiotext (rtstruct *);
 void infobox_update_epg (epgstruct *);
 void infobox_update_mmusic (mmstruct *);
-
-static void recordClicked (GtkWidget * w, gpointer user_data);
-static void isplitClicked (GtkWidget * w, gpointer user_data);
-static void vsplitClicked (GtkWidget * w, gpointer user_data);
-static void dvb_configure_ok (GtkWidget *, gpointer);
-static void config_to_gui (cfgstruct *);
-static void config_from_gui (cfgstruct *);
 
 #endif // __AUDACIOUS_DVB_GUI_H__

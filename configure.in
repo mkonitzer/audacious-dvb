@@ -12,19 +12,22 @@ AC_HEADER_STDC
 AM_PROG_LIBTOOL
 
 # GLIB
-AM_PATH_GLIB_2_0(2.6.0, , AC_MSG_ERROR([*** GLIB >= 2.6 not installed - please install first ***]))
+AM_PATH_GLIB_2_0(2.6.0, , AC_MSG_ERROR([*** GLIB >= 2.6.0 not installed - please install first ***]))
 
 # GTK+
-AM_PATH_GTK_2_0(2.6.0, , AC_MSG_ERROR([*** GTK+ >= 2.6 not installed - please install first ***]), gthread)
+AM_PATH_GTK_2_0(2.6.0, , AC_MSG_ERROR([*** GTK+ >= 2.6.0 not installed - please install first ***]), gthread)
 
 # Audacious
-#LDFLAGS="$LDFLAGS -lm"
 PKG_CHECK_MODULES(AUDACIOUS, [audacious >= 1.0.0], ,
-	AC_MSG_ERROR([*** Audacious >= 1.0 is not installed - please install first ***]))
-#AC_SUBST(AUDACIOUS_CFLAGS)
-#AC_SUBST(AUDACIOUS_LIBS)
+	AC_MSG_ERROR([*** Audacious >= 1.0.0 is not installed - please install first ***]))
 PLUGIN_DIR="`$PKG_CONFIG --variable=input_plugin_dir audacious`"
 AC_SUBST(PLUGIN_DIR)
+
+# libglade
+PKG_CHECK_MODULES(LIBGLADE, [libglade-2.0 >= 2.3.1], ,
+	AC_MSG_ERROR([*** libglade >= 2.3.1 is not installed - please install first ***]))
+AC_SUBST(LIBGLADE_CFLAGS)
+AC_SUBST(LIBGLADE_LIBS)
 
 # LAME
 AC_MSG_CHECKING(LAME library)
