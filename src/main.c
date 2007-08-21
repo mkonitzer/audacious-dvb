@@ -22,12 +22,15 @@
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
 #include <glib.h>
+#include <glib/gprintf.h>
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/param.h>
 #include <linux/dvb/dmx.h>
 #include <linux/dvb/frontend.h>
+#include <audacious/output.h>
 #include <audacious/plugin.h>
 #include <audacious/strings.h>
 #include <audacious/vfs.h>
@@ -162,8 +165,6 @@ dvb_file_info_box (gchar * s)
 static void
 dvb_init (void)
 {
-  gint rc;
-
   if (config == NULL)
     config = config_init ();
   config_from_db (config);
@@ -442,7 +443,7 @@ dvb_parse_url (gchar * url, tunestruct * tune)
   gint i;
   tunestruct t;
   gchar **args, **pair;
-  guchar *par, *val, ch;
+  gchar *par, *val, ch;
 
   if (!g_str_has_prefix (url, "dvb://audio?"))
     return -1;
@@ -803,6 +804,7 @@ feed_thread (gpointer args)
   g_mutex_unlock (gmt_feed);
   gmt_feed = NULL;
   g_thread_exit (0);
+  return NULL;
 }
 
 
@@ -1090,7 +1092,6 @@ static void
 dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 {
   gint nout, i, vu, ms;
-  gchar info[4096];
   gfloat dB;
   time_t t;
   static gshort left[34560], right[34560];
@@ -1149,11 +1150,11 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
     {
       if (mp3d.header_parsed == 1)
 	{
+	  gchar *title;
 	  if (audio == 0)
 	    audio =
 	      playback->output->open_audio (FMT_S16_NE, mp3d.samplerate, 2);
 
-	  gchar *title;
 	  if ((title = dvb_build_file_title ()) != NULL)
 	    {
 	      dvb_ip->set_info (str_to_utf8 (title), -1,
@@ -1297,14 +1298,13 @@ get_name_thread (gpointer arg)
 
 		  if (dt == 0x48)
 		    {
-		      gchar *prov_final;
+		      gchar *prov_final, *name_final;
 		      memcpy (prov, &pp[2], pp[1]);
 		      prov[pp[1]] = '\0';
 		      prov_final = str_beautify (prov);
 		      if (is_updated (prov_final, &station->prov_name))
 			station->refresh = TRUE;
 
-		      gchar *name_final;
 		      memcpy (name, &pp[3 + pp[1]], pp[2 + pp[1]]);
 		      name[pp[2 + pp[1]]] = '\0';
 		      name_final = str_beautify (name);
@@ -1412,6 +1412,7 @@ epg_thread (gpointer arg)
   g_mutex_unlock (gmt_epg);
   gmt_epg = NULL;
   g_thread_exit (0);
+  return NULL;
 }
 
 
@@ -1427,7 +1428,7 @@ mmusic_thread (gpointer arg)
     gmt_mmusic = g_mutex_new ();
   g_mutex_lock (gmt_mmusic);
 
-  // Make sure information retrieval is initialized
+  /* Make sure information retrieval is initialized */
   if ((mmusic = madmusic_init ()) == NULL)
     {
       g_mutex_unlock (gmt_mmusic);
@@ -1495,4 +1496,5 @@ mmusic_thread (gpointer arg)
   g_mutex_unlock (gmt_mmusic);
   gmt_mmusic = NULL;
   g_thread_exit (0);
+  return NULL;
 }
