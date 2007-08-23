@@ -75,11 +75,11 @@ log_close (gpointer hlog)
 
 
 gint
-log_print (gpointer hlog, gint lvl, gchar * fmt, ...)
+log_print (gpointer hlog, gint lvl, const gchar * fmt, ...)
 {
   HLOG *hl;
+  gchar *msg;
   va_list args;
-  gchar msgbuf[256];
 
   hl = (HLOG *) hlog;
 
@@ -89,9 +89,10 @@ log_print (gpointer hlog, gint lvl, gchar * fmt, ...)
   if (hl->hl_level >= lvl)
     {
       va_start (args, fmt);
-      g_vsnprintf (msgbuf, 255, fmt, args);
+      msg = g_strdup_vprintf (fmt, args);
       va_end (args);
-      g_message ("[%s] %s", hl->hl_pfx, msgbuf);
+      g_message ("[%s] %s", hl->hl_pfx, msg);
+      g_free (msg);
     }
 
   return RC_OK;
