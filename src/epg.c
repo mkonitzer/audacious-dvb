@@ -100,7 +100,10 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 
 	  j = *q++;		// event_name_length
 	  if (j > 0)		// event_name_char
-	    name = str_beautify (q, j, FALSE);
+	    {
+	      name = str_beautify (q, j, FALSE);
+	      q += j;
+	    }
 
 	  j = *q++;		// text_length
 	  if (j > 0)		// text_char
