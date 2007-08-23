@@ -419,6 +419,14 @@ dvb_stop (InputPlayback * playback)
 	g_thread_join (gt_epg);
       gt_feed = gt_get_name = gt_mmusic = gt_epg = NULL;
 
+      // Update info box
+      infobox_update_service (NULL);
+      infobox_update_radiotext (NULL);
+      infobox_update_epg (NULL);
+      infobox_update_mmusic (NULL);
+      infobox_update_dvb (NULL);
+      
+      // Close output plugin
       playback->output->close_audio ();
 
       g_free (station);
@@ -941,7 +949,7 @@ dvb_pes_pkt (InputPlayback * playback, guchar * buf, gint len, gint reset)
 			  dvb_payload (playback, pp, pp_len, 0);
 
 			  memcpy (pesbuf, &pesbuf[i + 6 + PES_packet_length],
-				  pbh - (i + 6 + PES_packet_length));
+				  pbh - (i + 6 + PES_packet_length));	// FIXME: overlapping copy
 			  pbl = 0;
 			  pbh -= (i + 6 + PES_packet_length);
 			}
@@ -1043,7 +1051,7 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 		  dvb_mpeg_frame (playback, mpbuf, fl, num_samples);
 		  if (rt != NULL)
 		    radiotext_read_data (rt, mpbuf, fl);
-		  memcpy (mpbuf, &mpbuf[fl], bph - fl);
+		  memcpy (mpbuf, &mpbuf[fl], bph - fl);		// FIXME: overlapping copy
 		  bph -= fl;
 		}
 	      else
@@ -1291,7 +1299,7 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 		}
 	    }
 
-	  memcpy (sumarr, &sumarr[1], sizeof (int) * (sap - 1));
+	  memcpy (sumarr, &sumarr[1], sizeof (int) * (sap - 1));	// FIXME: overlapping copy
 	  sap--;
 	}
     }

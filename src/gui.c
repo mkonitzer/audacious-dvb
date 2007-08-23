@@ -40,6 +40,7 @@
 
 extern gpointer hlog;
 extern cfgstruct *config;
+extern gchar *glwidgets;
 
 static Widgets widgets = { 0 };
 
@@ -419,8 +420,14 @@ dvb_infobox (statstruct * station, rtstruct * rt, epgstruct * epg,
   GladeXML *xml;
   GtkWidget *infoBox;
 
+  if (widgets.infoBox)
+    {
+      gdk_window_raise (GTK_WIDGET (widgets.infoBox)->window);
+      return;
+    }
+
   // Create info box
-  xml = glade_xml_new ("audacious-dvb.glade", "fileinfo", NULL);
+  xml = glade_xml_new_from_buffer (glwidgets, strlen(glwidgets), "fileinfo", NULL);
   widgets.infoXml = xml;
   glade_xml_signal_autoconnect (xml);
   infoBox = glade_xml_get_widget (xml, "fileinfo");
@@ -498,7 +505,12 @@ infobox_update_epg (epgstruct * epg)
   if (widgets.infoBox)
     {
       GtkTextBuffer *epgevddescTextBuffer;
-      GtkWidget *epgevnameEntry, *epgevdescEntry, *epgevddescTextView;
+      GtkWidget *epglangEntry, *epgatypeEntry,
+	*epgevnameEntry, *epgevdescEntry, *epgevddescTextView;
+      epglangEntry =
+	glade_xml_get_widget (widgets.infoXml, "epglangEntry");
+      epgatypeEntry =
+	glade_xml_get_widget (widgets.infoXml, "epgatypeEntry");
       epgevnameEntry =
 	glade_xml_get_widget (widgets.infoXml, "epgevnameEntry");
       epgevdescEntry =
@@ -509,6 +521,8 @@ infobox_update_epg (epgstruct * epg)
 	gtk_text_view_get_buffer (GTK_TEXT_VIEW (epgevddescTextView));
       if (epg != NULL)
 	{
+	  gtk_entry_set_text (GTK_ENTRY (epglangEntry), epg->lang);
+	  gtk_entry_set_text (GTK_ENTRY (epgatypeEntry), epg->stream_type);
 	  gtk_entry_set_text (GTK_ENTRY (epgevnameEntry), epg->short_ev_name);
 	  gtk_entry_set_text (GTK_ENTRY (epgevdescEntry), epg->short_ev_text);
 	  if (epg->ext_ev_text != NULL)
@@ -517,6 +531,8 @@ infobox_update_epg (epgstruct * epg)
 	}
       else
 	{
+	  gtk_entry_set_text (GTK_ENTRY (epglangEntry), "");
+	  gtk_entry_set_text (GTK_ENTRY (epgatypeEntry), "");
 	  gtk_entry_set_text (GTK_ENTRY (epgevnameEntry), "");
 	  gtk_entry_set_text (GTK_ENTRY (epgevdescEntry), "");
 	  gtk_text_buffer_set_text (epgevddescTextBuffer, "", -1);
@@ -584,8 +600,14 @@ infobox_update_dvb (dvbstatstruct * dvb)
 	  gchar *text;
 	  gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbstrProgressBar),
 					 ((double) dvb->str) / 0xffff);
+	  text = g_strdup_printf ("%.1lf%%", ((double) dvb->str)*100 / 0xffff);
+	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbstrProgressBar), text);
+	  g_free (text);
+	  text = g_strdup_printf ("%.1lf%%", ((double) dvb->snr)*100 / 0xffff);
 	  gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbsnrProgressBar),
 					 ((double) dvb->snr) / 0xffff);
+	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbsnrProgressBar), text);
+	  g_free (text);
 	  gtk_entry_printf (dvbuncEntry, "%08x", dvb->unc);
 	  gtk_entry_printf (dvbberEntry, "%08x", dvb->ber);
 	  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
@@ -608,8 +630,10 @@ infobox_update_dvb (dvbstatstruct * dvb)
 	{
 	  gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbstrProgressBar),
 					 0);
+	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbstrProgressBar), "");
 	  gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbsnrProgressBar),
 					 0);
+	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbsnrProgressBar), "");
 	  gtk_entry_set_text (GTK_ENTRY (dvbuncEntry), "");
 	  gtk_entry_set_text (GTK_ENTRY (dvbberEntry), "");
 	  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON

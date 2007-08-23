@@ -28,6 +28,8 @@
 
 typedef struct _epgstruct
 {
+  gchar *lang;
+  gchar *stream_type;
   gchar *short_ev_name;
   gchar *short_ev_text;
   gchar *ext_ev_text;
