@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.2.2 on Tue Aug 21 23:38:04 2007 by marius@marius-->
+<!--Generated with glade3 3.2.2 on Thu Aug 23 10:43:41 2007 by marius@marius-->
 <glade-interface>
   <widget class="GtkWindow" id="fileinfo">
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -351,29 +351,24 @@
                                     <property name="n_columns">2</property>
                                     <property name="column_spacing">6</property>
                                     <child>
-                                      <widget class="GtkLabel" id="epglangLabel">
+                                      <widget class="GtkAlignment" id="epgatypeAlignment">
                                         <property name="visible">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="xalign">0</property>
-                                        <property name="yalign">0</property>
-                                        <property name="label" translatable="yes">Language:</property>
-                                      </widget>
-                                      <packing>
-                                        <property name="y_options"></property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <widget class="GtkLabel" id="epgatypeLabel">
-                                        <property name="visible">True</property>
-                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="xalign">0</property>
-                                        <property name="yalign">0</property>
-                                        <property name="label" translatable="yes">Audio type:</property>
+                                        <property name="bottom_padding">6</property>
+                                        <child>
+                                          <widget class="GtkEntry" id="epgatypeEntry">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                            <property name="editable">False</property>
+                                          </widget>
+                                        </child>
                                       </widget>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
-                                        <property name="y_options"></property>
+                                        <property name="top_attach">1</property>
+                                        <property name="bottom_attach">2</property>
                                       </packing>
                                     </child>
                                     <child>
@@ -396,24 +391,29 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <widget class="GtkAlignment" id="epgatypeAlignment">
+                                      <widget class="GtkLabel" id="epgatypeLabel">
                                         <property name="visible">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="bottom_padding">6</property>
-                                        <child>
-                                          <widget class="GtkEntry" id="epgatypeEntry">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">True</property>
-                                            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                            <property name="editable">False</property>
-                                          </widget>
-                                        </child>
+                                        <property name="xalign">0</property>
+                                        <property name="yalign">0</property>
+                                        <property name="label" translatable="yes">Audio type:</property>
                                       </widget>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
-                                        <property name="top_attach">1</property>
-                                        <property name="bottom_attach">2</property>
+                                        <property name="y_options"></property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <widget class="GtkLabel" id="epglangLabel">
+                                        <property name="visible">True</property>
+                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                        <property name="xalign">0</property>
+                                        <property name="yalign">0</property>
+                                        <property name="label" translatable="yes">Language:</property>
+                                      </widget>
+                                      <packing>
+                                        <property name="y_options"></property>
                                       </packing>
                                     </child>
                                   </widget>
@@ -605,23 +605,32 @@
                                     <property name="n_columns">2</property>
                                     <property name="column_spacing">6</property>
                                     <child>
-                                      <widget class="GtkAlignment" id="dvbapidAlignment">
+                                      <widget class="GtkAlignment" id="dvbfreqAlignment">
                                         <property name="visible">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                                         <property name="bottom_padding">6</property>
                                         <child>
-                                          <widget class="GtkComboBox" id="dvbapidComboBox">
+                                          <widget class="GtkEntry" id="dvbfreqEntry">
                                             <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
                                             <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                            <property name="editable">False</property>
                                           </widget>
                                         </child>
                                       </widget>
                                       <packing>
-                                        <property name="left_attach">1</property>
-                                        <property name="right_attach">2</property>
                                         <property name="top_attach">1</property>
                                         <property name="bottom_attach">2</property>
                                       </packing>
+                                    </child>
+                                    <child>
+                                      <widget class="GtkLabel" id="dvbfreqLabel">
+                                        <property name="visible">True</property>
+                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                        <property name="xalign">0</property>
+                                        <property name="yalign">0</property>
+                                        <property name="label" translatable="yes">Frequency:</property>
+                                      </widget>
                                     </child>
                                     <child>
                                       <widget class="GtkLabel" id="dvbapidLabel">
@@ -637,29 +646,20 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <widget class="GtkLabel" id="dvbfreqLabel">
-                                        <property name="visible">True</property>
-                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="xalign">0</property>
-                                        <property name="yalign">0</property>
-                                        <property name="label" translatable="yes">Frequency:</property>
-                                      </widget>
-                                    </child>
-                                    <child>
-                                      <widget class="GtkAlignment" id="dvbfreqAlignment">
+                                      <widget class="GtkAlignment" id="dvbapidAlignment">
                                         <property name="visible">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                                         <property name="bottom_padding">6</property>
                                         <child>
-                                          <widget class="GtkEntry" id="dvbfreqEntry">
+                                          <widget class="GtkComboBox" id="dvbapidComboBox">
                                             <property name="visible">True</property>
-                                            <property name="can_focus">True</property>
                                             <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                            <property name="editable">False</property>
                                           </widget>
                                         </child>
                                       </widget>
                                       <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
                                         <property name="top_attach">1</property>
                                         <property name="bottom_attach">2</property>
                                       </packing>
@@ -742,44 +742,13 @@
                                     <property name="n_columns">2</property>
                                     <property name="column_spacing">6</property>
                                     <child>
-                                      <widget class="GtkAlignment" id="dvbberAlignment">
+                                      <widget class="GtkLabel" id="dvbuncLabel">
                                         <property name="visible">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="bottom_padding">6</property>
-                                        <child>
-                                          <widget class="GtkEntry" id="dvbfreqEntry4">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">True</property>
-                                            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                            <property name="editable">False</property>
-                                          </widget>
-                                        </child>
+                                        <property name="xalign">0</property>
+                                        <property name="yalign">0</property>
+                                        <property name="label" translatable="yes">Uncorrected blocks:</property>
                                       </widget>
-                                      <packing>
-                                        <property name="left_attach">1</property>
-                                        <property name="right_attach">2</property>
-                                        <property name="top_attach">1</property>
-                                        <property name="bottom_attach">2</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <widget class="GtkAlignment" id="dvbuncAlignment">
-                                        <property name="visible">True</property>
-                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="bottom_padding">6</property>
-                                        <child>
-                                          <widget class="GtkEntry" id="dvbfreqEntry3">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">True</property>
-                                            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                            <property name="editable">False</property>
-                                          </widget>
-                                        </child>
-                                      </widget>
-                                      <packing>
-                                        <property name="top_attach">1</property>
-                                        <property name="bottom_attach">2</property>
-                                      </packing>
                                     </child>
                                     <child>
                                       <widget class="GtkLabel" id="dvbberLabel">
@@ -795,13 +764,44 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <widget class="GtkLabel" id="dvbuncLabel">
+                                      <widget class="GtkAlignment" id="dvbuncAlignment">
                                         <property name="visible">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="xalign">0</property>
-                                        <property name="yalign">0</property>
-                                        <property name="label" translatable="yes">Uncorrected blocks:</property>
+                                        <property name="bottom_padding">6</property>
+                                        <child>
+                                          <widget class="GtkEntry" id="dvbuncEntry">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                            <property name="editable">False</property>
+                                          </widget>
+                                        </child>
                                       </widget>
+                                      <packing>
+                                        <property name="top_attach">1</property>
+                                        <property name="bottom_attach">2</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <widget class="GtkAlignment" id="dvbberAlignment">
+                                        <property name="visible">True</property>
+                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                        <property name="bottom_padding">6</property>
+                                        <child>
+                                          <widget class="GtkEntry" id="dvbberEntry">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                            <property name="editable">False</property>
+                                          </widget>
+                                        </child>
+                                      </widget>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">1</property>
+                                        <property name="bottom_attach">2</property>
+                                      </packing>
                                     </child>
                                   </widget>
                                   <packing>
@@ -829,61 +829,19 @@
                                             <property name="n_columns">3</property>
                                             <property name="homogeneous">True</property>
                                             <child>
-                                              <widget class="GtkCheckButton" id="dvbsignalCheckButton">
+                                              <widget class="GtkCheckButton" id="dvbtimedoutCheckButton">
                                                 <property name="visible">True</property>
                                                 <property name="sensitive">False</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                                <property name="tooltip" translatable="yes">Found something above the noise level</property>
-                                                <property name="label" translatable="yes">Signal</property>
-                                                <property name="response_id">0</property>
-                                                <property name="draw_indicator">True</property>
-                                              </widget>
-                                            </child>
-                                            <child>
-                                              <widget class="GtkCheckButton" id="dvbcarrierCheckButton">
-                                                <property name="visible">True</property>
-                                                <property name="sensitive">False</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                                <property name="tooltip" translatable="yes">Found a DVB signal</property>
-                                                <property name="label" translatable="yes">Carrier</property>
-                                                <property name="response_id">0</property>
-                                                <property name="draw_indicator">True</property>
-                                              </widget>
-                                              <packing>
-                                                <property name="left_attach">1</property>
-                                                <property name="right_attach">2</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <widget class="GtkCheckButton" id="dvbviterbiCheckButton">
-                                                <property name="visible">True</property>
-                                                <property name="sensitive">False</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                                <property name="tooltip" translatable="yes">FEC is stable</property>
-                                                <property name="label" translatable="yes">Viterbi</property>
+                                                <property name="tooltip" translatable="yes">No lock within the last 2 seconds</property>
+                                                <property name="label" translatable="yes">Timed out</property>
                                                 <property name="response_id">0</property>
                                                 <property name="draw_indicator">True</property>
                                               </widget>
                                               <packing>
                                                 <property name="left_attach">2</property>
                                                 <property name="right_attach">3</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <widget class="GtkCheckButton" id="dvbsyncCheckButton">
-                                                <property name="visible">True</property>
-                                                <property name="sensitive">False</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                                <property name="tooltip" translatable="yes">Found sync bytes</property>
-                                                <property name="label" translatable="yes">Sync</property>
-                                                <property name="response_id">0</property>
-                                                <property name="draw_indicator">True</property>
-                                              </widget>
-                                              <packing>
                                                 <property name="top_attach">1</property>
                                                 <property name="bottom_attach">2</property>
                                               </packing>
@@ -907,22 +865,64 @@
                                               </packing>
                                             </child>
                                             <child>
-                                              <widget class="GtkCheckButton" id="dvbtimedoutCheckButton">
+                                              <widget class="GtkCheckButton" id="dvbsyncCheckButton">
                                                 <property name="visible">True</property>
                                                 <property name="sensitive">False</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                                <property name="tooltip" translatable="yes">No lock within the last 2 seconds</property>
-                                                <property name="label" translatable="yes">Timed out</property>
+                                                <property name="tooltip" translatable="yes">Found sync bytes</property>
+                                                <property name="label" translatable="yes">Sync</property>
+                                                <property name="response_id">0</property>
+                                                <property name="draw_indicator">True</property>
+                                              </widget>
+                                              <packing>
+                                                <property name="top_attach">1</property>
+                                                <property name="bottom_attach">2</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <widget class="GtkCheckButton" id="dvbviterbiCheckButton">
+                                                <property name="visible">True</property>
+                                                <property name="sensitive">False</property>
+                                                <property name="can_focus">True</property>
+                                                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                                <property name="tooltip" translatable="yes">FEC is stable</property>
+                                                <property name="label" translatable="yes">Viterbi</property>
                                                 <property name="response_id">0</property>
                                                 <property name="draw_indicator">True</property>
                                               </widget>
                                               <packing>
                                                 <property name="left_attach">2</property>
                                                 <property name="right_attach">3</property>
-                                                <property name="top_attach">1</property>
-                                                <property name="bottom_attach">2</property>
                                               </packing>
+                                            </child>
+                                            <child>
+                                              <widget class="GtkCheckButton" id="dvbcarrierCheckButton">
+                                                <property name="visible">True</property>
+                                                <property name="sensitive">False</property>
+                                                <property name="can_focus">True</property>
+                                                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                                <property name="tooltip" translatable="yes">Found a DVB signal</property>
+                                                <property name="label" translatable="yes">Carrier</property>
+                                                <property name="response_id">0</property>
+                                                <property name="draw_indicator">True</property>
+                                              </widget>
+                                              <packing>
+                                                <property name="left_attach">1</property>
+                                                <property name="right_attach">2</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <widget class="GtkCheckButton" id="dvbsignalCheckButton">
+                                                <property name="visible">True</property>
+                                                <property name="sensitive">False</property>
+                                                <property name="can_focus">True</property>
+                                                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                                <property name="tooltip" translatable="yes">Found something above the noise level</property>
+                                                <property name="label" translatable="yes">Signal</property>
+                                                <property name="response_id">0</property>
+                                                <property name="draw_indicator">True</property>
+                                              </widget>
                                             </child>
                                           </widget>
                                         </child>
@@ -1078,38 +1078,13 @@
                                     <property name="n_columns">2</property>
                                     <property name="column_spacing">6</property>
                                     <child>
-                                      <widget class="GtkAlignment" id="mmtrnumAlignment">
-                                        <property name="visible">True</property>
-                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="bottom_padding">6</property>
-                                        <child>
-                                          <widget class="GtkEntry" id="mmtrnumEntry">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">True</property>
-                                            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                            <property name="editable">False</property>
-                                          </widget>
-                                        </child>
-                                      </widget>
-                                      <packing>
-                                        <property name="left_attach">1</property>
-                                        <property name="right_attach">2</property>
-                                        <property name="top_attach">1</property>
-                                        <property name="bottom_attach">2</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <widget class="GtkLabel" id="mmtrnumLabel">
+                                      <widget class="GtkLabel" id="mmalbumLabel">
                                         <property name="visible">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                                         <property name="xalign">0</property>
                                         <property name="yalign">0</property>
-                                        <property name="label" translatable="yes">Track number:</property>
+                                        <property name="label" translatable="yes">Album:</property>
                                       </widget>
-                                      <packing>
-                                        <property name="left_attach">1</property>
-                                        <property name="right_attach">2</property>
-                                      </packing>
                                     </child>
                                     <child>
                                       <widget class="GtkAlignment" id="mmalbumAlignment">
@@ -1131,13 +1106,38 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <widget class="GtkLabel" id="mmalbumLabel">
+                                      <widget class="GtkLabel" id="mmtrnumLabel">
                                         <property name="visible">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                                         <property name="xalign">0</property>
                                         <property name="yalign">0</property>
-                                        <property name="label" translatable="yes">Album:</property>
+                                        <property name="label" translatable="yes">Track number:</property>
                                       </widget>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <widget class="GtkAlignment" id="mmtrnumAlignment">
+                                        <property name="visible">True</property>
+                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                        <property name="bottom_padding">6</property>
+                                        <child>
+                                          <widget class="GtkEntry" id="mmtrnumEntry">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                            <property name="editable">False</property>
+                                          </widget>
+                                        </child>
+                                      </widget>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">1</property>
+                                        <property name="bottom_attach">2</property>
+                                      </packing>
                                     </child>
                                   </widget>
                                   <packing>
