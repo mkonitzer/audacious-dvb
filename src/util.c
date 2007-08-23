@@ -53,14 +53,44 @@ str_remove_non_ascii (gchar * s)
 }
 
 
+void
+str_replace_non_printable (gchar * s)
+{
+  gchar *ch, *chplus1;
+  gint i;
+  
+  ch = g_utf8_offset_to_pointer (s, 0);
+  
+  for (i = 1; i < g_utf8_strlen(s, -1); i++)
+  {
+    chplus1 = g_utf8_offset_to_pointer (s, i);
+    if (!g_unichar_isprint(g_utf8_get_char(ch)))
+      memset (ch, ' ', chplus1-ch);
+    ch = chplus1;
+  }
+}
+
+
 gchar *
-str_beautify (const gchar * s)
+str_beautify (const gchar * s, gint len, gboolean ascii)
 {
   int i, skip = 0;
   gchar *newstr, last = '\0';
-  newstr = g_strdup (s);
-  // Remove all non-ASCII characters
-  str_remove_non_ascii (newstr);
+  // Remove/Replace all non-ascii/-printable characters
+  if (ascii)
+    {
+      if (len > 0)
+	newstr = g_strndup (s, len);
+      else
+	newstr = g_strdup (s);
+      str_remove_non_ascii (newstr);
+    }
+  else
+    {
+      newstr =
+	g_convert (s, len, "UTF-8", "ISO-8859-1", NULL, NULL, NULL);
+      str_replace_non_printable (newstr);
+    }
   // Remove leading and trailing spaces
   newstr = g_strstrip (newstr);
   // Replace multiple by single space ('s/[ ]*/ /')
@@ -83,11 +113,11 @@ str_beautify (const gchar * s)
 
 
 gboolean
-is_updated (const gchar * oldtext, gchar ** newtextptr)
+is_updated (const gchar * oldtext, gchar ** newtextptr, gboolean ascii)
 {
   gboolean refresh = FALSE;
 
-  // FIXME: This can probably be done easyer
+  // FIXME: This can probably be done easier
   if (oldtext != NULL)
     {
       if (*newtextptr != NULL)
@@ -107,8 +137,22 @@ is_updated (const gchar * oldtext, gchar ** newtextptr)
   if (refresh)
     {
       g_free (*newtextptr);
-      *newtextptr = str_beautify (oldtext);
+      *newtextptr = str_beautify (oldtext, -1, ascii);
     }
 
   return refresh;
+}
+
+
+void
+gtk_entry_printf (GtkWidget * w, const gchar * fmt, ...)
+{
+  gchar *msg;
+  va_list args;
+
+  va_start (args, fmt);
+  msg = g_strdup_vprintf (fmt, args);
+  va_end (args);
+  gtk_entry_set_text (GTK_ENTRY (w), msg);
+  g_free (msg);
 }

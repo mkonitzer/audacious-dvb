@@ -25,6 +25,7 @@
 #define __AUDACIOUS_DVB_UTIL_H__
 
 #include <glib.h>
+#include <gtk/gtk.h>
 
 typedef struct _statstruct
 {
@@ -35,7 +36,8 @@ typedef struct _statstruct
 
 
 void str_remove_non_ascii (gchar * s);
-gchar *str_beautify (const gchar * s);
-gboolean is_updated (const gchar * oldtext, gchar ** newtextptr);
+gchar *str_beautify (const gchar * s, gint len, gboolean ascii);
+gboolean is_updated (const gchar * oldtext, gchar ** newtextptr, gboolean ascii);
+void gtk_entry_printf (GtkWidget *, const gchar *, ...);
 
 #endif // __AUDACIOUS_DVB_UTIL_H__
