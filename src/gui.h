@@ -30,6 +30,7 @@
 #include <glade/glade.h>
 
 #include "cfg.h"
+#include "dvb.h"
 #include "epg.h"
 #include "rtxt.h"
 #include "util.h"
@@ -74,5 +75,6 @@ void infobox_update_service (statstruct *);
 void infobox_update_radiotext (rtstruct *);
 void infobox_update_epg (epgstruct *);
 void infobox_update_mmusic (mmstruct *);
+void infobox_update_dvb (dvbstatstruct *);
 
 #endif // __AUDACIOUS_DVB_GUI_H__

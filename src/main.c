@@ -82,6 +82,7 @@ static gpointer feed_thread (gpointer);
 static gpointer get_name_thread (gpointer);
 static gpointer epg_thread (gpointer);
 static gpointer mmusic_thread (gpointer);
+static gpointer dvb_status_thread (gpointer);
 
 
 // Miscellaneous globals
@@ -108,10 +109,12 @@ static GThread *gt_feed = NULL;
 static GThread *gt_get_name = NULL;
 static GThread *gt_epg = NULL;
 static GThread *gt_mmusic = NULL;
+static GThread *gt_dvbstat = NULL;
 static GMutex *gmt_feed = NULL;
 static GMutex *gmt_get_name = NULL;
 static GMutex *gmt_epg = NULL;
 static GMutex *gmt_mmusic = NULL;
+static GMutex *gmt_dvbstat = NULL;
 
 static gint sap;
 static gint sumarr[512];
@@ -263,6 +266,13 @@ dvb_play (InputPlayback * playback)
 
   log_print (hlog, LOG_DEBUG, "dvb_play(\"%s\");", playback->filename);
 
+  // Update info box
+  infobox_update_service (NULL);
+  infobox_update_radiotext (NULL);
+  infobox_update_epg (NULL);
+  infobox_update_mmusic (NULL);
+  infobox_update_dvb (NULL);
+
   // Initialize tuning information
   g_free (tune);
   tune = g_malloc0 (sizeof (tunestruct));
@@ -319,12 +329,6 @@ dvb_play (InputPlayback * playback)
   g_free (station->svc_name);
   station->svc_name = g_strdup (playback->filename);
 
-  // Update info box
-  infobox_update_service (NULL);
-  infobox_update_radiotext (NULL);
-  infobox_update_epg (NULL);
-  infobox_update_mmusic (NULL);
-
   // Get audio PIDs from SID
   if ((rc = dvb_get_pid (hdvb, tune->sid, &apid, &dpid)) != RC_OK)
     {
@@ -365,7 +369,7 @@ dvb_play (InputPlayback * playback)
 	  if ((gt_mmusic =
 	       g_thread_create (mmusic_thread, 0, TRUE, NULL)) == NULL)
 	    log_print (hlog, LOG_ERR,
-		       "g_thread_create() failed for dvb_madmusic()");
+		       "g_thread_create() failed for mmusic_thread()");
 	}
       else
 	log_print (hlog, LOG_ERR, "dvb_dpid() returned %d.", rc);
@@ -374,11 +378,17 @@ dvb_play (InputPlayback * playback)
   // Initialize EPG info retrieval
   if (config->info_epg)
     {
-      if ((gt_epg =
-	   g_thread_create (epg_thread, (gpointer) & tune->sid, TRUE,
-			    NULL)) == NULL)
-	log_print (hlog, LOG_ERR, "g_thread_create() failed for dvb_epg()");
+      if ((gt_epg = g_thread_create (epg_thread, (gpointer) & tune->sid, TRUE,
+				     NULL)) == NULL)
+	log_print (hlog, LOG_ERR,
+		   "g_thread_create() failed for epg_thread()");
     }
+
+  // Initialize DVB status info retrieval
+  if ((gt_dvbstat = g_thread_create (dvb_status_thread, NULL, TRUE,
+				     NULL)) == NULL)
+    log_print (hlog, LOG_ERR,
+	       "g_thread_create() failed for dvb_status_thread()");
 
   // Start receiving audio packets and playback
   if ((gt_feed = g_thread_create (feed_thread, playback, TRUE, NULL)) == NULL)
@@ -399,6 +409,8 @@ dvb_stop (InputPlayback * playback)
       // Stop all threads
       if (gt_feed != NULL)
 	g_thread_join (gt_feed);
+      if (gt_dvbstat != NULL)
+	g_thread_join (gt_dvbstat);
       if (gt_get_name != NULL)
 	g_thread_join (gt_get_name);
       if (gt_mmusic != NULL)
@@ -737,7 +749,7 @@ dvb_parse_url (gchar * url, tunestruct * tune)
 static gpointer
 feed_thread (gpointer args)
 {
-  gint rc, ar, toctr, statctr;
+  gint rc, ar, toctr;
   guchar pkt[3840];
   InputPlayback *playback;
 
@@ -751,14 +763,12 @@ feed_thread (gpointer args)
   if (config->info_rt)
     rt = radiotext_init ();
 
-  dvbstat = g_malloc0 (sizeof (dvbstatstruct));
-
   dvb_pes_pkt (playback, NULL, 0, 1);
   dvb_payload (playback, NULL, 0, 1);
 
   time (&isplit_last);
 
-  toctr = statctr = 0;
+  toctr = 0;
 
   while (playing)
     {
@@ -767,14 +777,7 @@ feed_thread (gpointer args)
 	{
 	  toctr = 0;
 	  if (!paused)
-	    {
-	      dvb_pes_pkt (playback, pkt, ar, 0);
-	      if (statctr++ > 4)
-		{
-		  statctr = 0;
-		  dvb_get_status (hdvb, dvbstat);
-		}
-	    }
+	    dvb_pes_pkt (playback, pkt, ar, 0);
 	}
       else
 	{
@@ -814,16 +817,44 @@ feed_thread (gpointer args)
       rt = NULL;
     }
 
+  log_print (hlog, LOG_INFO, "dvb_feed_thread() stopping");
+
+  g_mutex_unlock (gmt_feed);
+  gmt_feed = NULL;
+  g_thread_exit (0);
+  return NULL;
+}
+
+
+static gpointer
+dvb_status_thread (gpointer args)
+{
+  guchar pkt[3840];
+
+  log_print (hlog, LOG_INFO, "dvb_status_thread() starting");
+
+  if (gmt_dvbstat == NULL)
+    gmt_dvbstat = g_mutex_new ();
+  g_mutex_lock (gmt_dvbstat);
+
+  dvbstat = g_malloc0 (sizeof (dvbstatstruct));
+
+  while (playing)
+    {
+      dvb_get_status (hdvb, dvbstat);
+      usleep (500000);
+    }
+
   if (dvbstat != NULL)
     {
       g_free (dvbstat);
       dvbstat = NULL;
     }
 
-  log_print (hlog, LOG_INFO, "dvb_feed_thread() stopping");
+  log_print (hlog, LOG_INFO, "dvb_status_thread() stopping");
 
-  g_mutex_unlock (gmt_feed);
-  gmt_feed = NULL;
+  g_mutex_unlock (gmt_dvbstat);
+  gmt_dvbstat = NULL;
   g_thread_exit (0);
   return NULL;
 }
@@ -1088,15 +1119,30 @@ dvb_build_file_title (void)
       log_print (hlog, LOG_DEBUG, "EPG info changed!");
       infobox_update_epg (epg);
       epg->refresh = FALSE;
-      refreshed = TRUE;
     }
   if (mmusic != NULL && mmusic->refresh)
     {
-      // TODO: implement me!
+      // ... hoping no station sends out *both* MadMusic and Radiotext info!
+      if (mmusic->title != NULL)
+	{
+	  gchar *tmp = title;
+	  if (mmusic->artist != NULL)
+	    title =
+	      g_strconcat (title, ": ", mmusic->artist, " - ", mmusic->title,
+			   NULL);
+	  else
+	    title = g_strconcat (title, ": ", mmusic->title, NULL);
+	  g_free (tmp);
+	}
       log_print (hlog, LOG_DEBUG, "MadMusic info changed!");
       infobox_update_mmusic (mmusic);
       mmusic->refresh = FALSE;
       refreshed = TRUE;
+    }
+  if (dvbstat != NULL && dvbstat->refresh)
+    {
+      infobox_update_dvb (dvbstat);
+      dvbstat->refresh = FALSE;
     }
 
   if (!refreshed)
@@ -1319,26 +1365,21 @@ get_name_thread (gpointer arg)
 
 		  if (dt == 0x48)
 		    {
-		      gchar *prov_final, *name_final;
 		      memcpy (prov, &pp[2], pp[1]);
 		      prov[pp[1]] = '\0';
-		      prov_final = str_beautify (prov);
-		      if (is_updated (prov_final, &station->prov_name))
+		      if (is_updated (prov, &station->prov_name, FALSE))
 			station->refresh = TRUE;
 
 		      memcpy (name, &pp[3 + pp[1]], pp[2 + pp[1]]);
 		      name[pp[2 + pp[1]]] = '\0';
-		      name_final = str_beautify (name);
-		      if (is_updated (name_final, &station->svc_name))
+		      if (is_updated (name, &station->svc_name, FALSE))
 			station->refresh = TRUE;
 
 		      if (station->refresh)
 			log_print (hlog, LOG_INFO,
-				   "Service name: \"%s\", \"%s\"", prov_final,
-				   name_final);
+				   "Service name: \"%s\", \"%s\"", prov,
+				   name);
 
-		      g_free (prov_final);
-		      g_free (name_final);
 		      log_print (hlog, LOG_INFO,
 				 "get_name_thread() stopping");
 

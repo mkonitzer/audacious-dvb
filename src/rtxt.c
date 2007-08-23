@@ -125,7 +125,6 @@ radiotext_decode (rtstruct * rt)
     {
       if (mtext[5] == 0x0a)
 	{
-	  gchar *rt_final;
 	  /* byte 6+7 = DSN+PSN (DataSetNumber+ProgramServiceNumber, 
 	   *                           ignore here, always 0x00 ?)
 	   * byte 8   = MEL (MessageElementLength, max. 64+1 byte @ RT)
@@ -149,11 +148,9 @@ radiotext_decode (rtstruct * rt)
 		   0x80) ? rds_addchar[mtext[9 + i] - 0x80] : mtext[9 + i];
 	    }
 	  memcpy (rt->plustext, temptext, RT_MEL - 1);
-	  rt_final = str_beautify ((gchar *) rt->plustext);
-	  if (is_updated (rt_final, &rt->radiotext))
+	  if (is_updated (rt->plustext, &rt->radiotext, TRUE))
 	    rt->refresh = TRUE;
-	  log_print (hlog, LOG_INFO, "Radiotext: %s", rt_final);
-	  g_free (rt_final);
+	  log_print (hlog, LOG_INFO, "Radiotext: %s", rt->plustext);
 	}
       else if (mtext[5] == 0x46)
 	{
@@ -211,25 +208,22 @@ radiotext_decode (rtstruct * rt)
 		{
 		  if (rtp_start[i] + rtp_len[i] + 1 < RT_MEL)
 		    {
-		      gchar *rtp_final;
 		      memset (temptext, 0, RT_MEL - 1);
 		      memmove (temptext, rt->plustext + rtp_start[i],
 			       rtp_len[i] + 1);
-		      rtp_final = str_beautify (temptext);
 		      switch (rtp_typ[i])
 			{
 			case 1:	// title
-			  if (is_updated (rtp_final, &rt->title))
+			  if (is_updated (temptext, &rt->title, TRUE))
 			    rt->refresh = TRUE;
 			  break;
 			case 4:	// artist
-			  if (is_updated (rtp_final, &rt->artist))
+			  if (is_updated (temptext, &rt->artist, TRUE))
 			    rt->refresh = TRUE;
 			  break;
 			}
 		      log_print (hlog, LOG_INFO, "RTplus[%d]: %s (type %d)",
-				 i, rtp_final, rtp_typ[i]);
-		      g_free (rtp_final);
+				 i, temptext, rtp_typ[i]);
 		    }
 		}
 	    }

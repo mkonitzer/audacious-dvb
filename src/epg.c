@@ -27,6 +27,7 @@
 #include "epg.h"
 #include "log.h"
 #include "dvb.h"
+#include "util.h"
 
 
 extern gpointer hlog;
@@ -44,7 +45,7 @@ static gint
 dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 {
   gint dt, dl, i, j, cdn, ldn, loi;
-  gchar ll[1024], hex[16], lg[4], name[256], text[256];
+  gchar ll[1024], hex[16], lg[4], *name, *text, *newtext, *exttext;
   const guchar *p, *q;
 
   p = d;
@@ -63,35 +64,29 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	  q += 3;
 
 	  j = *q++;		// event_name_length
-	  if (j > 0)
-	    {
-	      for (i = 0; i < j; i++)
-		name[i] = *q++;
-	    }
-	  name[j] = '\0';	// event_name_char
-	  str_remove_non_ascii (name);
+	  if (j > 0)		// event_name_char
+	    name = str_beautify (q, j, FALSE);
 
 	  j = *q++;		// text_length
-	  if (j > 0)
-	    {
-	      for (i = 0; i < j; i++)
-		text[i] = *q++;
-	    }
-	  text[j] = '\0';	// text_char
-	  str_remove_non_ascii (text);
+	  if (j > 0)		// text_char
+	    text = str_beautify (q, j, FALSE);
 
-	  if (is_updated (name, &epg->short_ev_name))
+	  if (is_updated (name, &epg->short_ev_name, FALSE))
 	    epg->refresh = TRUE;
 
-	  if (is_updated (text, &epg->short_ev_text))
+	  if (is_updated (text, &epg->short_ev_text, FALSE))
 	    epg->refresh = TRUE;
 
 	  if (epg->refresh)
 	    log_print (hlog, LOG_INFO, "EIT: %s,\"%s\",\"%s\"", lg, name,
 		       text);
+
+	  g_free (name);
+	  g_free (text);
+	  name = text = NULL;
 	  break;
 
-	case 0x4e:
+	case 0x4e:		// extended_event_descriptor
 	  cdn = q[0] >> 4;	// descriptor_number
 	  ldn = q[0] & 0xf;	// last_descriptor_number
 	  q++;
@@ -105,15 +100,31 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 
 	  j = *q++;		// text_length
 	  if (j > 0)
-	    {
-	      for (i = 0; i < j; i++)
-		text[i] = *q++;	// text_char
+	    {			// text_char
+	      gchar *tmp = exttext;
+	      newtext = str_beautify (q, j, FALSE);
+	      
+	      exttext =
+		g_strconcat ((exttext != NULL ? exttext : ""), newtext, NULL);
+	      g_free (tmp);
 	    }
-	  text[j] = '\0';
-	  str_remove_non_ascii (text);
 
 	  log_print (hlog, LOG_INFO, "EIT: %d/%d,%s,\"%s\"", cdn, ldn, lg,
-		     text);
+		     newtext);
+
+	  g_free (newtext);
+	  newtext = NULL;
+
+	  // Free exttext if we just processed the last ext. packet
+	  if (cdn == ldn)
+	    {
+	      if (is_updated (exttext, &epg->ext_ev_text, FALSE))
+		epg->refresh = TRUE;
+	      
+	      g_free (exttext);
+	      exttext = NULL;
+	    }
+
 	  break;
 
 	default:
@@ -133,6 +144,9 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 
       p += dl;
     }
+
+  g_free (exttext);
+  exttext = NULL;
 
   return RC_OK;
 }

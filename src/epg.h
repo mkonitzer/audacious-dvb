@@ -30,6 +30,7 @@ typedef struct _epgstruct
 {
   gchar *short_ev_name;
   gchar *short_ev_text;
+  gchar *ext_ev_text;
   gboolean refresh;
 } epgstruct;
 

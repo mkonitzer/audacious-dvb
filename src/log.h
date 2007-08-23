@@ -48,7 +48,7 @@
 
 gint log_open (gpointer *, gchar *, gint);
 gint log_close (gpointer);
-gint log_print (gpointer, gint, gchar *, ...);
+gint log_print (gpointer, gint, const gchar *, ...);
 void log_set_level (gpointer hlog, gint lvl);
 
 #endif // __AUDACIOUS_DVB_LOG_H__
