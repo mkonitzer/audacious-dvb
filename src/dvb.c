@@ -808,7 +808,7 @@ dvb_get_status (gpointer hdvb, dvbstatstruct * st)
   _st.lock = (status & FE_HAS_LOCK);
   _st.timedout = (status & FE_TIMEDOUT);
   if (ioctl (h->dvb_fedh, FE_READ_SIGNAL_STRENGTH, &_st.str) == -1)
-    _st.signal = -2;
+    _st.str = -2;
   if (ioctl (h->dvb_fedh, FE_READ_SNR, &_st.snr) == -1)
     _st.snr = -2;
   if (ioctl (h->dvb_fedh, FE_READ_BER, &_st.ber) == -1)
