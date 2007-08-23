@@ -64,9 +64,9 @@ str_beautify (const gchar * s)
   // Remove leading and trailing spaces
   newstr = g_strstrip (newstr);
   // Replace multiple by single space ('s/[ ]*/ /')
-  for (i = 0; i + skip < strlen(newstr); i++)
+  for (i = 0; i + skip < strlen (newstr); i++)
     {
-      while (g_ascii_isspace(last) && g_ascii_isspace(newstr[i + skip]))
+      while (g_ascii_isspace (last) && g_ascii_isspace (newstr[i + skip]))
 	skip++;
       if (skip > 0)
 	newstr[i] = newstr[i + skip];

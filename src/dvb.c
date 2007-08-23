@@ -62,6 +62,10 @@ struct diseqc_cmd
   guint wait;
 };
 
+static gint check_status (gpointer hdvb, gint type,
+			  struct dvb_frontend_parameters *feparams,
+			  guint base);
+
 
 gpointer *
 dvb_open (gint devnum)
@@ -668,9 +672,9 @@ do_diseqc (gpointer hdvb, guchar sat_no, gint polv, gint hi_lo)
 }
 
 
-int
-check_status (gpointer hdvb, int type,
-	      struct dvb_frontend_parameters *feparams, unsigned int base)
+static gint
+check_status (gpointer hdvb, gint type,
+	      struct dvb_frontend_parameters *feparams, guint base)
 {
   guint strength;
   fe_status_t festatus;
@@ -773,6 +777,51 @@ check_status (gpointer hdvb, int type,
 		 "Not able to lock to the signal on the given frequency!");
       return -1;
     }
+  return 0;
+}
+
+
+gint
+dvb_get_status (gpointer hdvb, dvbstatstruct * st)
+{
+  guint status;
+  dvbstatstruct _st;
+  HDVB *h;
+  h = (HDVB *) hdvb;
+
+  if (st == NULL)
+    return -1;
+
+  if (ioctl (h->dvb_fedh, FE_READ_STATUS, &status) == -1)
+    {
+      log_print (hlog, LOG_WARNING,
+		 "FE_READ_STATUS failed in dvb_get_status().");
+      return -1;
+    }
+
+  // Fill in values (if we can get them)
+  memset (&_st, 0, sizeof (dvbstatstruct));
+  _st.signal = (status & FE_HAS_SIGNAL);
+  _st.carrier = (status & FE_HAS_CARRIER);
+  _st.viterbi = (status & FE_HAS_VITERBI);
+  _st.sync = (status & FE_HAS_SYNC);
+  _st.lock = (status & FE_HAS_LOCK);
+  _st.timedout = (status & FE_TIMEDOUT);
+  if (ioctl (h->dvb_fedh, FE_READ_SIGNAL_STRENGTH, &_st.str) == -1)
+    _st.signal = -2;
+  if (ioctl (h->dvb_fedh, FE_READ_SNR, &_st.snr) == -1)
+    _st.snr = -2;
+  if (ioctl (h->dvb_fedh, FE_READ_BER, &_st.ber) == -1)
+    _st.ber = -2;
+  if (ioctl (h->dvb_fedh, FE_READ_UNCORRECTED_BLOCKS, &_st.unc) == -1)
+    _st.unc = -2;
+  _st.refresh = TRUE;
+  memcpy (st, &_st, sizeof (dvbstatstruct));
+
+  log_print (hlog, LOG_DEBUG, "status %02x | signal %04x | snr %04x | "
+	     "ber %08x | unc %08x | ", status, st->str, st->snr, st->ber,
+	     st->unc);
+
   return 0;
 }
 

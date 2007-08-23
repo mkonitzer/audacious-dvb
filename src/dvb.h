@@ -52,10 +52,23 @@ typedef struct _tunestruct
   fe_code_rate_t hpcr;
   fe_code_rate_t lpcr;
   fe_hierarchy_t hier;
-
   guint sid;
 } tunestruct;
 
+typedef struct _dvbstatstruct
+{
+  guint str;
+  guint snr;
+  guint unc;
+  guint ber;
+  gboolean signal;
+  gboolean carrier;
+  gboolean viterbi;
+  gboolean sync;
+  gboolean lock;
+  gboolean timedout;
+  gboolean refresh;
+} dvbstatstruct;
 
 #ifndef RC_OK
 #define RC_OK                           0
@@ -110,7 +123,6 @@ typedef struct _tunestruct
 
 gpointer *dvb_open (gint);
 gint dvb_close (gpointer);
-/*gint dvb_status (gpointer);*/
 gint dvb_filter (gpointer, gint);
 gint dvb_packet (gpointer, guchar *, gint);
 gint dvb_unfilter (gpointer);
@@ -121,7 +133,7 @@ gint dvb_dpid (gpointer, gint);
 gint dvb_dpkt (gpointer, guchar *, gint, gint, gint *);
 gint dvb_volume (gpointer, gint);
 gint dvb_get_pid (gpointer, gint, gint *, gint *);
-
+gint dvb_get_status (gpointer hdvb, dvbstatstruct * st);
 void dvb_tune_defaults (tunestruct *);
 gint dvb_tune (gpointer, tunestruct *);
 

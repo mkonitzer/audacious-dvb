@@ -417,7 +417,7 @@ dvb_infobox (statstruct * station, rtstruct * rt, epgstruct * epg,
 {
   GladeXML *xml;
   GtkWidget *infoBox;
-  
+
   // Create info box
   xml = glade_xml_new ("audacious-dvb.glade", "fileinfo", NULL);
   widgets.infoXml = xml;
@@ -426,7 +426,8 @@ dvb_infobox (statstruct * station, rtstruct * rt, epgstruct * epg,
   widgets.infoBox = infoBox;
 
   // Register signal handlers
-  g_signal_connect_swapped (G_OBJECT (glade_xml_get_widget (xml, "closeButton")),
+  g_signal_connect_swapped (G_OBJECT
+			    (glade_xml_get_widget (xml, "closeButton")),
 			    "clicked", G_CALLBACK (gtk_widget_destroy),
 			    GTK_OBJECT (infoBox));
 

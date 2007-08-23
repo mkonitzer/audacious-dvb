@@ -96,6 +96,7 @@ rtstruct *rt = NULL;
 epgstruct *epg = NULL;
 statstruct *station = NULL;
 tunestruct *tune = NULL;
+dvbstatstruct *dvbstat = NULL;
 
 static gint audio, file_index, frm_ctr;
 static gchar erfn[MAXPATHLEN];
@@ -191,6 +192,11 @@ dvb_exit (void)
     {
       madmusic_exit (mmusic);
       mmusic = NULL;
+    }
+  if (dvbstat != NULL)
+    {
+      g_free (dvbstat);
+      dvbstat = NULL;
     }
   if (rt != NULL)
     {
@@ -731,7 +737,7 @@ dvb_parse_url (gchar * url, tunestruct * tune)
 static gpointer
 feed_thread (gpointer args)
 {
-  gint rc, ar, toctr;
+  gint rc, ar, toctr, statctr;
   guchar pkt[3840];
   InputPlayback *playback;
 
@@ -745,12 +751,14 @@ feed_thread (gpointer args)
   if (config->info_rt)
     rt = radiotext_init ();
 
+  dvbstat = g_malloc0 (sizeof (dvbstatstruct));
+
   dvb_pes_pkt (playback, NULL, 0, 1);
   dvb_payload (playback, NULL, 0, 1);
 
   time (&isplit_last);
 
-  toctr = 0;
+  toctr = statctr = 0;
 
   while (playing)
     {
@@ -759,7 +767,14 @@ feed_thread (gpointer args)
 	{
 	  toctr = 0;
 	  if (!paused)
-	    dvb_pes_pkt (playback, pkt, ar, 0);
+	    {
+	      dvb_pes_pkt (playback, pkt, ar, 0);
+	      if (statctr++ > 4)
+		{
+		  statctr = 0;
+		  dvb_get_status (hdvb, dvbstat);
+		}
+	    }
 	}
       else
 	{
@@ -797,6 +812,12 @@ feed_thread (gpointer args)
     {
       radiotext_exit (rt);
       rt = NULL;
+    }
+
+  if (dvbstat != NULL)
+    {
+      g_free (dvbstat);
+      dvbstat = NULL;
     }
 
   log_print (hlog, LOG_INFO, "dvb_feed_thread() stopping");
