@@ -58,16 +58,16 @@ str_replace_non_printable (gchar * s)
 {
   gchar *ch, *chplus1;
   gint i;
-  
+
   ch = g_utf8_offset_to_pointer (s, 0);
-  
-  for (i = 1; i < g_utf8_strlen(s, -1); i++)
-  {
-    chplus1 = g_utf8_offset_to_pointer (s, i);
-    if (!g_unichar_isprint(g_utf8_get_char(ch)))
-      memset (ch, ' ', chplus1-ch);
-    ch = chplus1;
-  }
+
+  for (i = 1; i < g_utf8_strlen (s, -1); i++)
+    {
+      chplus1 = g_utf8_offset_to_pointer (s, i);
+      if (!g_unichar_isprint (g_utf8_get_char (ch)))
+	memset (ch, ' ', chplus1 - ch);
+      ch = chplus1;
+    }
 }
 
 
@@ -87,8 +87,7 @@ str_beautify (const gchar * s, gint len, gboolean ascii)
     }
   else
     {
-      newstr =
-	g_convert (s, len, "UTF-8", "ISO-8859-1", NULL, NULL, NULL);
+      newstr = g_convert (s, len, "UTF-8", "ISO-8859-1", NULL, NULL, NULL);
       str_replace_non_printable (newstr);
     }
   // Remove leading and trailing spaces

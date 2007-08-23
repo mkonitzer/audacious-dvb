@@ -103,7 +103,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	    {			// text_char
 	      gchar *tmp = exttext;
 	      newtext = str_beautify (q, j, FALSE);
-	      
+
 	      exttext =
 		g_strconcat ((exttext != NULL ? exttext : ""), newtext, NULL);
 	      g_free (tmp);
@@ -120,7 +120,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	    {
 	      if (is_updated (exttext, &epg->ext_ev_text, FALSE))
 		epg->refresh = TRUE;
-	      
+
 	      g_free (exttext);
 	      exttext = NULL;
 	    }
