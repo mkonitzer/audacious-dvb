@@ -867,7 +867,7 @@ dvb_status_thread (gpointer args)
   while (playing)
     {
       dvb_get_status (hdvb, dvbstat);
-      usleep (500000);
+      usleep (750000);
     }
 
   if (dvbstat != NULL)
