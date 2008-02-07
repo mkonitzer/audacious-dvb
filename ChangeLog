@@ -1,3 +1,9 @@
+2007-06-26  Marius Konitzer  <m.konitzer@gmx.de>
+
+	Released 0.6.1.
+
+	* Make audacious-dvb compile/run with Audacious 1.4
+
 2007-08-23  Marius Konitzer  <m.konitzer@gmx.de>
 
 	Released 0.6.0.

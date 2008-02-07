@@ -1,0 +1,118 @@
+Audacious DVB Input Plugin
+==========================
+
+Introduction:
+
+    This package contains the source code for an Audacious input plugin that
+    enables Audacious to play and record audio streams from a DVB-S/-T/-C
+    adapter (see below). audacious-dvb is based on Christian Motz's XMMS DVB
+    Input Plugin (http://xmms-dvb.sourceforge.net).
+    It has since some improved abilities like parsing of EPG/EIT, Radiotext[+]
+    and MadMusic data, display of DVB status (reception quality etc.) and
+    experimental support for DVB-T and DVB-C adapters.
+
+
+Installation:
+
+    To compile audacious-dvb you will need:
+
+	* GTK+ (>= 2.6.0) [http://www.gtk.org/]
+	* GLIB (>= 2.6.0) [http://www.gtk.org/]
+	* Audacious (>= 1.4.0) [http://audacious-media-player.org/]
+	* libglade (>= 2.0) [http://ftp.gnome.org/pub/GNOME/sources/libglade/]
+	* liblame (>= 3.96) [http://lame.sourceforge.net/]
+	* pkgconfig [http://pkg-config.freedesktop.org/]
+
+    Compilation is done using the conventional
+
+	./configure
+	make
+	make install
+    
+    triplet. If you just want to install audacious-dvb on a per-user basis,
+    just copy 'src/.libs/libdvb.so' to '~/.local/share/audacious/Plugins/'.
+
+
+Runtime:
+
+    To make it work, install the plugin and open a location in Audacious
+    with an URL of the following syntax:
+
+	dvb://audio?par1=val1:par2=val2:...:parN=valN
+
+    while the following 'parameter=value'-pairs may be used:
+
+    sid	    Service ID
+	    Values: <num> (no default, mandatory)
+
+    freq    Frequency of transponder (DVB-T/-C: in Hz, DVB-S: in kHz)
+	    Values: <num> (no default, mandatory)
+
+    pol	    Polarisation (DVB-S)
+	    Values: h or v (no default, mandatory)
+
+    srate   Symbol rate in symbols per second (DVB-S/-T/-C)
+	    Values: <num> (no default, mandatory)
+
+    slof    Switch frequency of LNB (DVB-S)
+	    Values: <num> (Default: 11700)
+
+    lof1    Local frequency of lower LNB band (DVB-S)
+	    Values: <num> (Default: 9750)
+
+    lof2    Local frequency of upper LNB band (DVB-S)
+	    Values: <num> (Default: 10600)
+
+    diseqc  DiSEqC address of the used LNB (DVB-S)
+	    Values: a, b, 0, 1, 2, 3 or 4 (Default: 0)
+
+    sinv    Spectral inversion (DVB-S)
+	    Values: 0 or 1 (Default: AUTO)
+
+    qam	    Quadrature modulation (DVB-T/-C)
+	    Values: 16, 32, 64, 128 or 256 (Default: AUTO)
+
+    vsb	    Vestigial sideband modulation (if compiled with ATSC-support)
+	    Values: 8 or 16 (Default: AUTO)
+
+    gival   Guard interval (DVB-T: in 1/gival)
+	    Values: 4, 8, 16 or 32 (Default: AUTO)
+
+    tmode   Transmission mode (DVB-T: in k)
+	    Values: 2 or 8 (Default: AUTO)
+
+    bandw   Bandwidth (DVB-T: in MHz)
+	    Values: 6, 7 or 8 (Default: 8)
+
+    hpcr    (High priority) Stream code rate (DVB-S/-T/-C)
+	    Values: 1_2, 2_3, ..., 7_8, NONE or AUTO (Default: AUTO)
+
+    lpcr    Low priority stream code rate (DVB-T)
+	    Values: 1_2, 2_3, ..., 7_8, NONE or AUTO (Default: NONE)
+
+    hier    Hierarchy (DVB-T)
+	    Values: 1, 2, 4, NONE or AUTO (Default: AUTO)
+
+    while <num> is a non-negative integer. For some valid practical
+    combinations have a look at the .xspf-playlists in the
+    'examples/'-subfolder, which contain ready-to-use URIs under examplary
+    configurations.
+
+    You might want to change audacious-dvb's default configuration values
+    to suit it to your needs. This can be done in Audacious' preferences
+    window (Preferences -> Plugins -> Decoders).
+
+
+Bugs/Support:
+
+Let me quote Christian Motz, the author of the previous xmms-dvb:
+
+>>  If you find the plugin useful, let me know. If you have some
+    suggestions on how to improve it, let me know. Just don't count on my
+    implementing anything in the blink of an eye -- unless of course you
+    pay me for it.
+
+    If you find a bug, send me a _detailed_ bug description, preferably on
+    how to reliably reproduce it, and I will see what I can do to fix it. <<
+
+Nothing left to say!
