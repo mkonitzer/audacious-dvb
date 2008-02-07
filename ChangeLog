@@ -1,35 +1,60 @@
-0.5.0:
-Christian Motz - April 7th, 2004
-* Fixed a bug which caused flickering visualization display and caused
-  excessive CPU usage in the X server while plugin is running.
-* Improved retrieval of the Service Name from the Service Descriptor
-  Table.
-* Added missing output buffer check to fix problems with some output
-  plugins (e.g. ALSA).
-* Added support for retrieval of EPG (current) information.
+2007-08-23  Marius Konitzer  <m.konitzer@gmx.de>
 
-0.4.0:
-Christian Motz - July 4th, 2003
-* Changed retrieval of audio stream to use DMX_PES_AUDIO to be able to
-  make use of audio services protected by conditional access.
-* Added code to extract track info from OpenTV stream for the
-  MAD Music channels in the NetMed / Nova package on 13° east.
+	Released 0.6.0.
 
-0.3.0:
-Christian Motz - June 28th, 2003
-* Added support for splitting recording file by energy level
+	* Rename to 'audacious-dvb'
+	* Make audacious-dvb compile/run with Audacious 1.3:
+	    * Switched to GTK+, GLIB and Glade
+	    * Adjusted autotools files
+	    * Changes in playback mechanism
+	    * Changes in plugin structure
+	* Support for DVB-C and -T adapters, too (very experimental)
+	* Support for RDS-Radiotext[+] (if supported by provider)
+	* Support for some more EPG/EIT fields
+	* Huge code cleanup/rewrite
 
-0.2.0:
-Christian Motz - June 26th, 2003
-* Introduced logging support for easier debugging
-* Added support to select service based on the SID
-* With services selected by SID, the service name is retrieved and
-  displayed.
-* Cleaned up the configuration dialog a bit using GTK boxes.
-* Added support for automatic splitting of the recording file.
-* Introduced a (still useless) information dialog.
-* Moved the GTK user interface code into a seperate file.
+2004-04-07  Christian Motz  <douleftis@users.sourceforge.net>
 
-0.1.0:
-Christian Motz - June 18th, 2003
-* Created initial version by combining some code fragments.
+	Released 0.5.0.
+
+	* Fixed a bug which caused flickering visualization display and caused
+	  excessive CPU usage in the X server while plugin is running.
+	* Improved retrieval of the Service Name from the Service Descriptor
+	  Table.
+	* Added missing output buffer check to fix problems with some output
+	  plugins (e.g. ALSA).
+	* Added support for retrieval of EPG (current) information.
+
+2003-07-04  Christian Motz  <douleftis@users.sourceforge.net>
+
+	Released 0.4.0.
+
+	* Changed retrieval of audio stream to use DMX_PES_AUDIO to be able to
+	  make use of audio services protected by conditional access.
+	* Added code to extract track info from OpenTV stream for the
+	  MAD Music channels in the NetMed / Nova package on 13? east.
+
+2003-06-28  Christian Motz  <douleftis@users.sourceforge.net>
+
+	Released 0.3.0.
+
+	* Added support for splitting recording file by energy level
+
+2003-06-26  Christian Motz  <douleftis@users.sourceforge.net>
+
+	Released 0.2.0.
+
+	* Introduced logging support for easier debugging
+	* Added support to select service based on the SID
+	* With services selected by SID, the service name is retrieved and
+	  displayed.
+	* Cleaned up the configuration dialog a bit using GTK boxes.
+	* Added support for automatic splitting of the recording file.
+	* Introduced a (still useless) information dialog.
+	* Moved the GTK user interface code into a seperate file.
+
+2003-06-18  Christian Motz  <douleftis@users.sourceforge.net>
+
+	Released 0.1.0.
+
+	* Created initial version by combining some code fragments.
