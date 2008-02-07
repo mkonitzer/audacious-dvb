@@ -23,6 +23,7 @@
 
 #include <glib.h>
 #include <audacious/configdb.h>
+#include <audacious/plugin.h>
 
 #include "cfg.h"
 
@@ -59,37 +60,37 @@ config_from_db (cfgstruct * config)
 {
   ConfigDb *db;
 
-  if ((db = bmp_cfg_db_open ()) == NULL)
+  if ((db = aud_cfg_db_open ()) == NULL)
     return FALSE;
 
-  bmp_cfg_db_get_int (db, "dvb", "devno", &config->devno);
-  bmp_cfg_db_get_int (db, "dvb", "loglevel", &config->loglvl);
+  aud_cfg_db_get_int (db, "dvb", "devno", &config->devno);
+  aud_cfg_db_get_int (db, "dvb", "loglevel", &config->loglvl);
 
-  bmp_cfg_db_get_bool (db, "dvb", "rec", &config->rec);
+  aud_cfg_db_get_bool (db, "dvb", "rec", &config->rec);
   if (config->rec_fname != NULL)
     {
       g_free (config->rec_fname);
       config->rec_fname = NULL;
     }
-  bmp_cfg_db_get_string (db, "dvb", "rec.fname", &config->rec_fname);
+  aud_cfg_db_get_string (db, "dvb", "rec.fname", &config->rec_fname);
   if (config->rec_fname == NULL)
     config->rec_fname = g_strdup ("/tmp/audacious-dvb-rec.mp2");
-  bmp_cfg_db_get_bool (db, "dvb", "rec.append", &config->rec_append);
+  aud_cfg_db_get_bool (db, "dvb", "rec.append", &config->rec_append);
 
-  bmp_cfg_db_get_bool (db, "dvb", "isplit", &config->isplit);
-  bmp_cfg_db_get_int (db, "dvb", "isplit.ival", &config->isplit_ival);
+  aud_cfg_db_get_bool (db, "dvb", "isplit", &config->isplit);
+  aud_cfg_db_get_int (db, "dvb", "isplit.ival", &config->isplit_ival);
 
-  bmp_cfg_db_get_bool (db, "dvb", "vsplit", &config->vsplit);
-  if (bmp_cfg_db_get_double (db, "dvb", "vsplit.vol", &config->vsplit_vol))
+  aud_cfg_db_get_bool (db, "dvb", "vsplit", &config->vsplit);
+  if (aud_cfg_db_get_double (db, "dvb", "vsplit.vol", &config->vsplit_vol))
     config->vsplit_vol /= 100;
-  bmp_cfg_db_get_int (db, "dvb", "vsplit.dur", &config->vsplit_dur);
-  bmp_cfg_db_get_int (db, "dvb", "vsplit.minlen", &config->vsplit_minlen);
+  aud_cfg_db_get_int (db, "dvb", "vsplit.dur", &config->vsplit_dur);
+  aud_cfg_db_get_int (db, "dvb", "vsplit.minlen", &config->vsplit_minlen);
 
-  bmp_cfg_db_get_bool (db, "dvb", "info.mmusic", &config->info_mmusic);
-  bmp_cfg_db_get_bool (db, "dvb", "info.epg", &config->info_epg);
-  bmp_cfg_db_get_bool (db, "dvb", "info.rt", &config->info_rt);
+  aud_cfg_db_get_bool (db, "dvb", "info.mmusic", &config->info_mmusic);
+  aud_cfg_db_get_bool (db, "dvb", "info.epg", &config->info_epg);
+  aud_cfg_db_get_bool (db, "dvb", "info.rt", &config->info_rt);
 
-  bmp_cfg_db_close (db);
+  aud_cfg_db_close (db);
 }
 
 
@@ -98,29 +99,29 @@ config_to_db (cfgstruct * config)
 {
   ConfigDb *db;
 
-  if ((db = bmp_cfg_db_open ()) == NULL)
+  if ((db = aud_cfg_db_open ()) == NULL)
     return FALSE;
 
-  bmp_cfg_db_set_int (db, "dvb", "devno", config->devno);
-  bmp_cfg_db_set_int (db, "dvb", "loglevel", config->loglvl);
+  aud_cfg_db_set_int (db, "dvb", "devno", config->devno);
+  aud_cfg_db_set_int (db, "dvb", "loglevel", config->loglvl);
 
-  bmp_cfg_db_set_bool (db, "dvb", "rec", config->rec);
-  bmp_cfg_db_set_string (db, "dvb", "rec.fname", config->rec_fname);
-  bmp_cfg_db_set_bool (db, "dvb", "rec.append", config->rec_append);
+  aud_cfg_db_set_bool (db, "dvb", "rec", config->rec);
+  aud_cfg_db_set_string (db, "dvb", "rec.fname", config->rec_fname);
+  aud_cfg_db_set_bool (db, "dvb", "rec.append", config->rec_append);
 
-  bmp_cfg_db_set_bool (db, "dvb", "isplit", config->isplit);
-  bmp_cfg_db_set_int (db, "dvb", "isplit.ival", config->isplit_ival);
+  aud_cfg_db_set_bool (db, "dvb", "isplit", config->isplit);
+  aud_cfg_db_set_int (db, "dvb", "isplit.ival", config->isplit_ival);
 
-  bmp_cfg_db_set_bool (db, "dvb", "vsplit", config->vsplit);
-  bmp_cfg_db_set_double (db, "dvb", "vsplit.vol", config->vsplit_vol * 100);
-  bmp_cfg_db_set_int (db, "dvb", "vsplit.dur", config->vsplit_dur);
-  bmp_cfg_db_set_int (db, "dvb", "vsplit.minlen", config->vsplit_minlen);
+  aud_cfg_db_set_bool (db, "dvb", "vsplit", config->vsplit);
+  aud_cfg_db_set_double (db, "dvb", "vsplit.vol", config->vsplit_vol * 100);
+  aud_cfg_db_set_int (db, "dvb", "vsplit.dur", config->vsplit_dur);
+  aud_cfg_db_set_int (db, "dvb", "vsplit.minlen", config->vsplit_minlen);
 
-  bmp_cfg_db_set_bool (db, "dvb", "info.mmusic", config->info_mmusic);
-  bmp_cfg_db_set_bool (db, "dvb", "info.epg", config->info_epg);
-  bmp_cfg_db_set_bool (db, "dvb", "info.rt", config->info_rt);
+  aud_cfg_db_set_bool (db, "dvb", "info.mmusic", config->info_mmusic);
+  aud_cfg_db_set_bool (db, "dvb", "info.epg", config->info_epg);
+  aud_cfg_db_set_bool (db, "dvb", "info.rt", config->info_rt);
 
-  bmp_cfg_db_close (db);
+  aud_cfg_db_close (db);
 }
 
 

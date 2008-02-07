@@ -66,7 +66,7 @@ static gint dvb_is_our_file (gchar *);
 static void dvb_play (InputPlayback *);
 static void dvb_stop (InputPlayback *);
 static void dvb_pause (InputPlayback *, gshort);
-static gint dvb_gettime (InputPlayback *);
+static gint dvb_get_time (InputPlayback *);
 static void dvb_file_info_box (gchar * s);
 static void dvb_exit (void);
 
@@ -101,7 +101,7 @@ dvbstatstruct *dvbstat = NULL;
 
 static gint audio, file_index, frm_ctr;
 static gchar erfn[MAXPATHLEN];
-static VFSFile *rec_file;
+static FILE *rec_file;
 static time_t t_start, isplit_last;
 
 // Threads/Mutexes
@@ -134,29 +134,23 @@ static gint sft[] = {
   22050, 24000, 16000, 0, 44100, 48000, 32000, 0
 };
 
-InputPlugin *dvb_ip = NULL;
+InputPlugin dvb_ip = {
+  .description = "DVB Input Plugin",
+  .init = dvb_init,
+  .about = dvb_about,
+  .configure = dvb_configure,
+  .is_our_file = dvb_is_our_file,
+  .play_file = dvb_play,
+  .stop = dvb_stop,
+  .pause = dvb_pause,
+  .get_time = dvb_get_time,
+  .cleanup = dvb_exit,
+  .file_info_box = dvb_file_info_box,
+};
 
+InputPlugin *dvb_iplist[] = { &dvb_ip, NULL };
 
-InputPlugin *
-get_iplugin_info (void)
-{
-  if (dvb_ip == NULL)
-    {
-      dvb_ip = g_new0 (InputPlugin, 1);
-      dvb_ip->description = g_strdup ("DVB Input Plugin");
-      dvb_ip->init = dvb_init;
-      dvb_ip->about = dvb_about;
-      dvb_ip->configure = dvb_configure;
-      dvb_ip->is_our_file = dvb_is_our_file;
-      dvb_ip->play_file = dvb_play;
-      dvb_ip->stop = dvb_stop;
-      dvb_ip->pause = dvb_pause;
-      dvb_ip->get_time = dvb_gettime;
-      dvb_ip->cleanup = dvb_exit;
-      dvb_ip->file_info_box = dvb_file_info_box;
-    }
-  return dvb_ip;
-}
+DECLARE_PLUGIN(dvb, NULL, NULL, dvb_iplist, NULL, NULL, NULL, NULL, NULL);
 
 
 static void
@@ -184,6 +178,8 @@ dvb_init (void)
 
   if (!g_thread_supported ())
     g_thread_init (NULL);
+
+  aud_uri_set_plugin("dvb://", &dvb_ip);
 }
 
 
@@ -391,11 +387,13 @@ dvb_play (InputPlayback * playback)
 	       "g_thread_create() failed for dvb_status_thread()");
 
   // Start receiving audio packets and playback
-  if ((gt_feed = g_thread_create (feed_thread, playback, TRUE, NULL)) == NULL)
+  if ((gt_feed = g_thread_self ()) == NULL)
     {
       playing = FALSE;
-      log_print (hlog, LOG_CRIT, "g_thread_create() failed for dvb_feed()");
+      log_print (hlog, LOG_CRIT, "g_thread_self() failed for dvb_play()");
     }
+  playback->set_pb_ready (playback);
+  feed_thread (playback);
 }
 
 
@@ -408,16 +406,35 @@ dvb_stop (InputPlayback * playback)
 
       // Stop all threads
       if (gt_feed != NULL)
-	g_thread_join (gt_feed);
+	{
+	  log_print (hlog, LOG_INFO, "Waiting for dvb_feed_thread() to die...");
+	  g_thread_join (gt_feed);
+	  gt_feed = NULL;
+	}
       if (gt_dvbstat != NULL)
-	g_thread_join (gt_dvbstat);
+	{
+	  log_print (hlog, LOG_INFO, "Waiting for dvb_status_thread to die...");
+	  g_thread_join (gt_dvbstat);
+	  gt_dvbstat = NULL;
+	}
       if (gt_get_name != NULL)
-	g_thread_join (gt_get_name);
+	{
+	  log_print (hlog, LOG_INFO, "Waiting for get_name_thread thread to die...");
+	  g_thread_join (gt_get_name);
+	  gt_get_name = NULL;
+	}
       if (gt_mmusic != NULL)
-	g_thread_join (gt_mmusic);
+	{
+	  log_print (hlog, LOG_INFO, "Waiting for mmusic_thread thread to die...");
+	  g_thread_join (gt_mmusic);
+	  gt_mmusic = NULL;
+	}
       if (gt_epg != NULL)
-	g_thread_join (gt_epg);
-      gt_feed = gt_get_name = gt_mmusic = gt_epg = NULL;
+	{
+	  log_print (hlog, LOG_INFO, "Waiting for epg_thread() to die...");
+	  g_thread_join (gt_epg);
+	  gt_epg = NULL;
+	}
 
       // Update info box
       infobox_update_service (NULL);
@@ -454,7 +471,7 @@ dvb_pause (InputPlayback * playback, gshort i)
 
 
 static gint
-dvb_gettime (InputPlayback * playback)
+dvb_get_time (InputPlayback * playback)
 {
   if (playing)
     return (playback->output->output_time ());
@@ -1199,12 +1216,12 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 	    {
 	      log_print (hlog, LOG_INFO, "opening record \"%s\" for append",
 			 erfn);
-	      rec_file = vfs_fopen (erfn, "ab");
+	      rec_file = fopen (erfn, "ab");
 	    }
 	  else
 	    {
 	      log_print (hlog, LOG_INFO, "opening record \"%s\"", erfn);
-	      rec_file = vfs_fopen (erfn, "wb");
+	      rec_file = fopen (erfn, "wb");
 	    }
 
 	  if (config->isplit || config->vsplit)
@@ -1218,7 +1235,7 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 	}
 
       if (rec_file != NULL)
-	vfs_fwrite (frame, sizeof (unsigned char), len, rec_file);
+	fwrite (frame, sizeof (unsigned char), len, rec_file);
     }
 
   if ((nout = lame_decode_headers (frame, len, left, right, &mp3d)) > 0)
@@ -1232,7 +1249,7 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 
 	  if ((title = dvb_build_file_title ()) != NULL)
 	    {
-	      dvb_ip->set_info (str_to_utf8 (title), -1,
+	      dvb_ip.set_info (aud_str_to_utf8 (title), -1,
 				mp3d.bitrate * 1000, mp3d.samplerate,
 				mp3d.stereo);
 	      g_free (title);
@@ -1264,8 +1281,7 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 
       vu /= nout;
 
-      produce_audio (playback->output->written_time (), FMT_S16_NE, 2,
-		     nout << 2, stereo, NULL);
+      playback->pass_audio (playback, FMT_S16_NE, 2, nout << 2, stereo, NULL);
 
       sumarr[sap++] = vu;
       ms = (sap * nout) / mp3d.bitrate;
@@ -1312,7 +1328,7 @@ dvb_close_record (void)
   if (rec_file != NULL)
     {
       log_print (hlog, LOG_INFO, "closing record \"%s\"", erfn);
-      vfs_fclose (rec_file);
+      fclose (rec_file);
       rec_file = NULL;
       sap = 0;
       memset (sumarr, 0x00, sizeof (sumarr));
