@@ -427,7 +427,9 @@ dvb_infobox (statstruct * station, rtstruct * rt, epgstruct * epg,
     }
 
   // Create info box
-  xml = glade_xml_new_from_buffer (glwidgets, strlen(glwidgets), "fileinfo", NULL);
+  xml =
+    glade_xml_new_from_buffer (glwidgets, strlen (glwidgets), "fileinfo",
+			       NULL);
   widgets.infoXml = xml;
   glade_xml_signal_autoconnect (xml);
   infoBox = glade_xml_get_widget (xml, "fileinfo");
@@ -507,10 +509,8 @@ infobox_update_epg (epgstruct * epg)
       GtkTextBuffer *epgevddescTextBuffer;
       GtkWidget *epglangEntry, *epgatypeEntry,
 	*epgevnameEntry, *epgevdescEntry, *epgevddescTextView;
-      epglangEntry =
-	glade_xml_get_widget (widgets.infoXml, "epglangEntry");
-      epgatypeEntry =
-	glade_xml_get_widget (widgets.infoXml, "epgatypeEntry");
+      epglangEntry = glade_xml_get_widget (widgets.infoXml, "epglangEntry");
+      epgatypeEntry = glade_xml_get_widget (widgets.infoXml, "epgatypeEntry");
       epgevnameEntry =
 	glade_xml_get_widget (widgets.infoXml, "epgevnameEntry");
       epgevdescEntry =
@@ -600,13 +600,17 @@ infobox_update_dvb (dvbstatstruct * dvb)
 	  gchar *text;
 	  gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbstrProgressBar),
 					 ((double) dvb->str) / 0xffff);
-	  text = g_strdup_printf ("%.1lf%%", ((double) dvb->str)*100 / 0xffff);
-	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbstrProgressBar), text);
+	  text =
+	    g_strdup_printf ("%.1lf%%", ((double) dvb->str) * 100 / 0xffff);
+	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbstrProgressBar),
+				     text);
 	  g_free (text);
-	  text = g_strdup_printf ("%.1lf%%", ((double) dvb->snr)*100 / 0xffff);
+	  text =
+	    g_strdup_printf ("%.1lf%%", ((double) dvb->snr) * 100 / 0xffff);
 	  gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbsnrProgressBar),
 					 ((double) dvb->snr) / 0xffff);
-	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbsnrProgressBar), text);
+	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbsnrProgressBar),
+				     text);
 	  g_free (text);
 	  gtk_entry_printf (dvbuncEntry, "%08x", dvb->unc);
 	  gtk_entry_printf (dvbberEntry, "%08x", dvb->ber);
@@ -630,10 +634,12 @@ infobox_update_dvb (dvbstatstruct * dvb)
 	{
 	  gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbstrProgressBar),
 					 0);
-	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbstrProgressBar), "");
+	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbstrProgressBar),
+				     "");
 	  gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbsnrProgressBar),
 					 0);
-	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbsnrProgressBar), "");
+	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbsnrProgressBar),
+				     "");
 	  gtk_entry_set_text (GTK_ENTRY (dvbuncEntry), "");
 	  gtk_entry_set_text (GTK_ENTRY (dvbberEntry), "");
 	  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON

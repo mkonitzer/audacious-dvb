@@ -41,38 +41,38 @@ epg_init (void)
 }
 
 
-static gchar*
+static gchar *
 stream_type (gint cnt, gint cty)
 {
   gchar *ret = "unknown";
-  if ( cnt == 0x02 )
+  if (cnt == 0x02)
     {
       switch (cty)
 	{
-	  case 0x01:
-	    ret = "Single mono";
-	    break;
-	  case 0x02:
-	    ret = "Dual mono";
-	    break;
-	  case 0x03:
-	    ret = "Stereo (2 channel)";
-	    break;
-	  case 0x04:
-	    ret = "Multi-lingual, multi-channel";
-	    break;
-	  case 0x05:
-	    ret = "Surround sound";
-	    break;
-	  case 0x40:
-	    ret = "Visually impaired";
-	    break;
-	  case 0x41:
-	    ret = "Hard of hearing";
-	    break;
+	case 0x01:
+	  ret = "Single mono";
+	  break;
+	case 0x02:
+	  ret = "Dual mono";
+	  break;
+	case 0x03:
+	  ret = "Stereo (2 channel)";
+	  break;
+	case 0x04:
+	  ret = "Multi-lingual, multi-channel";
+	  break;
+	case 0x05:
+	  ret = "Surround sound";
+	  break;
+	case 0x40:
+	  ret = "Visually impaired";
+	  break;
+	case 0x41:
+	  ret = "Hard of hearing";
+	  break;
 	}
     }
-  return g_strdup(ret);
+  return g_strdup (ret);
 }
 
 
@@ -163,25 +163,25 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	      exttext = NULL;
 	    }
 	  break;
-	  
+
 	case 0x50:		// component_descriptor
-	    cnt = q[0] & 0xf;	// stream_content
-	    cty = q[1];		// component_type
-	    stype = stream_type (cnt, cty);
-	    q+=3;
-	  
-	    memcpy (lg, q, 3);	// ISO_639_language_code
-	    lg[3] = '\0';
-	  
-	    if (is_updated (stype, &epg->stream_type, FALSE))
-	      epg->refresh = TRUE;
-	    if (is_updated (lg, &epg->lang, FALSE))
-	      epg->refresh = TRUE;
-	  
-	    g_free(stype);
-	    stype = NULL;
-	  
-	    break;
+	  cnt = q[0] & 0xf;	// stream_content
+	  cty = q[1];		// component_type
+	  stype = stream_type (cnt, cty);
+	  q += 3;
+
+	  memcpy (lg, q, 3);	// ISO_639_language_code
+	  lg[3] = '\0';
+
+	  if (is_updated (stype, &epg->stream_type, FALSE))
+	    epg->refresh = TRUE;
+	  if (is_updated (lg, &epg->lang, FALSE))
+	    epg->refresh = TRUE;
+
+	  g_free (stype);
+	  stype = NULL;
+
+	  break;
 
 	default:
 	  g_sprintf (ll, "%02x", dt);

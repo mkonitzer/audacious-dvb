@@ -150,7 +150,7 @@ InputPlugin dvb_ip = {
 
 InputPlugin *dvb_iplist[] = { &dvb_ip, NULL };
 
-DECLARE_PLUGIN(dvb, NULL, NULL, dvb_iplist, NULL, NULL, NULL, NULL, NULL);
+DECLARE_PLUGIN (dvb, NULL, NULL, dvb_iplist, NULL, NULL, NULL, NULL, NULL);
 
 
 static void
@@ -179,7 +179,7 @@ dvb_init (void)
   if (!g_thread_supported ())
     g_thread_init (NULL);
 
-  aud_uri_set_plugin("dvb://", &dvb_ip);
+  aud_uri_set_plugin ("dvb://", &dvb_ip);
 }
 
 
@@ -407,25 +407,29 @@ dvb_stop (InputPlayback * playback)
       // Stop all threads
       if (gt_feed != NULL)
 	{
-	  log_print (hlog, LOG_INFO, "Waiting for dvb_feed_thread() to die...");
+	  log_print (hlog, LOG_INFO,
+		     "Waiting for dvb_feed_thread() to die...");
 	  g_thread_join (gt_feed);
 	  gt_feed = NULL;
 	}
       if (gt_dvbstat != NULL)
 	{
-	  log_print (hlog, LOG_INFO, "Waiting for dvb_status_thread to die...");
+	  log_print (hlog, LOG_INFO,
+		     "Waiting for dvb_status_thread to die...");
 	  g_thread_join (gt_dvbstat);
 	  gt_dvbstat = NULL;
 	}
       if (gt_get_name != NULL)
 	{
-	  log_print (hlog, LOG_INFO, "Waiting for get_name_thread thread to die...");
+	  log_print (hlog, LOG_INFO,
+		     "Waiting for get_name_thread thread to die...");
 	  g_thread_join (gt_get_name);
 	  gt_get_name = NULL;
 	}
       if (gt_mmusic != NULL)
 	{
-	  log_print (hlog, LOG_INFO, "Waiting for mmusic_thread thread to die...");
+	  log_print (hlog, LOG_INFO,
+		     "Waiting for mmusic_thread thread to die...");
 	  g_thread_join (gt_mmusic);
 	  gt_mmusic = NULL;
 	}
@@ -442,7 +446,7 @@ dvb_stop (InputPlayback * playback)
       infobox_update_epg (NULL);
       infobox_update_mmusic (NULL);
       infobox_update_dvb (NULL);
-      
+
       // Close output plugin
       playback->output->close_audio ();
 
@@ -965,8 +969,9 @@ dvb_pes_pkt (InputPlayback * playback, guchar * buf, gint len, gint reset)
 			  pp_len = PES_packet_length - 3 - p[8];
 			  dvb_payload (playback, pp, pp_len, 0);
 
+			  // FIXME: overlapping copy
 			  memcpy (pesbuf, &pesbuf[i + 6 + PES_packet_length],
-				  pbh - (i + 6 + PES_packet_length));	// FIXME: overlapping copy
+				  pbh - (i + 6 + PES_packet_length));
 			  pbl = 0;
 			  pbh -= (i + 6 + PES_packet_length);
 			}
@@ -1068,7 +1073,7 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 		  dvb_mpeg_frame (playback, mpbuf, fl, num_samples);
 		  if (rt != NULL)
 		    radiotext_read_data (rt, mpbuf, fl);
-		  memcpy (mpbuf, &mpbuf[fl], bph - fl);		// FIXME: overlapping copy
+		  memcpy (mpbuf, &mpbuf[fl], bph - fl);	// FIXME: overlapping copy
 		  bph -= fl;
 		}
 	      else
@@ -1250,8 +1255,8 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 	  if ((title = dvb_build_file_title ()) != NULL)
 	    {
 	      dvb_ip.set_info (aud_str_to_utf8 (title), -1,
-				mp3d.bitrate * 1000, mp3d.samplerate,
-				mp3d.stereo);
+			       mp3d.bitrate * 1000, mp3d.samplerate,
+			       mp3d.stereo);
 	      g_free (title);
 	    }
 	}
