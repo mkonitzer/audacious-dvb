@@ -95,11 +95,6 @@ static GThread *gt_get_name = NULL;
 static GThread *gt_epg = NULL;
 static GThread *gt_mmusic = NULL;
 static GThread *gt_dvbstat = NULL;
-static GMutex *gmt_feed = NULL;
-static GMutex *gmt_get_name = NULL;
-static GMutex *gmt_epg = NULL;
-static GMutex *gmt_mmusic = NULL;
-static GMutex *gmt_dvbstat = NULL;
 
 static gint sap;
 static gint sumarr[512];
@@ -473,9 +468,8 @@ feed_thread (gpointer args)
   playback = (InputPlayback *) args;
   log_print (hlog, LOG_INFO, "dvb_feed_thread() starting");
 
-  if (gmt_feed == NULL)
-    gmt_feed = g_mutex_new ();
-  g_mutex_lock (gmt_feed);
+  static GStaticMutex gmt_feed = G_STATIC_MUTEX_INIT;
+  g_static_mutex_lock(&gmt_feed);
 
   if (config->info_rt)
     rt = radiotext_init ();
@@ -536,8 +530,7 @@ feed_thread (gpointer args)
 
   log_print (hlog, LOG_INFO, "dvb_feed_thread() stopping");
 
-  g_mutex_unlock (gmt_feed);
-  gmt_feed = NULL;
+  g_static_mutex_unlock(&gmt_feed);
   g_thread_exit (0);
   return NULL;
 }
@@ -550,9 +543,8 @@ dvb_status_thread (gpointer args)
 
   log_print (hlog, LOG_INFO, "dvb_status_thread() starting");
 
-  if (gmt_dvbstat == NULL)
-    gmt_dvbstat = g_mutex_new ();
-  g_mutex_lock (gmt_dvbstat);
+  static GStaticMutex gmt_dvbstat = G_STATIC_MUTEX_INIT;
+  g_static_mutex_lock(&gmt_dvbstat);
 
   dvbstat = g_malloc0 (sizeof (dvbstatstruct));
 
@@ -570,8 +562,7 @@ dvb_status_thread (gpointer args)
 
   log_print (hlog, LOG_INFO, "dvb_status_thread() stopping");
 
-  g_mutex_unlock (gmt_dvbstat);
-  gmt_dvbstat = NULL;
+  g_static_mutex_unlock(&gmt_dvbstat);
   g_thread_exit (0);
   return NULL;
 }
@@ -1043,9 +1034,8 @@ get_name_thread (gpointer arg)
 
   log_print (hlog, LOG_INFO, "get_name_thread(%d) starting", svc_sid);
 
-  if (gmt_get_name == NULL)
-    gmt_get_name = g_mutex_new ();
-  g_mutex_lock (gmt_get_name);
+  static GStaticMutex gmt_get_name = G_STATIC_MUTEX_INIT;
+  g_static_mutex_lock(&gmt_get_name);
 
   sct = 0;
 
@@ -1100,8 +1090,7 @@ get_name_thread (gpointer arg)
 		      log_print (hlog, LOG_INFO,
 				 "get_name_thread() stopping");
 
-		      g_mutex_unlock (gmt_get_name);
-		      gmt_get_name = NULL;
+		      g_static_mutex_unlock (&gmt_get_name);
 		      g_thread_exit (0);
 
 		      return NULL;
@@ -1125,8 +1114,7 @@ get_name_thread (gpointer arg)
 
   log_print (hlog, LOG_INFO, "get_name_thread() stopping");
 
-  g_mutex_unlock (gmt_get_name);
-  gmt_get_name = NULL;
+  g_static_mutex_unlock (&gmt_get_name);
   g_thread_exit (0);
 
   return NULL;
@@ -1141,9 +1129,8 @@ epg_thread (gpointer arg)
 
   log_print (hlog, LOG_INFO, "epg_thread() started");
 
-  if (gmt_epg == NULL)
-    gmt_epg = g_mutex_new ();
-  g_mutex_lock (gmt_epg);
+  static GStaticMutex gmt_epg = G_STATIC_MUTEX_INIT;
+  g_static_mutex_lock(&gmt_epg);
 
   sid = *((gint *) arg);
   log_print (hlog, LOG_DEBUG, "EPG SID: %d (0x%04x)", sid, sid);
@@ -1151,8 +1138,7 @@ epg_thread (gpointer arg)
   // Make sure EPG retrieval is initialized
   if ((epg = epg_init ()) == NULL)
     {
-      g_mutex_unlock (gmt_epg);
-      gmt_epg = NULL;
+      g_static_mutex_unlock (&gmt_epg);
       g_thread_exit (0);
       return NULL;
     }
@@ -1188,8 +1174,7 @@ epg_thread (gpointer arg)
 
   log_print (hlog, LOG_INFO, "epg_thread() stopping");
 
-  g_mutex_unlock (gmt_epg);
-  gmt_epg = NULL;
+  g_static_mutex_unlock (&gmt_epg);
   g_thread_exit (0);
   return NULL;
 }
@@ -1203,15 +1188,13 @@ mmusic_thread (gpointer arg)
 
   log_print (hlog, LOG_INFO, "mmusic_thread() starting");
 
-  if (gmt_mmusic == NULL)
-    gmt_mmusic = g_mutex_new ();
-  g_mutex_lock (gmt_mmusic);
+  static GStaticMutex gmt_mmusic = G_STATIC_MUTEX_INIT;
+  g_static_mutex_lock(&gmt_mmusic);
 
   /* Make sure information retrieval is initialized */
   if ((mmusic = madmusic_init ()) == NULL)
     {
-      g_mutex_unlock (gmt_mmusic);
-      gmt_mmusic = NULL;
+      g_static_mutex_unlock (&gmt_mmusic);
       g_thread_exit (0);
       return NULL;
     }
@@ -1272,8 +1255,7 @@ mmusic_thread (gpointer arg)
 
   log_print (hlog, LOG_INFO, "mmusic_thread() stopping");
 
-  g_mutex_unlock (gmt_mmusic);
-  gmt_mmusic = NULL;
+  g_static_mutex_unlock (&gmt_mmusic);
   g_thread_exit (0);
   return NULL;
 }
