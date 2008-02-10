@@ -605,13 +605,13 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
   if (ioctl (h->dvb_fedh, FE_SET_VOLTAGE, v) < 0)
     return -1;
 
-  usleep (15 * 1000);
+  g_usleep (15 * 1000);
 
   if (sat_no >= 1 && sat_no <= 4)	// 1.x compatible DiSEqC
     {
       if (ioctl (h->dvb_fedh, FE_DISEQC_SEND_MASTER_CMD, &cmd->cmd) < 0)
 	return -1;
-      usleep (cmd->wait * 1000);
+      g_usleep (cmd->wait * 1000);
     }
   else				// A or B simple DiSEqC
     {
@@ -621,7 +621,7 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
 	return -1;
     }
 
-  usleep (15 * 1000);
+  g_usleep (15 * 1000);
 
   if (ioctl (h->dvb_fedh, FE_SET_TONE, t) < 0)
     return -1;
@@ -665,7 +665,7 @@ do_diseqc (gpointer hdvb, guchar sat_no, gint polv, gint hi_lo)
 	   (hi_lo ? SEC_TONE_ON : SEC_TONE_OFF)) < 0)
 	return -1;
 
-      usleep (15 * 1000);
+      g_usleep (15 * 1000);
     }
 
   return 0;
@@ -710,7 +710,7 @@ check_status (gpointer hdvb, gint type,
 	    }
 	}
 
-      usleep (10000);
+      g_usleep (10000);
 
       if ((festatus & FE_TIMEDOUT) || (locks >= 2)
 	  || (time (NULL) - tm1 >= 3))
@@ -844,8 +844,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
       return -1;
     }
 
-  log_print (hlog, LOG_INFO, "Using DVB card '%s', freq=%d", fe_info.name,
-	     t->freq);
+  log_print (hlog, LOG_INFO, "Using DVB card '%s'", fe_info.name);
 
   if (t->freq < 1000000)
     t->freq *= 1000UL;
@@ -862,7 +861,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
       feparams.u.ofdm.transmission_mode = t->tmode;
       feparams.u.ofdm.guard_interval = t->gival;
       feparams.u.ofdm.hierarchy_information = t->hier;
-      log_print (hlog, LOG_INFO, "tuning DVB-T to %d Hz, Bandwidth: %d",
+      log_print (hlog, LOG_INFO, "tuning DVB-T to %u Hz, Bandwidth: %d",
 		 t->freq, t->bandw == BANDWIDTH_8_MHZ ? 8 :
 		 (t->bandw == BANDWIDTH_7_MHZ ? 7 : 6));
       break;
@@ -889,7 +888,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
 	}
 
       log_print (hlog, LOG_INFO,
-		 "tuning DVB-S to Freq: %u, Pol:%c Srate=%d, 22kHz tone=%s, "
+		 "tuning DVB-S to %u kHz, Pol:%c Srate=%d, 22kHz tone=%s, "
 		 "LNB: %d, SLOF %d, LOF1: %d, LOF2: %d",
 		 feparams.frequency, t->pol, t->srate,
 		 hi_lo == 1 ? "ON" : "OFF", t->diseqc, t->slof / 1000UL,
@@ -907,7 +906,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
 	}
       break;
     case FE_QAM:
-      log_print (hlog, LOG_INFO, "tuning DVB-C to %d, srate=%d",
+      log_print (hlog, LOG_INFO, "tuning DVB-C to %d Hz, srate=%d",
 		 t->freq, t->srate);
       feparams.frequency = t->freq;
       feparams.inversion = INVERSION_OFF;
@@ -917,7 +916,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
       break;
 #ifdef DVB_ATSC
     case FE_ATSC:
-      log_print (hlog, LOG_INFO, "tuning ATSC to %d, modulation=%d", t->freq,
+      log_print (hlog, LOG_INFO, "tuning ATSC to %d Hz, modulation=%d", t->freq,
 		 t->mod);
       feparams.frequency = t->freq;
       feparams.u.vsb.modulation = t->mod;
@@ -927,7 +926,6 @@ dvb_tune (gpointer hdvb, tunestruct * t)
       log_print (hlog, LOG_ERR, "Unknown FE type. Aborting");
       return -1;
     }
-  usleep (100000);
 
   return (check_status (hdvb, fe_info.type, &feparams, base));
 }
