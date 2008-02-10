@@ -253,7 +253,7 @@ dvb_is_our_file (gchar * s)
 static void
 dvb_play (InputPlayback * playback)
 {
-  gint rc, apid, dpid;
+  gint rc;
   gchar tfn[MAXPATHLEN];
   struct stat st;
 
@@ -269,37 +269,19 @@ dvb_play (InputPlayback * playback)
   infobox_update_mmusic (NULL);
   infobox_update_dvb (NULL);
 
-  // Initialize tuning information
-  g_free (tune);
-  tune = g_malloc0 (sizeof (tunestruct));
-  if ((rc = dvb_parse_url (playback->filename, tune)) != RC_OK)
-    {
-      log_print (hlog, LOG_INFO, "dvb_parse_url() returned rc = %d", rc);
-      return;
-    }
-
+  // Reset playback structures
   playing = TRUE;
-  t_start = 0;
-  frm_ctr = 0;
-
-  sap = 0;
+  t_start = frm_ctr = sap = file_index = 0;
   memset (sumarr, 0x00, sizeof (sumarr));
-
   if (rec_file == NULL)
     memset (erfn, 0x00, sizeof (erfn));
-
-  file_index = 0;
   if (config->isplit || config->vsplit)
     {
       if (index (config->rec_fname, '%'))
 	{
-	  while (1)
-	    {
-	      g_sprintf (tfn, config->rec_fname, file_index);
-	      if (stat (tfn, &st) < 0)
-		break;
-	      file_index++;
-	    }
+	  g_sprintf (tfn, config->rec_fname, file_index);
+	  while (stat (tfn, &st) >= 0)
+	    g_sprintf (tfn, config->rec_fname, ++file_index);
 	}
     }
 
@@ -310,10 +292,19 @@ dvb_play (InputPlayback * playback)
       return;
     }
 
+  // Initialize tuning information
+  tune = g_malloc0 (sizeof (tunestruct));
+  if ((rc = dvb_parse_url (playback->filename, tune)) != RC_OK)
+    {
+      log_print (hlog, LOG_INFO, "dvb_parse_url() returned rc = %d", rc);
+      return;
+    }
+
   // Tune DVB device to stations's frequency
   if ((rc = dvb_tune (hdvb, tune)) != RC_OK)
     {
       playing = FALSE;
+      g_free (tune);
       dvb_close (hdvb);
       hdvb = NULL;
       return;
@@ -326,10 +317,11 @@ dvb_play (InputPlayback * playback)
   station->svc_name = g_strdup (playback->filename);
 
   // Get audio PIDs from SID
-  if ((rc = dvb_get_pid (hdvb, tune->sid, &apid, &dpid)) != RC_OK)
+  if ((rc = dvb_get_pid (hdvb, tune->sid, &(tune->apid), &(tune->dpid))) != RC_OK)
     {
       log_print (hlog, LOG_WARNING, "dvb_get_pid() returned %d.", rc);
       playing = FALSE;
+      g_free (tune);
       dvb_close (hdvb);
       hdvb = NULL;
       return;
@@ -342,10 +334,11 @@ dvb_play (InputPlayback * playback)
     log_print (hlog, LOG_WARNING, "Failed to start dvb_get_name() thread");
 
   // Set audio PES-filter
-  if ((rc = dvb_apid (hdvb, apid)) != RC_OK)
+  if ((rc = dvb_apid (hdvb, tune->apid)) != RC_OK)
     {
       log_print (hlog, LOG_ERR, "dvb_apid() returned %d.", rc);
       playing = FALSE;
+      g_free (tune);
       dvb_close (hdvb);
       hdvb = NULL;
       return;
@@ -355,12 +348,12 @@ dvb_play (InputPlayback * playback)
   lame_decode_init ();
 
   // Initialize MadMusic info retrieval
-  if ((dpid > 0) && config->info_mmusic)
+  if ((tune->dpid > 0) && config->info_mmusic)
     {
       log_print (hlog, LOG_INFO,
-		 "Data service associated on PID %d (0x%04x).", dpid, dpid);
+		 "Data service associated on PID %d (0x%04x).", tune->dpid, tune->dpid);
 
-      if ((rc = dvb_dpid (hdvb, dpid)) == RC_OK)
+      if ((rc = dvb_dpid (hdvb, tune->dpid)) == RC_OK)
 	{
 	  if ((gt_mmusic =
 	       g_thread_create (mmusic_thread, 0, TRUE, NULL)) == NULL)
@@ -386,11 +379,12 @@ dvb_play (InputPlayback * playback)
     log_print (hlog, LOG_ERR,
 	       "g_thread_create() failed for dvb_status_thread()");
 
-  // Start receiving audio packets and playback
+  // Initialize audio packet retrieval (including Radiotext info)
   if ((gt_feed = g_thread_self ()) == NULL)
     {
-      playing = FALSE;
       log_print (hlog, LOG_CRIT, "g_thread_self() failed for dvb_play()");
+      dvb_stop(playback);
+      return;
     }
   playback->set_pb_ready (playback);
   feed_thread (playback);
@@ -871,7 +865,7 @@ dvb_status_thread (gpointer args)
   while (playing)
     {
       dvb_get_status (hdvb, dvbstat);
-      usleep (750000);
+      g_usleep (750000);
     }
 
   if (dvbstat != NULL)

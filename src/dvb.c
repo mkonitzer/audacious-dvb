@@ -613,7 +613,7 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
 	return -1;
       g_usleep (cmd->wait * 1000);
     }
-  else				// A or B simple DiSEqC
+  else					// A or B simple DiSEqC
     {
       log_print (hlog, LOG_INFO, "Setting simple %c burst", sat_no);
       if (ioctl (h->dvb_fedh, FE_DISEQC_SEND_BURST,

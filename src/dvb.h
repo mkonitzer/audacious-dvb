@@ -53,6 +53,8 @@ typedef struct _tunestruct
   fe_code_rate_t lpcr;
   fe_hierarchy_t hier;
   guint sid;
+  guint apid;
+  guint dpid;
 } tunestruct;
 
 typedef struct _dvbstatstruct
