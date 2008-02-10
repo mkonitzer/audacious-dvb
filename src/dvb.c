@@ -316,7 +316,7 @@ dvb_section (gpointer hdvb, gint pid, gint sect, gint sid, gint sct,
 
 
 gint
-dvb_apid (gpointer hdvb, gint pid)
+dvb_apid (gpointer hdvb, guint pid)
 {
   HDVB *h;
   struct dmx_pes_filter_params fp;
@@ -353,7 +353,7 @@ dvb_apid (gpointer hdvb, gint pid)
 
 
 gint
-dvb_apkt (gpointer hdvb, guchar * pkt, gint len, gint t, gint * rcvd)
+dvb_apkt (gpointer hdvb, guchar * pkt, guint len, guint t, gint * rcvd)
 {
   gint r, sel;
   HDVB *h;
@@ -395,7 +395,7 @@ dvb_apkt (gpointer hdvb, guchar * pkt, gint len, gint t, gint * rcvd)
 
 
 gint
-dvb_dpid (gpointer hdvb, gint pid)
+dvb_dpid (gpointer hdvb, guint pid)
 {
   HDVB *h;
   struct dmx_sct_filter_params fp;
@@ -494,10 +494,10 @@ dvb_dpkt (void *hdvb, guchar * s, gint len, gint t, gint * rcvd)
 
 
 gint
-dvb_get_pid (gpointer hdvb, gint s, gint * apid, gint * dpid)
+dvb_get_pid (gpointer hdvb, gint s, guint * apid, guint * dpid)
 {
   gint rc, len, pmt, pil, es, es_type, es_audio, es_data;
-  gint sid;
+  guint sid;
   guchar sct[4096], *p, *q;
 
   if ((rc = dvb_section (hdvb, 0, 0, 0, 0, sct, 10000)) != RC_OK)
@@ -928,4 +928,294 @@ dvb_tune (gpointer hdvb, tunestruct * t)
     }
 
   return (check_status (hdvb, fe_info.type, &feparams, base));
+}
+
+gint
+dvb_parse_url (const gchar * url, tunestruct * tune)
+{
+  gint i;
+  tunestruct t;
+  gchar **args, **pair;
+  gchar *par, *val, ch;
+
+  if (!g_str_has_prefix (url, "dvb://audio?"))
+    return -1;
+
+  // Fill in frontend defaults
+  dvb_tune_defaults (&t);
+
+  args = g_strsplit (&url[12], ":", 0);
+
+  // Parse each (parameter=value)-pair
+  i = 0;
+  while (args[i])
+    {
+      pair = g_strsplit (args[i++], "=", 2);
+      par = pair[0];
+      val = pair[1];
+
+      if (par == NULL || val == NULL)
+	{
+	  g_strfreev (pair);
+	  g_strfreev (args);
+	  return 0;
+	}
+
+      if (g_ascii_strcasecmp (par, "sid") == 0)
+	{
+	  // Service ID
+	  t.sid = atol (val);
+	}
+      else if (g_ascii_strcasecmp (par, "freq") == 0)
+	{
+	  // Frequency of transponder (DVB-T/-C: in Hz, DVB-S: in kHz)
+	  t.freq = atol (val);
+	}
+      else if (g_ascii_strcasecmp (par, "pol") == 0)
+	{
+	  // Polarisation (DVB-S)
+	  if (val[1] == 0)
+	    {
+	      ch = g_ascii_toupper (val[0]);
+	      switch (ch)
+		{
+		case 'H':
+		case 'V':
+		  t.pol = ch;
+		  break;
+		default:
+		  log_print (hlog, LOG_ERR, "Invalid polarisation value '%c'",
+			     ch);
+		}
+	    }
+	}
+      else if (g_ascii_strcasecmp (par, "slof") == 0)
+	{
+	  // Switch frequency of LNB (DVB-S)
+	  t.slof = atol (val) * 1000UL;
+	}
+      else if (g_ascii_strcasecmp (par, "lof1") == 0)
+	{
+	  // Local frequency of lower LNB band (DVB-S)
+	  t.lof1 = atol (val) * 1000UL;
+	}
+      else if (g_ascii_strcasecmp (par, "lof2") == 0)
+	{
+	  // Local frequency of upper LNB band (DVB-S)
+	  t.lof2 = atol (val) * 1000UL;
+	}
+      else if (g_ascii_strcasecmp (par, "srate") == 0)
+	{
+	  // Symbol rate in symbols per second (DVB-S/-T/-C)
+	  t.srate = atol (val) * 1000UL;
+	}
+      else if (g_ascii_strcasecmp (par, "diseqc") == 0)
+	{
+	  // DiSEqC address of the used LNB (DVB-S)
+	  if (val[1] == 0)
+	    {
+	      ch = g_ascii_toupper (val[0]);
+	      switch (ch)
+		{
+		case 'A':
+		case 'B':
+		  t.diseqc = ch;
+		  break;
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		  t.diseqc = g_ascii_digit_value (ch);
+		  break;
+		default:
+		  log_print (hlog, LOG_ERR, "Invalid DiSEqC address '%c'",
+			     ch);
+		}
+	    }
+	}
+      else if (g_ascii_strcasecmp (par, "sinv") == 0)
+	{
+	  // Spectral inversion (DVB-S)
+	  switch (atol (val))
+	    {
+	    case 0:
+	      t.sinv = INVERSION_OFF;
+	      break;
+	    case 1:
+	      t.sinv = INVERSION_ON;
+	      break;
+	    default:
+	      log_print (hlog, LOG_ERR, "Invalid spectral inversion '%s'",
+			 val);
+	    }
+	}
+      else if (g_ascii_strcasecmp (par, "qam") == 0)
+	{
+	  // Quadrature modulation (DVB-T/-C)
+	  switch (atol (val))
+	    {
+	    case 16:
+	      t.mod = QAM_16;
+	      break;
+	    case 32:
+	      t.mod = QAM_32;
+	      break;
+	    case 64:
+	      t.mod = QAM_64;
+	      break;
+	    case 128:
+	      t.mod = QAM_128;
+	      break;
+	    case 256:
+	      t.mod = QAM_256;
+	      break;
+	    default:
+	      log_print (hlog, LOG_ERR, "Invalid QAM value '%s'", val);
+	    }
+	}
+#ifdef DVB_ATSC
+      else if (g_ascii_strcasecmp (par, "vsb") == 0)
+	{
+	  // Vestigial sideband modulation (ATSC)
+	  switch (atol (val))
+	    {
+	    case 8:
+	      t.mod = VSB_8;
+	      break;
+	    case 16:
+	      t.mod = VSB_16;
+	      break;
+	    default:
+	      log_print (hlog, LOG_ERR, "Invalid ATSC VSB modulation '%s'",
+			 val);
+	    }
+	}
+#endif
+      else if (g_ascii_strcasecmp (par, "gival") == 0)
+	{
+	  // Guard interval (DVB-T)
+	  switch (atol (val))
+	    {
+	    case 32:
+	      t.gival = GUARD_INTERVAL_1_32;
+	      break;
+	    case 16:
+	      t.gival = GUARD_INTERVAL_1_16;
+	      break;
+	    case 8:
+	      t.gival = GUARD_INTERVAL_1_8;
+	      break;
+	    case 4:
+	      t.gival = GUARD_INTERVAL_1_4;
+	      break;
+	    default:
+	      log_print (hlog, LOG_ERR, "Invalid guard interval '%s'", val);
+	    }
+	}
+      else if (g_ascii_strcasecmp (par, "tmode") == 0)
+	{
+	  // Transmission mode (DVB-T)
+	  switch (atol (val))
+	    {
+	    case 8:
+	      t.tmode = TRANSMISSION_MODE_8K;
+	      break;
+	    case 2:
+	      t.tmode = TRANSMISSION_MODE_2K;
+	      break;
+	    default:
+	      log_print (hlog, LOG_ERR, "Invalid transmission mode '%s'",
+			 val);
+	    }
+	}
+      else if (g_ascii_strcasecmp (par, "bandw") == 0)
+	{
+	  // Bandwidth (DVB-T)
+	  switch (atol (val))
+	    {
+	    case 8:
+	      t.bandw = BANDWIDTH_8_MHZ;
+	      break;
+	    case 7:
+	      t.bandw = BANDWIDTH_7_MHZ;
+	      break;
+	    case 6:
+	      t.bandw = BANDWIDTH_6_MHZ;
+	      break;
+	    default:
+	      log_print (hlog, LOG_ERR, "Invalid DVB-T bandwidth '%s'", val);
+	    }
+	}
+      else if (g_ascii_strcasecmp (par, "hpcr") == 0)
+	{
+	  // (High priority) Stream code rate (DVB-S/-T/-C)
+	  if (g_ascii_strcasecmp (val, "NONE") == 0)
+	    t.hpcr = FEC_NONE;
+	  else if (g_ascii_strcasecmp (val, "AUTO") == 0)
+	    t.hpcr = FEC_AUTO;
+	  else if (g_ascii_strcasecmp (val, "1_2") == 0)
+	    t.hpcr = FEC_1_2;
+	  else if (g_ascii_strcasecmp (val, "2_3") == 0)
+	    t.hpcr = FEC_2_3;
+	  else if (g_ascii_strcasecmp (val, "3_4") == 0)
+	    t.hpcr = FEC_3_4;
+	  else if (g_ascii_strcasecmp (val, "5_6") == 0)
+	    t.hpcr = FEC_5_6;
+	  else if (g_ascii_strcasecmp (val, "7_8") == 0)
+	    t.hpcr = FEC_7_8;
+	  else
+	    log_print (hlog, LOG_ERR, "Invalid code rate '%s'", val);
+	}
+      else if (g_ascii_strcasecmp (par, "lpcr") == 0)
+	{
+	  // Low priority stream code rate (DVB-T)
+	  if (g_ascii_strcasecmp (val, "NONE") == 0)
+	    t.lpcr = FEC_NONE;
+	  else if (g_ascii_strcasecmp (val, "AUTO") == 0)
+	    t.lpcr = FEC_AUTO;
+	  else if (g_ascii_strcasecmp (val, "1_2") == 0)
+	    t.lpcr = FEC_1_2;
+	  else if (g_ascii_strcasecmp (val, "2_3") == 0)
+	    t.lpcr = FEC_2_3;
+	  else if (g_ascii_strcasecmp (val, "3_4") == 0)
+	    t.lpcr = FEC_3_4;
+	  else if (g_ascii_strcasecmp (val, "5_6") == 0)
+	    t.lpcr = FEC_5_6;
+	  else if (g_ascii_strcasecmp (val, "7_8") == 0)
+	    t.lpcr = FEC_7_8;
+	  else
+	    log_print (hlog, LOG_ERR, "Invalid LP code rate '%s'", val);
+	}
+      else if (g_ascii_strcasecmp (par, "hier") == 0)
+	{
+	  // Hierarchy (DVB-T)
+	  if (g_ascii_strcasecmp (val, "NONE") == 0)
+	    t.hier = HIERARCHY_NONE;
+	  else if (g_ascii_strcasecmp (val, "AUTO") == 0)
+	    t.hier = HIERARCHY_AUTO;
+	  else if (g_ascii_strcasecmp (val, "1") == 0)
+	    t.hier = HIERARCHY_1;
+	  else if (g_ascii_strcasecmp (val, "2") == 0)
+	    t.hier = HIERARCHY_2;
+	  else if (g_ascii_strcasecmp (val, "4") == 0)
+	    t.hier = HIERARCHY_4;
+	  else
+	    log_print (hlog, LOG_ERR, "Invalid hierarchy value '%s'", val);
+	}
+      else
+	log_print (hlog, LOG_ERR, "Unknown parameter '%s' (with value '%s')",
+		   par, val);
+
+      g_strfreev (pair);
+    }
+  g_strfreev (args);
+
+  if (t.freq == 0)
+    return RC_DVB_TUNE_QPSK_DISEQC_FAILED;	// FIXME: wrong return value
+
+  if (tune != NULL)
+    memcpy (tune, &t, sizeof (tunestruct));
+
+  return RC_OK;
 }

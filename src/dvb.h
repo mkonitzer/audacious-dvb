@@ -129,14 +129,15 @@ gint dvb_filter (gpointer, gint);
 gint dvb_packet (gpointer, guchar *, gint);
 gint dvb_unfilter (gpointer);
 gint dvb_section (gpointer, gint, gint, gint, gint, guchar *, gint);
-gint dvb_apid (gpointer, gint);
-gint dvb_apkt (gpointer, guchar *, gint, gint, gint *);
-gint dvb_dpid (gpointer, gint);
+gint dvb_apid (gpointer, guint);
+gint dvb_apkt (gpointer, guchar *, guint, guint, gint *);
+gint dvb_dpid (gpointer, guint);
 gint dvb_dpkt (gpointer, guchar *, gint, gint, gint *);
 gint dvb_volume (gpointer, gint);
-gint dvb_get_pid (gpointer, gint, gint *, gint *);
-gint dvb_get_status (gpointer hdvb, dvbstatstruct * st);
+gint dvb_get_pid (gpointer, gint, guint *, guint *);
+gint dvb_get_status (gpointer, dvbstatstruct *);
 void dvb_tune_defaults (tunestruct *);
 gint dvb_tune (gpointer, tunestruct *);
+gint dvb_parse_url (const gchar *, tunestruct *);
 
 #endif // __AUDACIOUS_DVB_DVB_H__
