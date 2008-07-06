@@ -110,7 +110,7 @@ gint
 log_set_level (gpointer hlog, gint lvl)
 {
   HLOG *hl = (HLOG *) hlog;
-  if (hl != NULL)
+  if (hl == NULL)
     return RC_LOG_SET_LVL_HANDLE_INVALID;
   
   // Update current with given level
