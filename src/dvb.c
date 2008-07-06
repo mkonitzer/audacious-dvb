@@ -70,9 +70,7 @@ static gint check_status (gpointer hdvb, gint type,
 gpointer *
 dvb_open (gint devnum)
 {
-  HDVB *h;
-
-  h = g_malloc0 (sizeof (HDVB));
+  HDVB *h = g_malloc0 (sizeof (HDVB));
   if (h == NULL)
     return NULL;
 
@@ -91,9 +89,10 @@ dvb_open (gint devnum)
 gint
 dvb_close (gpointer hdvb)
 {
-  HDVB *h;
+  HDVB *h = (HDVB *) hdvb;
+  if (h == NULL)
+    return RC_NPE;
 
-  h = (HDVB *) hdvb;
   ioctl (h->dvb_fedh, FE_SET_VOLTAGE, SEC_VOLTAGE_OFF);
 
   if (h->dvb_admx > 0)
@@ -111,8 +110,9 @@ dvb_close (gpointer hdvb)
 gint
 dvb_filter (gpointer hdvb, gint pid)
 {
-  HDVB *h;
-  h = (HDVB *) hdvb;
+  HDVB *h = (HDVB *) hdvb;
+  if (h == NULL)
+    return RC_NPE;
 
   g_free (h->dvb_dmxdn);
   h->dvb_dmxdn = g_strdup_printf ("/dev/dvb/adapter%d/demux0", h->dvb_num);
@@ -154,12 +154,14 @@ gint
 dvb_packet (gpointer hdvb, guchar * pkt, gint t)
 {
   int r, s;
-  HDVB *h;
   fd_set rfd;
   struct timeval tv;
 
-  h = (HDVB *) hdvb;
-
+  HDVB *h = (HDVB *) hdvb;
+  if (h == NULL)
+    return RC_NPE;
+    
+  memset (&tv, 0x00, sizeof(tv));
   tv.tv_sec = t / 1000;
   tv.tv_usec = 1000 * (t % 1000);
 
@@ -189,9 +191,9 @@ dvb_packet (gpointer hdvb, guchar * pkt, gint t)
 gint
 dvb_unfilter (gpointer hdvb)
 {
-  HDVB *h;
-
-  h = (HDVB *) hdvb;
+  HDVB *h = (HDVB *) hdvb;
+  if (h == NULL)
+    return RC_NPE;
 
   if (ioctl (h->dvb_dmxdh, DMX_STOP) < 0)
     return RC_OK;
@@ -207,13 +209,16 @@ dvb_section (gpointer hdvb, gint pid, gint sect, gint sid, gint sct,
 	     guchar * s, gint t)
 {
   gint sel, r, fd;
-  HDVB *h;
   fd_set fds;
   struct timeval tv;
   struct dmx_sct_filter_params fp;
 
-  h = (HDVB *) hdvb;
-  g_free (h->dvb_dmxdn);
+  HDVB *h = (HDVB *) hdvb;
+  if (h == NULL)
+    return RC_NPE;
+
+  if (h->dvb_dmxdn)
+    g_free (h->dvb_dmxdn);
   h->dvb_dmxdn = g_strdup_printf ("/dev/dvb/adapter%d/demux0", h->dvb_num);
 
   if ((fd = open (h->dvb_dmxdn, O_RDWR)) < 0)
@@ -224,10 +229,8 @@ dvb_section (gpointer hdvb, gint pid, gint sect, gint sid, gint sct,
       return RC_DVB_SECTION_OPEN_DEMUX;
     }
 
+  memset (&fp, 0x00, sizeof(fp));
   fp.pid = pid;
-  memset (&fp.filter.filter, 0x00, DMX_FILTER_SIZE);
-  memset (&fp.filter.mask, 0x00, DMX_FILTER_SIZE);
-  memset (&fp.filter.mode, 0x00, DMX_FILTER_SIZE);
   fp.timeout = 0;
   fp.flags = DMX_IMMEDIATE_START | DMX_ONESHOT | DMX_CHECK_CRC;
 
@@ -318,11 +321,14 @@ dvb_section (gpointer hdvb, gint pid, gint sect, gint sid, gint sct,
 gint
 dvb_apid (gpointer hdvb, guint pid)
 {
-  HDVB *h;
   struct dmx_pes_filter_params fp;
 
-  h = (HDVB *) hdvb;
-  g_free (h->dvb_dmxdn);
+  HDVB *h = (HDVB *) hdvb;
+  if (h == NULL)
+    return RC_NPE;
+
+  if (h->dvb_dmxdn)
+    g_free (h->dvb_dmxdn);
   h->dvb_dmxdn = g_strdup_printf ("/dev/dvb/adapter%d/demux0", h->dvb_num);
 
   if ((h->dvb_admx = open (h->dvb_dmxdn, O_RDWR)) < 0)
@@ -339,6 +345,7 @@ dvb_apid (gpointer hdvb, guint pid)
       return RC_DVB_APID_SET_BUFFER_SIZE;
     }
 
+  memset (&fp, 0x00, sizeof(fp));
   fp.pid = pid;
   fp.input = DMX_IN_FRONTEND;
   fp.output = DMX_OUT_TAP;
@@ -356,12 +363,14 @@ gint
 dvb_apkt (gpointer hdvb, guchar * pkt, guint len, guint t, gint * rcvd)
 {
   gint r, sel;
-  HDVB *h;
   fd_set rfd;
   struct timeval tv;
 
-  h = (HDVB *) hdvb;
+  HDVB *h = (HDVB *) hdvb;
+  if (h == NULL)
+    return RC_NPE;
 
+  memset (&tv, 0x00, sizeof(tv));
   tv.tv_sec = t / 1000;
   tv.tv_usec = 1000 * (t % 1000);
 
@@ -397,12 +406,15 @@ dvb_apkt (gpointer hdvb, guchar * pkt, guint len, guint t, gint * rcvd)
 gint
 dvb_dpid (gpointer hdvb, guint pid)
 {
-  HDVB *h;
   struct dmx_sct_filter_params fp;
   struct dmx_pes_filter_params pfp;
 
-  h = (HDVB *) hdvb;
-  g_free (h->dvb_dmxdn);
+  HDVB *h = (HDVB *) hdvb;
+  if (h == NULL)
+    return RC_NPE;
+
+  if (h->dvb_dmxdn)
+    g_free (h->dvb_dmxdn);
   h->dvb_dmxdn = g_strdup_printf ("/dev/dvb/adapter%d/demux0", h->dvb_num);
 
   if ((h->dvb_ddmx = open (h->dvb_dmxdn, O_RDWR)) < 0)
@@ -419,6 +431,7 @@ dvb_dpid (gpointer hdvb, guint pid)
       return RC_DVB_DPID_SET_BUFFER_SIZE;
     }
 
+  memset (&pfp, 0x00, sizeof(pfp));
   pfp.pid = pid;
   pfp.input = DMX_IN_FRONTEND;
   pfp.output = DMX_OUT_TAP;
@@ -428,10 +441,8 @@ dvb_dpid (gpointer hdvb, guint pid)
   if (ioctl (h->dvb_ddmx, DMX_SET_PES_FILTER, &pfp) < 0)
     return RC_DVB_DPID_SETFILTER_FAILED;
 
+  memset (&fp, 0x00, sizeof(fp));
   fp.pid = pid;
-  memset (&fp.filter.filter, 0x00, DMX_FILTER_SIZE);
-  memset (&fp.filter.mask, 0x00, DMX_FILTER_SIZE);
-  memset (&fp.filter.mode, 0x00, DMX_FILTER_SIZE);
   fp.timeout = 0;
   fp.flags = DMX_IMMEDIATE_START | DMX_CHECK_CRC;
 
@@ -455,12 +466,14 @@ gint
 dvb_dpkt (void *hdvb, guchar * s, gint len, gint t, gint * rcvd)
 {
   gint r, sel;
-  HDVB *h;
   fd_set fds;
   struct timeval tv;
 
-  h = (HDVB *) hdvb;
+  HDVB *h = (HDVB *) hdvb;
+  if (h == NULL)
+    return RC_NPE;
 
+  memset (&tv, 0x00, sizeof(tv));
   tv.tv_sec = t / 1000;
   tv.tv_usec = 1000 * (t % 1000);
 
@@ -578,7 +591,7 @@ dvb_tune_defaults (tunestruct * t)
   if (t == NULL)
     return;
 
-  memset (t, 0, sizeof (tunestruct));
+  memset (t, 0x00, sizeof (tunestruct));
   t->slof = (11700 * 1000UL);
   t->lof1 = (9750 * 1000UL);
   t->lof2 = (10600 * 1000UL);
@@ -597,8 +610,9 @@ static int
 diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
 		 fe_sec_tone_mode_t t, guchar sat_no)
 {
-  HDVB *h;
-  h = (HDVB *) hdvb;
+  HDVB *h = (HDVB *) hdvb;
+  if (h == NULL)
+    return RC_NPE;
 
   if (ioctl (h->dvb_fedh, FE_SET_TONE, SEC_TONE_OFF) < 0)
     return -1;
@@ -633,8 +647,9 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
 static int
 do_diseqc (gpointer hdvb, guchar sat_no, gint polv, gint hi_lo)
 {
-  HDVB *h;
-  h = (HDVB *) hdvb;
+  HDVB *h = (HDVB *) hdvb;
+  if (h == NULL)
+    return RC_NPE;
 
   struct diseqc_cmd cmd = { {{0xe0, 0x10, 0x38, 0xf0, 0x00, 0x00}, 4}, 0 };
 
@@ -682,8 +697,9 @@ check_status (gpointer hdvb, gint type,
   gint status, locks = 0, ok = 0;
   time_t tm1, tm2;
 
-  HDVB *h;
-  h = (HDVB *) hdvb;
+  HDVB *h = (HDVB *) hdvb;
+  if (h == NULL)
+    return RC_NPE;
 
   if (ioctl (h->dvb_fedh, FE_SET_FRONTEND, feparams) < 0)
     {
@@ -692,6 +708,7 @@ check_status (gpointer hdvb, gint type,
       return -1;
     }
 
+  memset (&pfd, 0x00, sizeof(pfd));
   pfd[0].fd = h->dvb_fedh;
   pfd[0].events = POLLPRI;
 
@@ -786,11 +803,13 @@ dvb_get_status (gpointer hdvb, dvbstatstruct * st)
 {
   guint status;
   dvbstatstruct _st;
-  HDVB *h;
-  h = (HDVB *) hdvb;
+
+  HDVB *h = (HDVB *) hdvb;
+  if (h == NULL)
+    return RC_NPE;
 
   if (st == NULL)
-    return -1;
+    return RC_NPE;
 
   if (ioctl (h->dvb_fedh, FE_READ_STATUS, &status) == -1)
     {
@@ -834,8 +853,9 @@ dvb_tune (gpointer hdvb, tunestruct * t)
   struct dvb_frontend_parameters feparams;
   struct dvb_frontend_info fe_info;
 
-  HDVB *h;
-  h = (HDVB *) hdvb;
+  HDVB *h = (HDVB *) hdvb;
+  if (h == NULL)
+    return RC_NPE;
 
   if ((res = ioctl (h->dvb_fedh, FE_GET_INFO, &fe_info) < 0))
     {
@@ -849,6 +869,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
   if (t->freq < 1000000)
     t->freq *= 1000UL;
 
+  memset (&feparams, 0x00, sizeof(feparams));
   switch (fe_info.type)
     {
     case FE_OFDM:
@@ -938,6 +959,10 @@ dvb_parse_url (const gchar * url, tunestruct * tune)
   gchar **args, **pair;
   gchar *par, *val, ch;
 
+  if (url == NULL || &tune == NULL)
+    return RC_NPE;
+
+  // Our URLs always have syntax "dvb://audio?..."
   if (!g_str_has_prefix (url, "dvb://audio?"))
     return -1;
 
@@ -947,10 +972,9 @@ dvb_parse_url (const gchar * url, tunestruct * tune)
   args = g_strsplit (&url[12], ":", 0);
 
   // Parse each (parameter=value)-pair
-  i = 0;
-  while (args[i])
+  for (i = 0; args[i]; ++i)
     {
-      pair = g_strsplit (args[i++], "=", 2);
+      pair = g_strsplit (args[i], "=", 2);
       par = pair[0];
       val = pair[1];
 

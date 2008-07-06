@@ -76,6 +76,8 @@ typedef struct _dvbstatstruct
 #define RC_OK                           0
 #endif
 
+#define RC_NPE				1
+
 #define RC_DVB_OPEN_MALLOC_FAILED       2010
 #define RC_DVB_OPEN_FRONTEND_FAILED     2011
 
