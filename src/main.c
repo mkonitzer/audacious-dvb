@@ -643,13 +643,11 @@ dvb_pes_pkt (InputPlayback * playback, guchar * buf, gint len, gint reset)
 			{
 			  /* Uhmmmm, complete? */
 			  p = &pesbuf[i];
-
 			  pp = p + 9 + p[8];
 			  pp_len = PES_packet_length - 3 - p[8];
 			  dvb_payload (playback, pp, pp_len, 0);
 
-			  // FIXME: overlapping copy
-			  memcpy (pesbuf, &pesbuf[i + 6 + PES_packet_length],
+			  g_memmove (pesbuf, &pesbuf[i + 6 + PES_packet_length],
 				  pbh - (i + 6 + PES_packet_length));
 			  pbl = 0;
 			  pbh -= (i + 6 + PES_packet_length);
@@ -752,12 +750,12 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 		  dvb_mpeg_frame (playback, mpbuf, fl, num_samples);
 		  if (rt != NULL)
 		    radiotext_read_data (rt, mpbuf, fl);
-		  memcpy (mpbuf, &mpbuf[fl], bph - fl);	// FIXME: overlapping copy
+		  g_memmove (mpbuf, &mpbuf[fl], bph - fl);
 		  bph -= fl;
 		}
 	      else
 		{
-		  memcpy (mpbuf, &mpbuf[i], bph - i);
+		  g_memmove (mpbuf, &mpbuf[i], bph - i);
 		  bph -= i;
 		}
 	    }
@@ -775,7 +773,7 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 
 	  if (i < (bph - 4))
 	    {
-	      memcpy (mpbuf, &mpbuf[i], bph - i);
+	      g_memmove (mpbuf, &mpbuf[i], bph - i);
 	      bph -= i;
 	    }
 	  else
@@ -999,7 +997,7 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 		}
 	    }
 
-	  memcpy (sumarr, &sumarr[1], sizeof (int) * (sap - 1));	// FIXME: overlapping copy
+	  g_memmove (sumarr, &sumarr[1], sizeof (int) * (sap - 1));
 	  sap--;
 	}
     }
