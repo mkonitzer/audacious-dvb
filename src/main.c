@@ -353,11 +353,14 @@ dvb_play (InputPlayback * playback)
 		   "g_thread_create() failed for epg_thread()");
     }
 
-  // Initialize DVB status info retrieval
-  if ((gt_dvbstat = g_thread_create (dvb_status_thread, NULL, TRUE,
-				     NULL)) == NULL)
-    log_print (hlog, LOG_ERR,
-	       "g_thread_create() failed for dvb_status_thread()");
+  // Initialize DVB status info retrieval (signal strength, ...)
+  if (config->info_dvbstat)
+    {
+      if ((gt_dvbstat = g_thread_create (dvb_status_thread, NULL, TRUE,
+					 NULL)) == NULL)
+	log_print (hlog, LOG_ERR,
+		   "g_thread_create() failed for dvb_status_thread()");
+    }
 
   // Initialize audio packet retrieval (including Radiotext info)
   if ((gt_feed = g_thread_self ()) == NULL)

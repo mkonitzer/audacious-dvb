@@ -43,6 +43,7 @@ typedef struct _cfgstruct
   gint vsplit_dur;		/* ... for at least XYZ ms ... */
   gint vsplit_minlen;		/* ... with minimum length of XYZ s. */
 
+  gboolean info_dvbstat;	/* Poll DVB status info? */
   gboolean info_rt;		/* Receive Radiotext info? */
   gboolean info_epg;		/* Receive EPG info? */
   gboolean info_mmusic;		/* Receive MADMusic info? */

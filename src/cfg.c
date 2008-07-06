@@ -47,6 +47,7 @@ config_init (void)
   config->vsplit_dur = 360;
   config->vsplit_minlen = 15;
 
+  config->info_dvbstat = TRUE;
   config->info_rt = TRUE;
   config->info_epg = TRUE;
   config->info_mmusic = FALSE;
@@ -86,6 +87,7 @@ config_from_db (cfgstruct * config)
   aud_cfg_db_get_int (db, "dvb", "vsplit.dur", &config->vsplit_dur);
   aud_cfg_db_get_int (db, "dvb", "vsplit.minlen", &config->vsplit_minlen);
 
+  aud_cfg_db_get_bool (db, "dvb", "info.dvbstat", &config->info_dvbstat);
   aud_cfg_db_get_bool (db, "dvb", "info.mmusic", &config->info_mmusic);
   aud_cfg_db_get_bool (db, "dvb", "info.epg", &config->info_epg);
   aud_cfg_db_get_bool (db, "dvb", "info.rt", &config->info_rt);
@@ -117,6 +119,7 @@ config_to_db (cfgstruct * config)
   aud_cfg_db_set_int (db, "dvb", "vsplit.dur", config->vsplit_dur);
   aud_cfg_db_set_int (db, "dvb", "vsplit.minlen", config->vsplit_minlen);
 
+  aud_cfg_db_set_bool (db, "dvb", "info.dvbstat", config->info_dvbstat);
   aud_cfg_db_set_bool (db, "dvb", "info.mmusic", config->info_mmusic);
   aud_cfg_db_set_bool (db, "dvb", "info.epg", config->info_epg);
   aud_cfg_db_set_bool (db, "dvb", "info.rt", config->info_rt);

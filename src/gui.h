@@ -58,6 +58,7 @@ typedef struct _Widgets
   GtkWidget *vsplit4Label;
   GtkWidget *vsplitminlenSpin;
   GtkWidget *vsplit5Label;
+  GtkWidget *dvbCheck;
   GtkWidget *rtCheck;
   GtkWidget *epgCheck;
   GtkWidget *madCheck;

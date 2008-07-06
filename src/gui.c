@@ -263,6 +263,10 @@ dvb_configure (void)
   gtk_container_border_width (GTK_CONTAINER (vbox), 5);
   gtk_container_add (GTK_CONTAINER (infoFrame), vbox);
 
+  GtkWidget *dvbCheck = gtk_check_button_new_with_label ("DVB status");
+  widgets.dvbCheck = dvbCheck;
+  gtk_box_pack_start (GTK_BOX (vbox), dvbCheck, FALSE, FALSE, 0);
+
   GtkWidget *rtCheck = gtk_check_button_new_with_label ("RDS-Radiotext[+]");
   widgets.rtCheck = rtCheck;
   gtk_box_pack_start (GTK_BOX (vbox), rtCheck, FALSE, FALSE, 0);
@@ -362,6 +366,8 @@ config_to_gui (cfgstruct * config)
   gtk_spin_button_set_value (GTK_SPIN_BUTTON (widgets.vsplitminlenSpin),
 			     config->vsplit_minlen);
 
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.dvbCheck),
+				config->info_dvbstat);
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.rtCheck),
 				config->info_rt);
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.epgCheck),
@@ -405,6 +411,8 @@ config_from_gui (cfgstruct * config)
   config->vsplit_minlen =
     gtk_spin_button_get_value (GTK_SPIN_BUTTON (widgets.vsplitminlenSpin));
 
+  config->info_dvbstat =
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.dvbCheck));
   config->info_rt =
     gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.rtCheck));
   config->info_epg =
@@ -573,10 +581,14 @@ infobox_update_dvb (dvbstatstruct * dvb)
 {
   if (widgets.infoBox)
     {
-      GtkWidget *dvbstrProgressBar, *dvbsnrProgressBar, *dvbuncEntry,
+      GtkWidget *dvbtuneEntry, *dvbpidEntry, *dvbstrProgressBar, *dvbsnrProgressBar, *dvbuncEntry,
 	*dvbberEntry, *dvbsignalCheckButton, *dvbcarrierCheckButton,
 	*dvbviterbiCheckButton, *dvbsyncCheckButton, *dvblockCheckButton,
 	*dvbtimedoutCheckButton;
+      dvbtuneEntry =
+	glade_xml_get_widget (widgets.infoXml, "dvbtuneEntry");
+      dvbpidEntry =
+	glade_xml_get_widget (widgets.infoXml, "dvbpidEntry");
       dvbstrProgressBar =
 	glade_xml_get_widget (widgets.infoXml, "dvbstrProgressBar");
       dvbsnrProgressBar =
