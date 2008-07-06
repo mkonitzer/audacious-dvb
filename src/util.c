@@ -59,6 +59,7 @@ str_replace_non_printable (gchar * s)
   gchar *ch, *chplus1;
   gint i;
 
+  // TODO: simplify!
   ch = g_utf8_offset_to_pointer (s, 0);
 
   for (i = 1; i < g_utf8_strlen (s, -1); i++)
@@ -74,7 +75,9 @@ str_replace_non_printable (gchar * s)
 gchar *
 str_beautify (const gchar * s, gint len, gboolean ascii)
 {
-  int i, skip = 0;
+  gint i, skip = 0;
+  gchar from_enc[20];
+  GRegex *mwsp;
   gchar *newstr, last = '\0';
   // Remove/Replace all non-ascii/-printable characters
   if (ascii)
@@ -87,56 +90,49 @@ str_beautify (const gchar * s, gint len, gboolean ascii)
     }
   else
     {
-      newstr = g_convert (s, len, "UTF-8", "ISO-8859-1", NULL, NULL, NULL);
+      // First byte of string may reveal used character table
+      // (see ETSI EN 300 468, Annex A.2)
+      if (s[0] >= 0x01 && s[0] <= 0x0b)
+      {
+	g_snprintf(from_enc, sizeof(from_enc), "ISO_8859-%d", s[0] + 4);
+	log_print (hlog, LOG_DEBUG, "Detected character encoding %s", from_enc);
+	++s; --len;
+      }
+      else
+      {
+	strcpy(from_enc, "ISO_6937");
+	log_print (hlog, LOG_DEBUG, "Falling back to default character encoding %s", from_enc);
+      }
+      newstr = g_convert (s, len, "UTF-8", from_enc, NULL, NULL, NULL);
+      if (!g_utf8_validate(newstr, -1, NULL))
+	strcpy(newstr, "");
       str_replace_non_printable (newstr);
     }
   // Remove leading and trailing spaces
   newstr = g_strstrip (newstr);
-  // Replace multiple by single space ('s/[ ]*/ /')
-  for (i = 0; i + skip < strlen (newstr); i++)
-    {
-      while (g_ascii_isspace (last) && g_ascii_isspace (newstr[i + skip]))
-	skip++;
-      if (skip > 0)
-	newstr[i] = newstr[i + skip];
-      last = newstr[i];
-    }
-  newstr[i] = '\0';
-  if (newstr[0] == '\0')
-    {
-      g_free (newstr);
-      return NULL;
-    }
+  // Replace multiple whitespaces by single space
+  mwsp = g_regex_new("\\s+", 0, 0, NULL);
+  newstr = g_regex_replace (mwsp, newstr, -1, 0, " ", 0, NULL);
   return newstr;
 }
 
 
 gboolean
-is_updated (const gchar * oldtext, gchar ** newtextptr, gboolean ascii)
+is_updated (const gchar * newtext, gchar ** oldtextptr, gboolean ascii)
 {
-  gboolean refresh = FALSE;
+  gboolean refresh = TRUE;
 
-  // FIXME: This can probably be done easier
-  if (oldtext != NULL)
-    {
-      if (*newtextptr != NULL)
-	{
-	  if (strcmp (*newtextptr, oldtext) != 0)
-	    refresh = TRUE;
-	}
-      else
-	refresh = TRUE;
-    }
-  else
-    {
-      if (*newtextptr != NULL)
-	refresh = TRUE;
-    }
-
+  if (newtext == NULL && *oldtextptr == NULL)
+    return FALSE;
+  
+  if (newtext != NULL && *oldtextptr != NULL)
+    refresh = (strcmp (*oldtextptr, newtext) != 0);
+  
   if (refresh)
     {
-      g_free (*newtextptr);
-      *newtextptr = str_beautify (oldtext, -1, ascii);
+      if (*oldtextptr)
+	g_free (*oldtextptr);
+      *oldtextptr = g_strdup(newtext);
     }
 
   return refresh;
