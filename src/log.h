@@ -30,10 +30,13 @@
 #define RC_OK                         0
 #endif
 
-#define RC_LOG_OPEN_MALLOC_FAILED     3000
-#define RC_LOG_OPEN_PREFIX_TOO_LONG   3002
+#define RC_LOG_OPEN_PREFIX_NPE	      3000
+#define RC_LOG_OPEN_HLOG_NPE	      3001
+#define RC_LOG_OPEN_MALLOC_FAILED     3002
+#define RC_LOG_OPEN_PREFIX_TOO_LONG   3003
 #define RC_LOG_CLOSE_HANDLE_INVALID   3100
 #define RC_LOG_PRINT_HANDLE_INVALID   3200
+#define RC_LOG_SET_LVL_HANDLE_INVALID 3300
 
 
 #define LOG_EMERG   0
@@ -49,6 +52,6 @@
 gint log_open (gpointer *, gchar *, gint);
 gint log_close (gpointer);
 gint log_print (gpointer, gint, const gchar *, ...);
-void log_set_level (gpointer hlog, gint lvl);
+gint log_set_level (gpointer hlog, gint lvl);
 
 #endif // __AUDACIOUS_DVB_LOG_H__

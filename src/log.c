@@ -38,22 +38,30 @@ gint
 log_open (gpointer * hlog, gchar * pfx, gint lvl)
 {
   HLOG *hl;
+  
+  if (pfx == NULL)
+    return RC_LOG_OPEN_PREFIX_NPE;
 
-  if ((hl = malloc (sizeof (HLOG))) == NULL)
+  if (&hlog == NULL)
+    return RC_LOG_OPEN_HLOG_NPE;
+
+  // Allocate memory for HLOG structure
+  if ((hl = g_malloc0 (sizeof (HLOG))) == NULL)
     {
       *hlog = NULL;
       return RC_LOG_OPEN_MALLOC_FAILED;
     }
 
+  // We have a maximum length for prefixes
   if (strlen (pfx) >= sizeof (hl->hl_pfx))
     {
       *hlog = NULL;
       return RC_LOG_OPEN_PREFIX_TOO_LONG;
     }
+
+  // Fill in (default) values
   strcpy (hl->hl_pfx, pfx);
-
   hl->hl_level = lvl;
-
   *hlog = (void *) hl;
 
   return RC_OK;
@@ -63,12 +71,12 @@ log_open (gpointer * hlog, gchar * pfx, gint lvl)
 gint
 log_close (gpointer hlog)
 {
-  HLOG *hl;
-
-  if ((hl = (HLOG *) hlog) == NULL)
+  HLOG *hl = (HLOG *) hlog;
+  if (hl == NULL)
     return RC_LOG_CLOSE_HANDLE_INVALID;
 
-  free (hl);
+  // Free memory for HLOG structure
+  g_free (hl);
 
   return RC_OK;
 }
@@ -82,10 +90,10 @@ log_print (gpointer hlog, gint lvl, const gchar * fmt, ...)
   va_list args;
 
   hl = (HLOG *) hlog;
-
   if (hl == NULL)
     return RC_LOG_PRINT_HANDLE_INVALID;
 
+  // Only print message that has at least current level
   if (hl->hl_level >= lvl)
     {
       va_start (args, fmt);
@@ -98,10 +106,14 @@ log_print (gpointer hlog, gint lvl, const gchar * fmt, ...)
   return RC_OK;
 }
 
-void
+gint
 log_set_level (gpointer hlog, gint lvl)
 {
-  HLOG *hl;
-  hl = (HLOG *) hlog;
+  HLOG *hl = (HLOG *) hlog;
+  if (hl != NULL)
+    return RC_LOG_SET_LVL_HANDLE_INVALID;
+  
+  // Update current with given level
   hl->hl_level = lvl;
+  return RC_OK;
 }
