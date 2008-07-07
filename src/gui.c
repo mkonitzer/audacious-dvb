@@ -422,12 +422,9 @@ config_from_gui (cfgstruct * config)
 }
 
 void
-dvb_infobox (statstruct * station, rtstruct * rt, epgstruct * epg,
-	     mmstruct * mmusic)
+dvb_show_infobox (statstruct * station, rtstruct * rt, epgstruct * epg,
+		  mmstruct * mmusic)
 {
-  GladeXML *xml;
-  GtkWidget *infoBox;
-
   if (widgets.infoBox)
     {
       gdk_window_raise (GTK_WIDGET (widgets.infoBox)->window);
@@ -435,21 +432,20 @@ dvb_infobox (statstruct * station, rtstruct * rt, epgstruct * epg,
     }
 
   // Create info box
-  xml =
+  widgets.infoXml =
     glade_xml_new_from_buffer (glwidgets, strlen (glwidgets), "fileinfo",
 			       NULL);
-  widgets.infoXml = xml;
-  glade_xml_signal_autoconnect (xml);
-  infoBox = glade_xml_get_widget (xml, "fileinfo");
-  widgets.infoBox = infoBox;
+  glade_xml_signal_autoconnect (widgets.infoXml);
+  widgets.infoBox = glade_xml_get_widget (widgets.infoXml, "fileinfo");
 
   // Register signal handlers
-  g_signal_connect (G_OBJECT (infoBox), "destroy",
+  g_signal_connect (G_OBJECT (widgets.infoBox), "destroy",
 		    G_CALLBACK (gtk_widget_destroyed), &widgets.infoBox);
   g_signal_connect_swapped (G_OBJECT
-			    (glade_xml_get_widget (xml, "closeButton")),
-			    "clicked", G_CALLBACK (gtk_widget_destroy),
-			    GTK_OBJECT (infoBox));
+			    (glade_xml_get_widget
+			     (widgets.infoXml, "closeButton")), "clicked",
+			    G_CALLBACK (gtk_widget_destroy),
+			    GTK_OBJECT (widgets.infoBox));
 
   // Fill in stream information
   infobox_update_service (station);
@@ -457,28 +453,40 @@ dvb_infobox (statstruct * station, rtstruct * rt, epgstruct * epg,
   infobox_update_epg (epg);
   infobox_update_mmusic (mmusic);
 
-  gtk_widget_show_all (infoBox);
+  gtk_widget_show_all (widgets.infoBox);
+}
+
+
+void
+dvb_hide_infobox ()
+{
+  if (widgets.infoBox == NULL)
+    return;
+
+  gtk_widget_destroy (widgets.infoBox);
+  widgets.infoBox = NULL;
+  widgets.infoXml = NULL;
 }
 
 
 void
 infobox_update_service (statstruct * st)
 {
-  if (widgets.infoBox)
+  if (widgets.infoBox == NULL)
+    return;
+
+  GtkWidget *provEntry, *statEntry;
+  provEntry = glade_xml_get_widget (widgets.infoXml, "providerEntry");
+  statEntry = glade_xml_get_widget (widgets.infoXml, "stationEntry");
+  if (st != NULL)
     {
-      GtkWidget *provEntry, *statEntry;
-      provEntry = glade_xml_get_widget (widgets.infoXml, "providerEntry");
-      statEntry = glade_xml_get_widget (widgets.infoXml, "stationEntry");
-      if (st != NULL)
-	{
-	  gtk_entry_set_text (GTK_ENTRY (provEntry), st->prov_name);
-	  gtk_entry_set_text (GTK_ENTRY (statEntry), st->svc_name);
-	}
-      else
-	{
-	  gtk_entry_set_text (GTK_ENTRY (provEntry), "");
-	  gtk_entry_set_text (GTK_ENTRY (statEntry), "");
-	}
+      gtk_entry_set_text (GTK_ENTRY (provEntry), st->prov_name);
+      gtk_entry_set_text (GTK_ENTRY (statEntry), st->svc_name);
+    }
+  else
+    {
+      gtk_entry_set_text (GTK_ENTRY (provEntry), "");
+      gtk_entry_set_text (GTK_ENTRY (statEntry), "");
     }
 }
 
@@ -486,25 +494,24 @@ infobox_update_service (statstruct * st)
 void
 infobox_update_radiotext (rtstruct * rt)
 {
-  if (widgets.infoBox)
+  if (widgets.infoBox == NULL)
+    return;
+
+  GtkWidget *rtptitleEntry, *rtpartistEntry, *rtpptyEntry;
+  rtptitleEntry = glade_xml_get_widget (widgets.infoXml, "rttitleEntry");
+  rtpartistEntry = glade_xml_get_widget (widgets.infoXml, "rtartistEntry");
+  rtpptyEntry = glade_xml_get_widget (widgets.infoXml, "rtptyEntry");
+  if (rt != NULL)
     {
-      GtkWidget *rtptitleEntry, *rtpartistEntry, *rtpptyEntry;
-      rtptitleEntry = glade_xml_get_widget (widgets.infoXml, "rttitleEntry");
-      rtpartistEntry =
-	glade_xml_get_widget (widgets.infoXml, "rtartistEntry");
-      rtpptyEntry = glade_xml_get_widget (widgets.infoXml, "rtptyEntry");
-      if (rt != NULL)
-	{
-	  gtk_entry_set_text (GTK_ENTRY (rtptitleEntry), rt->title);
-	  gtk_entry_set_text (GTK_ENTRY (rtpartistEntry), rt->artist);
-	  gtk_entry_set_text (GTK_ENTRY (rtpptyEntry), rt->pty);
-	}
-      else
-	{
-	  gtk_entry_set_text (GTK_ENTRY (rtptitleEntry), "");
-	  gtk_entry_set_text (GTK_ENTRY (rtpartistEntry), "");
-	  gtk_entry_set_text (GTK_ENTRY (rtpptyEntry), "");
-	}
+      gtk_entry_set_text (GTK_ENTRY (rtptitleEntry), rt->title);
+      gtk_entry_set_text (GTK_ENTRY (rtpartistEntry), rt->artist);
+      gtk_entry_set_text (GTK_ENTRY (rtpptyEntry), rt->pty);
+    }
+  else
+    {
+      gtk_entry_set_text (GTK_ENTRY (rtptitleEntry), "");
+      gtk_entry_set_text (GTK_ENTRY (rtpartistEntry), "");
+      gtk_entry_set_text (GTK_ENTRY (rtpptyEntry), "");
     }
 }
 
@@ -512,39 +519,36 @@ infobox_update_radiotext (rtstruct * rt)
 void
 infobox_update_epg (epgstruct * epg)
 {
-  if (widgets.infoBox)
+  if (widgets.infoBox == NULL)
+    return;
+
+  GtkTextBuffer *epgevddescTextBuffer;
+  GtkWidget *epglangEntry, *epgatypeEntry,
+    *epgevnameEntry, *epgevdescEntry, *epgevddescTextView;
+  epglangEntry = glade_xml_get_widget (widgets.infoXml, "epglangEntry");
+  epgatypeEntry = glade_xml_get_widget (widgets.infoXml, "epgatypeEntry");
+  epgevnameEntry = glade_xml_get_widget (widgets.infoXml, "epgevnameEntry");
+  epgevdescEntry = glade_xml_get_widget (widgets.infoXml, "epgevdescEntry");
+  epgevddescTextView =
+    glade_xml_get_widget (widgets.infoXml, "epgevddescTextView");
+  epgevddescTextBuffer =
+    gtk_text_view_get_buffer (GTK_TEXT_VIEW (epgevddescTextView));
+  if (epg != NULL)
     {
-      GtkTextBuffer *epgevddescTextBuffer;
-      GtkWidget *epglangEntry, *epgatypeEntry,
-	*epgevnameEntry, *epgevdescEntry, *epgevddescTextView;
-      epglangEntry = glade_xml_get_widget (widgets.infoXml, "epglangEntry");
-      epgatypeEntry = glade_xml_get_widget (widgets.infoXml, "epgatypeEntry");
-      epgevnameEntry =
-	glade_xml_get_widget (widgets.infoXml, "epgevnameEntry");
-      epgevdescEntry =
-	glade_xml_get_widget (widgets.infoXml, "epgevdescEntry");
-      epgevddescTextView =
-	glade_xml_get_widget (widgets.infoXml, "epgevddescTextView");
-      epgevddescTextBuffer =
-	gtk_text_view_get_buffer (GTK_TEXT_VIEW (epgevddescTextView));
-      if (epg != NULL)
-	{
-	  gtk_entry_set_text (GTK_ENTRY (epglangEntry), epg->lang);
-	  gtk_entry_set_text (GTK_ENTRY (epgatypeEntry), epg->stream_type);
-	  gtk_entry_set_text (GTK_ENTRY (epgevnameEntry), epg->short_ev_name);
-	  gtk_entry_set_text (GTK_ENTRY (epgevdescEntry), epg->short_ev_text);
-	  if (epg->ext_ev_text != NULL)
-	    gtk_text_buffer_set_text (epgevddescTextBuffer, epg->ext_ev_text,
-				      -1);
-	}
-      else
-	{
-	  gtk_entry_set_text (GTK_ENTRY (epglangEntry), "");
-	  gtk_entry_set_text (GTK_ENTRY (epgatypeEntry), "");
-	  gtk_entry_set_text (GTK_ENTRY (epgevnameEntry), "");
-	  gtk_entry_set_text (GTK_ENTRY (epgevdescEntry), "");
-	  gtk_text_buffer_set_text (epgevddescTextBuffer, "", -1);
-	}
+      gtk_entry_set_text (GTK_ENTRY (epglangEntry), epg->lang);
+      gtk_entry_set_text (GTK_ENTRY (epgatypeEntry), epg->stream_type);
+      gtk_entry_set_text (GTK_ENTRY (epgevnameEntry), epg->short_ev_name);
+      gtk_entry_set_text (GTK_ENTRY (epgevdescEntry), epg->short_ev_text);
+      if (epg->ext_ev_text != NULL)
+	gtk_text_buffer_set_text (epgevddescTextBuffer, epg->ext_ev_text, -1);
+    }
+  else
+    {
+      gtk_entry_set_text (GTK_ENTRY (epglangEntry), "");
+      gtk_entry_set_text (GTK_ENTRY (epgatypeEntry), "");
+      gtk_entry_set_text (GTK_ENTRY (epgevnameEntry), "");
+      gtk_entry_set_text (GTK_ENTRY (epgevdescEntry), "");
+      gtk_text_buffer_set_text (epgevddescTextBuffer, "", -1);
     }
 }
 
@@ -552,120 +556,107 @@ infobox_update_epg (epgstruct * epg)
 void
 infobox_update_mmusic (mmstruct * mmusic)
 {
-  if (widgets.infoBox)
+  if (widgets.infoBox == NULL)
+    return;
+
+  GtkWidget *mmtitleEntry, *mmartistEntry, *mmalbumEntry, *mmtrnumEntry;
+  mmtitleEntry = glade_xml_get_widget (widgets.infoXml, "mmtitleEntry");
+  mmartistEntry = glade_xml_get_widget (widgets.infoXml, "mmartistEntry");
+  mmalbumEntry = glade_xml_get_widget (widgets.infoXml, "mmalbumEntry");
+  mmtrnumEntry = glade_xml_get_widget (widgets.infoXml, "mmtrnumEntry");
+  if (mmusic != NULL)
     {
-      GtkWidget *mmtitleEntry, *mmartistEntry, *mmalbumEntry, *mmtrnumEntry;
-      mmtitleEntry = glade_xml_get_widget (widgets.infoXml, "mmtitleEntry");
-      mmartistEntry = glade_xml_get_widget (widgets.infoXml, "mmartistEntry");
-      mmalbumEntry = glade_xml_get_widget (widgets.infoXml, "mmalbumEntry");
-      mmtrnumEntry = glade_xml_get_widget (widgets.infoXml, "mmtrnumEntry");
-      if (mmusic != NULL)
-	{
-	  gtk_entry_set_text (GTK_ENTRY (mmtitleEntry), mmusic->title);
-	  gtk_entry_set_text (GTK_ENTRY (mmartistEntry), mmusic->artist);
-	  gtk_entry_set_text (GTK_ENTRY (mmalbumEntry), mmusic->album);
-	  gtk_entry_printf (mmtrnumEntry, "%d", mmusic->trnum);
-	}
-      else
-	{
-	  gtk_entry_set_text (GTK_ENTRY (mmtitleEntry), "");
-	  gtk_entry_set_text (GTK_ENTRY (mmartistEntry), "");
-	  gtk_entry_set_text (GTK_ENTRY (mmalbumEntry), "");
-	  gtk_entry_set_text (GTK_ENTRY (mmtrnumEntry), "");
-	}
+      gtk_entry_set_text (GTK_ENTRY (mmtitleEntry), mmusic->title);
+      gtk_entry_set_text (GTK_ENTRY (mmartistEntry), mmusic->artist);
+      gtk_entry_set_text (GTK_ENTRY (mmalbumEntry), mmusic->album);
+      gtk_entry_printf (mmtrnumEntry, "%d", mmusic->trnum);
+    }
+  else
+    {
+      gtk_entry_set_text (GTK_ENTRY (mmtitleEntry), "");
+      gtk_entry_set_text (GTK_ENTRY (mmartistEntry), "");
+      gtk_entry_set_text (GTK_ENTRY (mmalbumEntry), "");
+      gtk_entry_set_text (GTK_ENTRY (mmtrnumEntry), "");
     }
 }
 
 void
 infobox_update_dvb (dvbstatstruct * dvb)
 {
-  if (widgets.infoBox)
+  if (widgets.infoBox == NULL)
+    return;
+
+  GtkWidget *dvbtuneEntry, *dvbpidEntry, *dvbstrProgressBar,
+    *dvbsnrProgressBar, *dvbuncEntry, *dvbberEntry, *dvbsignalCheckButton,
+    *dvbcarrierCheckButton, *dvbviterbiCheckButton, *dvbsyncCheckButton,
+    *dvblockCheckButton, *dvbtimedoutCheckButton;
+  dvbtuneEntry = glade_xml_get_widget (widgets.infoXml, "dvbtuneEntry");
+  dvbpidEntry = glade_xml_get_widget (widgets.infoXml, "dvbpidEntry");
+  dvbstrProgressBar =
+    glade_xml_get_widget (widgets.infoXml, "dvbstrProgressBar");
+  dvbsnrProgressBar =
+    glade_xml_get_widget (widgets.infoXml, "dvbsnrProgressBar");
+  dvbuncEntry = glade_xml_get_widget (widgets.infoXml, "dvbuncEntry");
+  dvbberEntry = glade_xml_get_widget (widgets.infoXml, "dvbberEntry");
+  dvbsignalCheckButton =
+    glade_xml_get_widget (widgets.infoXml, "dvbsignalCheckButton");
+  dvbcarrierCheckButton =
+    glade_xml_get_widget (widgets.infoXml, "dvbcarrierCheckButton");
+  dvbviterbiCheckButton =
+    glade_xml_get_widget (widgets.infoXml, "dvbviterbiCheckButton");
+  dvbsyncCheckButton =
+    glade_xml_get_widget (widgets.infoXml, "dvbsyncCheckButton");
+  dvblockCheckButton =
+    glade_xml_get_widget (widgets.infoXml, "dvblockCheckButton");
+  dvbtimedoutCheckButton =
+    glade_xml_get_widget (widgets.infoXml, "dvbtimedoutCheckButton");
+  if (dvb != NULL)
     {
-      GtkWidget *dvbtuneEntry, *dvbpidEntry, *dvbstrProgressBar, *dvbsnrProgressBar, *dvbuncEntry,
-	*dvbberEntry, *dvbsignalCheckButton, *dvbcarrierCheckButton,
-	*dvbviterbiCheckButton, *dvbsyncCheckButton, *dvblockCheckButton,
-	*dvbtimedoutCheckButton;
-      dvbtuneEntry =
-	glade_xml_get_widget (widgets.infoXml, "dvbtuneEntry");
-      dvbpidEntry =
-	glade_xml_get_widget (widgets.infoXml, "dvbpidEntry");
-      dvbstrProgressBar =
-	glade_xml_get_widget (widgets.infoXml, "dvbstrProgressBar");
-      dvbsnrProgressBar =
-	glade_xml_get_widget (widgets.infoXml, "dvbsnrProgressBar");
-      dvbuncEntry = glade_xml_get_widget (widgets.infoXml, "dvbuncEntry");
-      dvbberEntry = glade_xml_get_widget (widgets.infoXml, "dvbberEntry");
-      dvbsignalCheckButton =
-	glade_xml_get_widget (widgets.infoXml, "dvbsignalCheckButton");
-      dvbcarrierCheckButton =
-	glade_xml_get_widget (widgets.infoXml, "dvbcarrierCheckButton");
-      dvbviterbiCheckButton =
-	glade_xml_get_widget (widgets.infoXml, "dvbviterbiCheckButton");
-      dvbsyncCheckButton =
-	glade_xml_get_widget (widgets.infoXml, "dvbsyncCheckButton");
-      dvblockCheckButton =
-	glade_xml_get_widget (widgets.infoXml, "dvblockCheckButton");
-      dvbtimedoutCheckButton =
-	glade_xml_get_widget (widgets.infoXml, "dvbtimedoutCheckButton");
-      if (dvb != NULL)
-	{
-	  gchar *text;
-	  gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbstrProgressBar),
-					 ((double) dvb->str) / 0xffff);
-	  text =
-	    g_strdup_printf ("%.1lf%%", ((double) dvb->str) * 100 / 0xffff);
-	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbstrProgressBar),
-				     text);
-	  g_free (text);
-	  text =
-	    g_strdup_printf ("%.1lf%%", ((double) dvb->snr) * 100 / 0xffff);
-	  gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbsnrProgressBar),
-					 ((double) dvb->snr) / 0xffff);
-	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbsnrProgressBar),
-				     text);
-	  g_free (text);
-	  gtk_entry_printf (dvbuncEntry, "%08x", dvb->unc);
-	  gtk_entry_printf (dvbberEntry, "%08x", dvb->ber);
-	  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-					(dvbsignalCheckButton), dvb->signal);
-	  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-					(dvbcarrierCheckButton),
-					dvb->carrier);
-	  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-					(dvbviterbiCheckButton),
-					dvb->viterbi);
-	  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-					(dvbsyncCheckButton), dvb->sync);
-	  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-					(dvblockCheckButton), dvb->lock);
-	  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-					(dvbtimedoutCheckButton),
-					dvb->timedout);
-	}
-      else
-	{
-	  gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbstrProgressBar),
-					 0);
-	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbstrProgressBar),
-				     "");
-	  gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbsnrProgressBar),
-					 0);
-	  gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbsnrProgressBar),
-				     "");
-	  gtk_entry_set_text (GTK_ENTRY (dvbuncEntry), "");
-	  gtk_entry_set_text (GTK_ENTRY (dvbberEntry), "");
-	  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-					(dvbsignalCheckButton), FALSE);
-	  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-					(dvbcarrierCheckButton), FALSE);
-	  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-					(dvbviterbiCheckButton), FALSE);
-	  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-					(dvbsyncCheckButton), FALSE);
-	  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-					(dvblockCheckButton), FALSE);
-	  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-					(dvbtimedoutCheckButton), FALSE);
-	}
+      gchar *text;
+      gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbstrProgressBar),
+				     ((double) dvb->str) / 0xffff);
+      text = g_strdup_printf ("%.1lf%%", ((double) dvb->str) * 100 / 0xffff);
+      gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbstrProgressBar), text);
+      g_free (text);
+      text = g_strdup_printf ("%.1lf%%", ((double) dvb->snr) * 100 / 0xffff);
+      gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbsnrProgressBar),
+				     ((double) dvb->snr) / 0xffff);
+      gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbsnrProgressBar), text);
+      g_free (text);
+      gtk_entry_printf (dvbuncEntry, "%08x", dvb->unc);
+      gtk_entry_printf (dvbberEntry, "%08x", dvb->ber);
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				    (dvbsignalCheckButton), dvb->signal);
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				    (dvbcarrierCheckButton), dvb->carrier);
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				    (dvbviterbiCheckButton), dvb->viterbi);
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				    (dvbsyncCheckButton), dvb->sync);
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				    (dvblockCheckButton), dvb->lock);
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				    (dvbtimedoutCheckButton), dvb->timedout);
+    }
+  else
+    {
+      gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbstrProgressBar), 0);
+      gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbstrProgressBar), "");
+      gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbsnrProgressBar), 0);
+      gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbsnrProgressBar), "");
+      gtk_entry_set_text (GTK_ENTRY (dvbuncEntry), "");
+      gtk_entry_set_text (GTK_ENTRY (dvbberEntry), "");
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				    (dvbsignalCheckButton), FALSE);
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				    (dvbcarrierCheckButton), FALSE);
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				    (dvbviterbiCheckButton), FALSE);
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				    (dvbsyncCheckButton), FALSE);
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				    (dvblockCheckButton), FALSE);
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				    (dvbtimedoutCheckButton), FALSE);
     }
 }

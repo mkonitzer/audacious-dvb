@@ -93,25 +93,29 @@ str_beautify (const gchar * s, gint len, gboolean ascii)
       // First byte of string may reveal used character table
       // (see ETSI EN 300 468, Annex A.2)
       if (s[0] >= 0x01 && s[0] <= 0x0b)
-      {
-	g_snprintf(from_enc, sizeof(from_enc), "ISO_8859-%d", s[0] + 4);
-	log_print (hlog, LOG_DEBUG, "Detected character encoding %s", from_enc);
-	++s; --len;
-      }
+	{
+	  g_snprintf (from_enc, sizeof (from_enc), "ISO_8859-%d", s[0] + 4);
+	  log_print (hlog, LOG_DEBUG, "Detected character encoding %s",
+		     from_enc);
+	  ++s;
+	  --len;
+	}
       else
-      {
-	strcpy(from_enc, "ISO_6937");
-	log_print (hlog, LOG_DEBUG, "Falling back to default character encoding %s", from_enc);
-      }
+	{
+	  strcpy (from_enc, "ISO_6937");
+	  log_print (hlog, LOG_DEBUG,
+		     "Falling back to default character encoding %s",
+		     from_enc);
+	}
       newstr = g_convert (s, len, "UTF-8", from_enc, NULL, NULL, NULL);
-      if (!g_utf8_validate(newstr, -1, NULL))
-	strcpy(newstr, "");
+      if (!g_utf8_validate (newstr, -1, NULL))
+	strcpy (newstr, "");
       str_replace_non_printable (newstr);
     }
   // Remove leading and trailing spaces
   newstr = g_strstrip (newstr);
   // Replace multiple whitespaces by single space
-  mwsp = g_regex_new("\\s+", 0, 0, NULL);
+  mwsp = g_regex_new ("\\s+", 0, 0, NULL);
   newstr = g_regex_replace (mwsp, newstr, -1, 0, " ", 0, NULL);
   return newstr;
 }
@@ -124,15 +128,15 @@ is_updated (const gchar * newtext, gchar ** oldtextptr, gboolean ascii)
 
   if (newtext == NULL && *oldtextptr == NULL)
     return FALSE;
-  
+
   if (newtext != NULL && *oldtextptr != NULL)
     refresh = (strcmp (*oldtextptr, newtext) != 0);
-  
+
   if (refresh)
     {
       if (*oldtextptr)
 	g_free (*oldtextptr);
-      *oldtextptr = g_strdup(newtext);
+      *oldtextptr = g_strdup (newtext);
     }
 
   return refresh;

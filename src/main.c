@@ -136,7 +136,7 @@ DECLARE_PLUGIN (dvb, NULL, NULL, dvb_iplist, NULL, NULL, NULL, NULL, NULL);
 static void
 dvb_file_info_box (gchar * s)
 {
-  dvb_infobox (station, rt, epg, mmusic);
+  dvb_show_infobox (station, rt, epg, mmusic);
 }
 
 
@@ -297,7 +297,8 @@ dvb_play (InputPlayback * playback)
   station->svc_name = g_strdup (playback->filename);
 
   // Get audio PIDs from SID
-  if ((rc = dvb_get_pid (hdvb, tune->sid, &(tune->apid), &(tune->dpid))) != RC_OK)
+  if ((rc =
+       dvb_get_pid (hdvb, tune->sid, &(tune->apid), &(tune->dpid))) != RC_OK)
     {
       log_print (hlog, LOG_WARNING, "dvb_get_pid() returned %d.", rc);
       playing = FALSE;
@@ -331,7 +332,8 @@ dvb_play (InputPlayback * playback)
   if ((tune->dpid > 0) && config->info_mmusic)
     {
       log_print (hlog, LOG_INFO,
-		 "Data service associated on PID %d (0x%04x).", tune->dpid, tune->dpid);
+		 "Data service associated on PID %d (0x%04x).", tune->dpid,
+		 tune->dpid);
 
       if ((rc = dvb_dpid (hdvb, tune->dpid)) == RC_OK)
 	{
@@ -366,7 +368,7 @@ dvb_play (InputPlayback * playback)
   if ((gt_feed = g_thread_self ()) == NULL)
     {
       log_print (hlog, LOG_CRIT, "g_thread_self() failed for dvb_play()");
-      dvb_stop(playback);
+      dvb_stop (playback);
       return;
     }
   playback->set_pb_ready (playback);
@@ -440,6 +442,7 @@ dvb_stop (InputPlayback * playback)
       if (rec_file)
 	dvb_close_record ();
     }
+  log_print (hlog, LOG_DEBUG, "dvb_stop() finished");
 }
 
 
@@ -472,7 +475,7 @@ feed_thread (gpointer args)
   log_print (hlog, LOG_INFO, "dvb_feed_thread() starting");
 
   static GStaticMutex gmt_feed = G_STATIC_MUTEX_INIT;
-  g_static_mutex_lock(&gmt_feed);
+  g_static_mutex_lock (&gmt_feed);
 
   if (config->info_rt)
     rt = radiotext_init ();
@@ -533,7 +536,7 @@ feed_thread (gpointer args)
 
   log_print (hlog, LOG_INFO, "dvb_feed_thread() stopping");
 
-  g_static_mutex_unlock(&gmt_feed);
+  g_static_mutex_unlock (&gmt_feed);
   g_thread_exit (0);
   return NULL;
 }
@@ -547,7 +550,7 @@ dvb_status_thread (gpointer args)
   log_print (hlog, LOG_INFO, "dvb_status_thread() starting");
 
   static GStaticMutex gmt_dvbstat = G_STATIC_MUTEX_INIT;
-  g_static_mutex_lock(&gmt_dvbstat);
+  g_static_mutex_lock (&gmt_dvbstat);
 
   dvbstat = g_malloc0 (sizeof (dvbstatstruct));
 
@@ -565,7 +568,7 @@ dvb_status_thread (gpointer args)
 
   log_print (hlog, LOG_INFO, "dvb_status_thread() stopping");
 
-  g_static_mutex_unlock(&gmt_dvbstat);
+  g_static_mutex_unlock (&gmt_dvbstat);
   g_thread_exit (0);
   return NULL;
 }
@@ -650,8 +653,9 @@ dvb_pes_pkt (InputPlayback * playback, guchar * buf, gint len, gint reset)
 			  pp_len = PES_packet_length - 3 - p[8];
 			  dvb_payload (playback, pp, pp_len, 0);
 
-			  g_memmove (pesbuf, &pesbuf[i + 6 + PES_packet_length],
-				  pbh - (i + 6 + PES_packet_length));
+			  g_memmove (pesbuf,
+				     &pesbuf[i + 6 + PES_packet_length],
+				     pbh - (i + 6 + PES_packet_length));
 			  pbl = 0;
 			  pbh -= (i + 6 + PES_packet_length);
 			}
@@ -1036,7 +1040,7 @@ get_name_thread (gpointer arg)
   log_print (hlog, LOG_INFO, "get_name_thread(%d) starting", svc_sid);
 
   static GStaticMutex gmt_get_name = G_STATIC_MUTEX_INIT;
-  g_static_mutex_lock(&gmt_get_name);
+  g_static_mutex_lock (&gmt_get_name);
 
   sct = 0;
 
@@ -1131,7 +1135,7 @@ epg_thread (gpointer arg)
   log_print (hlog, LOG_INFO, "epg_thread() started");
 
   static GStaticMutex gmt_epg = G_STATIC_MUTEX_INIT;
-  g_static_mutex_lock(&gmt_epg);
+  g_static_mutex_lock (&gmt_epg);
 
   sid = *((gint *) arg);
   log_print (hlog, LOG_DEBUG, "EPG SID: %d (0x%04x)", sid, sid);
@@ -1190,7 +1194,7 @@ mmusic_thread (gpointer arg)
   log_print (hlog, LOG_INFO, "mmusic_thread() starting");
 
   static GStaticMutex gmt_mmusic = G_STATIC_MUTEX_INIT;
-  g_static_mutex_lock(&gmt_mmusic);
+  g_static_mutex_lock (&gmt_mmusic);
 
   /* Make sure information retrieval is initialized */
   if ((mmusic = madmusic_init ()) == NULL)

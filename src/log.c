@@ -38,7 +38,7 @@ gint
 log_open (gpointer * hlog, gchar * pfx, gint lvl)
 {
   HLOG *hl;
-  
+
   if (pfx == NULL)
     return RC_LOG_OPEN_PREFIX_NPE;
 
@@ -112,7 +112,7 @@ log_set_level (gpointer hlog, gint lvl)
   HLOG *hl = (HLOG *) hlog;
   if (hl == NULL)
     return RC_LOG_SET_LVL_HANDLE_INVALID;
-  
+
   // Update current with given level
   hl->hl_level = lvl;
   return RC_OK;

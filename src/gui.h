@@ -70,7 +70,8 @@ typedef struct _Widgets
 
 void dvb_about (void);
 void dvb_configure (void);
-void dvb_infobox (statstruct *, rtstruct *, epgstruct *, mmstruct *);
+void dvb_show_infobox (statstruct *, rtstruct *, epgstruct *, mmstruct *);
+void dvb_hide_infobox ();
 
 void infobox_update_service (statstruct *);
 void infobox_update_radiotext (rtstruct *);

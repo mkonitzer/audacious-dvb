@@ -160,8 +160,8 @@ dvb_packet (gpointer hdvb, guchar * pkt, gint t)
   HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
     return RC_NPE;
-    
-  memset (&tv, 0x00, sizeof(tv));
+
+  memset (&tv, 0x00, sizeof (tv));
   tv.tv_sec = t / 1000;
   tv.tv_usec = 1000 * (t % 1000);
 
@@ -229,7 +229,7 @@ dvb_section (gpointer hdvb, gint pid, gint sect, gint sid, gint sct,
       return RC_DVB_SECTION_OPEN_DEMUX;
     }
 
-  memset (&fp, 0x00, sizeof(fp));
+  memset (&fp, 0x00, sizeof (fp));
   fp.pid = pid;
   fp.timeout = 0;
   fp.flags = DMX_IMMEDIATE_START | DMX_ONESHOT | DMX_CHECK_CRC;
@@ -345,7 +345,7 @@ dvb_apid (gpointer hdvb, guint pid)
       return RC_DVB_APID_SET_BUFFER_SIZE;
     }
 
-  memset (&fp, 0x00, sizeof(fp));
+  memset (&fp, 0x00, sizeof (fp));
   fp.pid = pid;
   fp.input = DMX_IN_FRONTEND;
   fp.output = DMX_OUT_TAP;
@@ -370,7 +370,7 @@ dvb_apkt (gpointer hdvb, guchar * pkt, guint len, guint t, gint * rcvd)
   if (h == NULL)
     return RC_NPE;
 
-  memset (&tv, 0x00, sizeof(tv));
+  memset (&tv, 0x00, sizeof (tv));
   tv.tv_sec = t / 1000;
   tv.tv_usec = 1000 * (t % 1000);
 
@@ -431,7 +431,7 @@ dvb_dpid (gpointer hdvb, guint pid)
       return RC_DVB_DPID_SET_BUFFER_SIZE;
     }
 
-  memset (&pfp, 0x00, sizeof(pfp));
+  memset (&pfp, 0x00, sizeof (pfp));
   pfp.pid = pid;
   pfp.input = DMX_IN_FRONTEND;
   pfp.output = DMX_OUT_TAP;
@@ -441,7 +441,7 @@ dvb_dpid (gpointer hdvb, guint pid)
   if (ioctl (h->dvb_ddmx, DMX_SET_PES_FILTER, &pfp) < 0)
     return RC_DVB_DPID_SETFILTER_FAILED;
 
-  memset (&fp, 0x00, sizeof(fp));
+  memset (&fp, 0x00, sizeof (fp));
   fp.pid = pid;
   fp.timeout = 0;
   fp.flags = DMX_IMMEDIATE_START | DMX_CHECK_CRC;
@@ -473,7 +473,7 @@ dvb_dpkt (void *hdvb, guchar * s, gint len, gint t, gint * rcvd)
   if (h == NULL)
     return RC_NPE;
 
-  memset (&tv, 0x00, sizeof(tv));
+  memset (&tv, 0x00, sizeof (tv));
   tv.tv_sec = t / 1000;
   tv.tv_usec = 1000 * (t % 1000);
 
@@ -627,7 +627,7 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
 	return -1;
       g_usleep (cmd->wait * 1000);
     }
-  else					// A or B simple DiSEqC
+  else				// A or B simple DiSEqC
     {
       log_print (hlog, LOG_INFO, "Setting simple %c burst", sat_no);
       if (ioctl (h->dvb_fedh, FE_DISEQC_SEND_BURST,
@@ -708,7 +708,7 @@ check_status (gpointer hdvb, gint type,
       return -1;
     }
 
-  memset (&pfd, 0x00, sizeof(pfd));
+  memset (&pfd, 0x00, sizeof (pfd));
   pfd[0].fd = h->dvb_fedh;
   pfd[0].events = POLLPRI;
 
@@ -869,7 +869,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
   if (t->freq < 1000000)
     t->freq *= 1000UL;
 
-  memset (&feparams, 0x00, sizeof(feparams));
+  memset (&feparams, 0x00, sizeof (feparams));
   switch (fe_info.type)
     {
     case FE_OFDM:
@@ -937,8 +937,8 @@ dvb_tune (gpointer hdvb, tunestruct * t)
       break;
 #ifdef DVB_ATSC
     case FE_ATSC:
-      log_print (hlog, LOG_INFO, "tuning ATSC to %d Hz, modulation=%d", t->freq,
-		 t->mod);
+      log_print (hlog, LOG_INFO, "tuning ATSC to %d Hz, modulation=%d",
+		 t->freq, t->mod);
       feparams.frequency = t->freq;
       feparams.u.vsb.modulation = t->mod;
       break;

@@ -80,8 +80,9 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 {
   gint dt, dl, i, j, cdn, ldn, loi, cnt, cty;
   gchar ll[1024], hex[16], lg[4];
-  gchar *name=NULL, *text=NULL, *newtext=NULL, *exttext=NULL, *stype=NULL;
-  const guchar *p=NULL, *q=NULL;
+  gchar *name = NULL, *text = NULL, *newtext = NULL, *exttext = NULL, *stype =
+    NULL;
+  const guchar *p = NULL, *q = NULL;
 
   p = d;
 
@@ -212,7 +213,7 @@ gint
 epg_read_data (epgstruct * epg, const guchar * sect, gint len)
 {
   gint dll, rc, rst;
-  const guchar *p=NULL, *q=NULL;
+  const guchar *p = NULL, *q = NULL;
   static guchar un[4096];
 
   if (len == 0)
