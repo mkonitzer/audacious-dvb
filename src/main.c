@@ -69,9 +69,12 @@ static gpointer epg_thread (gpointer);
 static gpointer mmusic_thread (gpointer);
 static gpointer dvb_status_thread (gpointer);
 
+// Timer functions
+static gboolean infobox_timer (gpointer data);
+
 
 // Miscellaneous globals
-gboolean playing, paused;
+gboolean playing = FALSE, paused = FALSE;
 gpointer hlog = NULL;		// This is used everywhere :)
 gpointer hdvb = NULL;		// EPG retrieval uses this
 
@@ -84,10 +87,11 @@ statstruct *station = NULL;
 tunestruct *tune = NULL;
 dvbstatstruct *dvbstat = NULL;
 
-static gint audio, file_index, frm_ctr;
+static gint audio = 0, file_index = 0, frm_ctr = 0;
 static gchar erfn[MAXPATHLEN];
-static FILE *rec_file;
-static time_t t_start, isplit_last;
+static gchar *title = NULL;
+static FILE *rec_file = NULL;
+static time_t t_start = 0, isplit_last = 0;
 
 // Threads
 static GThread *gt_feed = NULL;
@@ -96,7 +100,10 @@ static GThread *gt_epg = NULL;
 static GThread *gt_mmusic = NULL;
 static GThread *gt_dvbstat = NULL;
 
-static gint sap;
+// Timers
+static guint infobox_timer_id = 0;
+
+static gint sap = 0;
 static gint sumarr[512];
 
 static gint brt[] = {
@@ -136,7 +143,11 @@ DECLARE_PLUGIN (dvb, NULL, NULL, dvb_iplist, NULL, NULL, NULL, NULL, NULL);
 static void
 dvb_file_info_box (gchar * s)
 {
+  // Show infobox
   infobox_show (station, rt, epg, mmusic);
+  // Register infobox timer
+  if (infobox_is_visible () && playing && infobox_timer_id == 0)
+    infobox_timer_id = g_timeout_add (1000, infobox_timer, NULL);
 }
 
 
@@ -151,10 +162,6 @@ dvb_init (void)
     hlog = NULL;
 
   log_print (hlog, LOG_INFO, "logging started");
-
-  hdvb = rec_file = NULL;
-  playing = paused = FALSE;
-  audio = t_start = frm_ctr = 0;
 
   if (!g_thread_supported ())
     g_thread_init (NULL);
@@ -243,12 +250,18 @@ dvb_play (InputPlayback * playback)
   log_print (hlog, LOG_DEBUG, "dvb_play(\"%s\");", playback->filename);
 
   // Update info box
-  infobox_update_service (NULL);
-  infobox_update_radiotext (NULL);
-  infobox_update_epg (NULL);
-  infobox_update_mmusic (NULL);
-  infobox_update_dvb (NULL);
-  infobox_redraw ();
+  if (infobox_is_visible ())
+    {
+      infobox_update_service (NULL);
+      infobox_update_radiotext (NULL);
+      infobox_update_epg (NULL);
+      infobox_update_mmusic (NULL);
+      infobox_update_dvb (NULL);
+      infobox_redraw ();
+      // Register infobox timer
+      if (infobox_timer_id == 0)
+	infobox_timer_id = g_timeout_add (1000, infobox_timer, NULL);
+    }
 
   // Reset playback structures
   playing = TRUE;
@@ -419,19 +432,28 @@ dvb_stop (InputPlayback * playback)
 	  gt_epg = NULL;
 	}
 
-      // Update info box
-      infobox_update_service (NULL);
-      infobox_update_radiotext (NULL);
-      infobox_update_epg (NULL);
-      infobox_update_mmusic (NULL);
-      infobox_update_dvb (NULL);
-      infobox_redraw ();
-
       // Close output plugin
       playback->output->close_audio ();
 
       g_free (station);
       station = NULL;
+
+      // Remove info box timer
+      if (infobox_timer_id != 0)
+	{
+	  g_source_remove (infobox_timer_id);
+	  infobox_timer_id = 0;
+	}
+      // Update info box
+      if (infobox_is_visible ())
+	{
+	  infobox_update_service (NULL);
+	  infobox_update_radiotext (NULL);
+	  infobox_update_epg (NULL);
+	  infobox_update_mmusic (NULL);
+	  infobox_update_dvb (NULL);
+	  infobox_redraw ();
+	}
 
       if (hdvb != NULL)
 	{
@@ -794,79 +816,39 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 static gchar *
 dvb_build_file_title (void)
 {
-  gchar *title = NULL;
-  gboolean refreshed = FALSE;
-
   if (station == NULL)
     return NULL;
 
-  //title = str_to_utf8 (station->svc_name);
+  // Title consists of:
+  gchar *title;
+  // (1) station name
   title = g_strdup (station->svc_name);
 
-  if (station->refresh)
+  // (2a) Radiotext info
+  if (rt && rt->title != NULL)
     {
-      log_print (hlog, LOG_DEBUG, "Station info changed!");
-      infobox_update_service (station);
-      station->refresh = FALSE;
-      refreshed = TRUE;
-    }
-  if (rt != NULL && rt->refresh)
-    {
-      if (rt->title != NULL)
-	{
-	  gchar *tmp = title;
-	  if (rt->artist != NULL)
-	    title =
-	      g_strconcat (title, ": ", rt->artist, " - ", rt->title, NULL);
-	  else
-	    title = g_strconcat (title, ": ", rt->title, NULL);
-	  g_free (tmp);
-	}
-      log_print (hlog, LOG_DEBUG, "Radiotext info changed!");
-      infobox_update_radiotext (rt);
-      rt->refresh = FALSE;
-      refreshed = TRUE;
-    }
-  if (epg != NULL && epg->refresh)
-    {
-      // TODO: implement me!
-      log_print (hlog, LOG_DEBUG, "EPG info changed!");
-      infobox_update_epg (epg);
-      epg->refresh = FALSE;
-    }
-  if (mmusic != NULL && mmusic->refresh)
-    {
-      // ... hoping no station sends out *both* MadMusic and Radiotext info!
-      if (mmusic->title != NULL)
-	{
-	  gchar *tmp = title;
-	  if (mmusic->artist != NULL)
-	    title =
-	      g_strconcat (title, ": ", mmusic->artist, " - ", mmusic->title,
-			   NULL);
-	  else
-	    title = g_strconcat (title, ": ", mmusic->title, NULL);
-	  g_free (tmp);
-	}
-      log_print (hlog, LOG_DEBUG, "MadMusic info changed!");
-      infobox_update_mmusic (mmusic);
-      mmusic->refresh = FALSE;
-      refreshed = TRUE;
-    }
-  if (dvbstat != NULL && dvbstat->refresh)
-    {
-      infobox_update_dvb (dvbstat);
-      infobox_redraw ();
-      dvbstat->refresh = FALSE;
+      gchar *tmp = title;
+      if (rt->artist != NULL)
+	title = g_strconcat (title, ": ", rt->artist, " - ", rt->title, NULL);
+      else
+	title = g_strconcat (title, ": ", rt->title, NULL);
+      g_free (tmp);
+      return title;
     }
 
-  if (!refreshed)
+  // (2b) MadMusic info
+  if (mmusic && mmusic->title != NULL)
     {
-      g_free (title);
-      return NULL;
+      gchar *tmp = title;
+      if (mmusic->artist != NULL)
+	title =
+	  g_strconcat (title, ": ", mmusic->artist, " - ", mmusic->title,
+		       NULL);
+      else
+	title = g_strconcat (title, ": ", mmusic->title, NULL);
+      g_free (tmp);
+      return title;
     }
-
-  infobox_redraw ();
 
   return title;
 }
@@ -930,86 +912,89 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 	fwrite (frame, sizeof (unsigned char), len, rec_file);
     }
 
-  if ((nout = lame_decode_headers (frame, len, left, right, &mp3d)) > 0)
+  nout = lame_decode_headers (frame, len, left, right, &mp3d);
+  if (nout <= 0)
+    return;
+
+  if (mp3d.header_parsed == 1)
     {
-      if (mp3d.header_parsed == 1)
+      gchar *newtitle;
+      if (audio == 0)
+	audio = playback->output->open_audio (FMT_S16_NE, mp3d.samplerate, 2);
+
+      newtitle = dvb_build_file_title ();
+      if (title == NULL
+	  || (newtitle != NULL && strcmp (newtitle, title) != 0))
 	{
-	  gchar *title;
-	  if (audio == 0)
-	    audio =
-	      playback->output->open_audio (FMT_S16_NE, mp3d.samplerate, 2);
-
-	  if ((title = dvb_build_file_title ()) != NULL)
-	    {
-	      dvb_ip.set_info (aud_str_to_utf8 (title), -1,
-			       mp3d.bitrate * 1000, mp3d.samplerate,
-			       mp3d.stereo);
-	      g_free (title);
-	    }
+	  dvb_ip.set_info (aud_str_to_utf8 (newtitle), -1,
+			   mp3d.bitrate * 1000, mp3d.samplerate, mp3d.stereo);
+	  if (title)
+	    g_free (title);
+	  title = newtitle;
 	}
+    }
 
-      /*
-       * Unfortunately Audacious' output wants sample data interleaved,
-       * not separate, so we have to rearrange it accordingly. But
-       * that's ok, we need to look at the PCM data to determine
-       * the energy level anyway :)
-       */
+  /*
+   * Unfortunately Audacious' output wants sample data interleaved,
+   * not separate, so we have to rearrange it accordingly. But
+   * that's ok, we need to look at the PCM data to determine
+   * the energy level anyway :)
+   */
+  vu = 0;
+  for (i = 0; i < nout; i++)
+    {
+      if (mp3d.stereo == 2)
+	{
+	  stereo[2 * i] = left[i];
+	  stereo[2 * i + 1] = right[i];
+	  vu += (abs (left[i]) + abs (right[i])) / 2;
+	}
+      else
+	{
+	  stereo[2 * i] = left[i];
+	  stereo[2 * i + 1] = left[i];
+	  vu += abs (left[i]);
+	}
+    }
+
+  vu /= nout;
+
+  playback->pass_audio (playback, FMT_S16_NE, 2, nout << 2, stereo, NULL);
+
+  sumarr[sap++] = vu;
+  ms = (sap * nout) / mp3d.bitrate;
+  if (ms >= config->vsplit_dur)
+    {
       vu = 0;
-      for (i = 0; i < nout; i++)
+
+      for (i = 0; i < sap; i++)
+	vu += sumarr[i];
+
+      vu /= sap;
+
+      dB = 20 * log10 ((float) vu / 32767);
+
+      if (dB < config->vsplit_vol)
 	{
-	  if (mp3d.stereo == 2)
+	  time (&t);
+	  if ((t - isplit_last) >= config->vsplit_minlen)
 	    {
-	      stereo[2 * i] = left[i];
-	      stereo[2 * i + 1] = right[i];
-	      vu += (abs (left[i]) + abs (right[i])) / 2;
-	    }
-	  else
-	    {
-	      stereo[2 * i] = left[i];
-	      stereo[2 * i + 1] = left[i];
-	      vu += abs (left[i]);
+	      log_print (hlog, LOG_INFO,
+			 "Avg: %.2f dB (%d) / %d ms (%d f) / %d:%02d.",
+			 dB, vu, ms, sap, (t - isplit_last) / 60,
+			 (t - isplit_last) % 60);
+	      time (&isplit_last);
+
+	      if (config->vsplit && config->rec)
+		dvb_close_record ();
+
+	      sap = 1;
+	      memset (sumarr, 0x00, sizeof (sumarr));
 	    }
 	}
 
-      vu /= nout;
-
-      playback->pass_audio (playback, FMT_S16_NE, 2, nout << 2, stereo, NULL);
-
-      sumarr[sap++] = vu;
-      ms = (sap * nout) / mp3d.bitrate;
-      if (ms >= config->vsplit_dur)
-	{
-	  vu = 0;
-
-	  for (i = 0; i < sap; i++)
-	    vu += sumarr[i];
-
-	  vu /= sap;
-
-	  dB = 20 * log10 ((float) vu / 32767);
-
-	  if (dB < config->vsplit_vol)
-	    {
-	      time (&t);
-	      if ((t - isplit_last) >= config->vsplit_minlen)
-		{
-		  log_print (hlog, LOG_INFO,
-			     "Avg: %.2f dB (%d) / %d ms (%d f) / %d:%02d.",
-			     dB, vu, ms, sap, (t - isplit_last) / 60,
-			     (t - isplit_last) % 60);
-		  time (&isplit_last);
-
-		  if (config->vsplit && config->rec)
-		    dvb_close_record ();
-
-		  sap = 1;
-		  memset (sumarr, 0x00, sizeof (sumarr));
-		}
-	    }
-
-	  g_memmove (sumarr, &sumarr[1], sizeof (int) * (sap - 1));
-	  sap--;
-	}
+      g_memmove (sumarr, &sumarr[1], sizeof (int) * (sap - 1));
+      sap--;
     }
 }
 
@@ -1266,4 +1251,60 @@ mmusic_thread (gpointer arg)
   g_static_mutex_unlock (&gmt_mmusic);
   g_thread_exit (0);
   return NULL;
+}
+
+
+static gboolean
+infobox_timer (gpointer data)
+{
+  log_print (hlog, LOG_DEBUG, "infobox_timer() starting");
+
+  if (!infobox_is_visible ())
+    {
+      infobox_timer_id = 0;
+      return FALSE;
+    }
+
+  gboolean refreshed = FALSE;
+
+  if (station != NULL && station->refresh)
+    {
+      log_print (hlog, LOG_DEBUG, "Station info changed!");
+      infobox_update_service (station);
+      station->refresh = FALSE;
+      refreshed = TRUE;
+    }
+  if (rt != NULL && rt->refresh)
+    {
+      log_print (hlog, LOG_DEBUG, "Radiotext info changed!");
+      infobox_update_radiotext (rt);
+      rt->refresh = FALSE;
+      refreshed = TRUE;
+    }
+  if (epg != NULL && epg->refresh)
+    {
+      log_print (hlog, LOG_DEBUG, "EPG info changed!");
+      infobox_update_epg (epg);
+      epg->refresh = FALSE;
+      refreshed = TRUE;
+    }
+  if (mmusic != NULL && mmusic->refresh)
+    {
+      log_print (hlog, LOG_DEBUG, "MadMusic info changed!");
+      infobox_update_mmusic (mmusic);
+      mmusic->refresh = FALSE;
+      refreshed = TRUE;
+    }
+  if (dvbstat != NULL && dvbstat->refresh)
+    {
+      infobox_update_dvb (dvbstat);
+      dvbstat->refresh = FALSE;
+      refreshed = TRUE;
+    }
+
+  if (refreshed)
+    infobox_redraw ();
+
+  log_print (hlog, LOG_DEBUG, "infobox_timer() stopping");
+  return TRUE;
 }
