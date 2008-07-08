@@ -62,7 +62,7 @@ static void dvb_mpeg_frame (InputPlayback *, guchar *, gint, gint);
 static void dvb_close_record (void);
 static gchar *dvb_build_file_title (void);
 
-// Threads
+// Thread functions
 static gpointer feed_thread (gpointer);
 static gpointer get_name_thread (gpointer);
 static gpointer epg_thread (gpointer);
@@ -89,7 +89,7 @@ static gchar erfn[MAXPATHLEN];
 static FILE *rec_file;
 static time_t t_start, isplit_last;
 
-// Threads/Mutexes
+// Threads
 static GThread *gt_feed = NULL;
 static GThread *gt_get_name = NULL;
 static GThread *gt_epg = NULL;
@@ -387,7 +387,7 @@ dvb_stop (InputPlayback * playback)
       if (gt_feed != NULL)
 	{
 	  log_print (hlog, LOG_INFO,
-		     "Waiting for dvb_feed_thread() to die...");
+		     "Waiting for feed_thread() to die...");
 	  g_thread_join (gt_feed);
 	  gt_feed = NULL;
 	}
@@ -472,7 +472,7 @@ feed_thread (gpointer args)
   InputPlayback *playback;
 
   playback = (InputPlayback *) args;
-  log_print (hlog, LOG_INFO, "dvb_feed_thread() starting");
+  log_print (hlog, LOG_INFO, "feed_thread() starting");
 
   static GStaticMutex gmt_feed = G_STATIC_MUTEX_INIT;
   g_static_mutex_lock (&gmt_feed);
@@ -534,7 +534,7 @@ feed_thread (gpointer args)
       rt = NULL;
     }
 
-  log_print (hlog, LOG_INFO, "dvb_feed_thread() stopping");
+  log_print (hlog, LOG_INFO, "feed_thread() stopping");
 
   g_static_mutex_unlock (&gmt_feed);
   g_thread_exit (0);
@@ -1132,7 +1132,7 @@ epg_thread (gpointer arg)
   gint sid, rc, len, sct;
   guchar s[4096];
 
-  log_print (hlog, LOG_INFO, "epg_thread() started");
+  log_print (hlog, LOG_INFO, "epg_thread() starting");
 
   static GStaticMutex gmt_epg = G_STATIC_MUTEX_INIT;
   g_static_mutex_lock (&gmt_epg);
