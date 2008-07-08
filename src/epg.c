@@ -79,7 +79,7 @@ static gint
 dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 {
   gint dt, dl, i, j, cdn, ldn, loi, cnt, cty;
-  gchar ll[1024], hex[16], lg[4];
+  gchar ll[1024], hex[16], lang[4];
   gchar *name = NULL, *text = NULL, *newtext = NULL, *exttext = NULL, *stype =
     NULL;
   const guchar *p = NULL, *q = NULL;
@@ -95,8 +95,8 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
       switch (dt)
 	{
 	case 0x4d:		// short_event_descriptor
-	  memcpy (lg, q, 3);	// ISO_639_language_code
-	  lg[3] = '\0';
+	  memcpy (lang, q, 3);	// ISO_639_language_code
+	  lang[3] = '\0';
 	  q += 3;
 
 	  j = *q++;		// event_name_length
@@ -117,7 +117,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	    epg->refresh = TRUE;
 
 	  if (epg->refresh)
-	    log_print (hlog, LOG_INFO, "EIT: %s,\"%s\",\"%s\"", lg, name,
+	    log_print (hlog, LOG_INFO, "EIT: %s,\"%s\",\"%s\"", lang, name,
 		       text);
 
 	  g_free (name);
@@ -130,8 +130,8 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	  ldn = q[0] & 0xf;	// last_descriptor_number
 	  q++;
 
-	  memcpy (lg, q, 3);	// ISO_639_language_code
-	  lg[3] = '\0';
+	  memcpy (lang, q, 3);	// ISO_639_language_code
+	  lang[3] = '\0';
 	  q += 3;
 
 	  loi = *q++;		// length_of_items
@@ -148,7 +148,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	      g_free (tmp);
 	    }
 
-	  log_print (hlog, LOG_INFO, "EIT: %d/%d,%s,\"%s\"", cdn, ldn, lg,
+	  log_print (hlog, LOG_INFO, "EIT: %d/%d,%s,\"%s\"", cdn, ldn, lang,
 		     newtext);
 
 	  g_free (newtext);
@@ -171,12 +171,12 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	  stype = stream_type (cnt, cty);
 	  q += 3;
 
-	  memcpy (lg, q, 3);	// ISO_639_language_code
-	  lg[3] = '\0';
+	  memcpy (lang, q, 3);	// ISO_639_language_code
+	  lang[3] = '\0';
 
 	  if (is_updated (stype, &epg->stream_type, FALSE))
 	    epg->refresh = TRUE;
-	  if (is_updated (lg, &epg->lang, FALSE))
+	  if (is_updated (lang, &epg->lang, FALSE))
 	    epg->refresh = TRUE;
 
 	  g_free (stype);
