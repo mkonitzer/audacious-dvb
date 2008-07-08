@@ -102,13 +102,13 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	  j = *q++;		// event_name_length
 	  if (j > 0)		// event_name_char
 	    {
-	      name = str_beautify (q, j, FALSE);
+	      name = g_strndup (q, j);
 	      q += j;
 	    }
 
 	  j = *q++;		// text_length
 	  if (j > 0)		// text_char
-	    text = str_beautify (q, j, FALSE);
+	    text = g_strndup (q, j);
 
 	  if (is_updated (name, &epg->short_ev_name, FALSE))
 	    epg->refresh = TRUE;
@@ -141,7 +141,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	  if (j > 0)
 	    {			// text_char
 	      gchar *tmp = exttext;
-	      newtext = str_beautify (q, j, FALSE);
+	      newtext = g_strndup (q, j);
 
 	      exttext =
 		g_strconcat ((exttext != NULL ? exttext : ""), newtext, NULL);
