@@ -537,7 +537,6 @@ feed_thread (gpointer args)
   log_print (hlog, LOG_INFO, "feed_thread() stopping");
 
   g_static_mutex_unlock (&gmt_feed);
-  g_thread_exit (0);
   return NULL;
 }
 
