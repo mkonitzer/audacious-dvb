@@ -70,9 +70,10 @@ typedef struct _Widgets
 
 void dvb_about (void);
 void dvb_configure (void);
-void dvb_show_infobox (statstruct *, rtstruct *, epgstruct *, mmstruct *);
-void dvb_hide_infobox ();
 
+void infobox_show (statstruct *, rtstruct *, epgstruct *, mmstruct *);
+void infobox_hide ();
+void infobox_redraw ();
 void infobox_update_service (statstruct *);
 void infobox_update_radiotext (rtstruct *);
 void infobox_update_epg (epgstruct *);

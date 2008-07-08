@@ -27,14 +27,15 @@
 #ifndef __AUDACIOUS_DVB_RTXT_H__
 #define __AUDACIOUS_DVB_RTXT_H__
 
-#define RT_MEL 65
+#define RT_MEL 65		// MessageElementLength, max. 64+1 byte
+#define RT_EVNTS 20		// Number of stored Radiotext events
 
 typedef struct _rtstruct
 {
-  gchar *title;
-  gchar *artist;
-  gchar *radiotext;
-  gchar *pty;
+  gchar *title;			// RTplus title
+  gchar *artist;		// RTplus artist
+  gchar *event[RT_EVNTS + 1];	// Last Radiotext events
+  gchar *pty;			// RDS Programme Type
   gint runtoggle;
   gboolean refresh;
   /* Don't touch the following! */
@@ -47,6 +48,7 @@ typedef struct _rtstruct
 
 rtstruct *radiotext_init (void);
 void radiotext_read_data (rtstruct *, const guchar *, gint);
+gchar *radiotext_events_to_text (rtstruct * rt);
 void radiotext_exit (rtstruct *);
 
 #endif // __AUDACIOUS_DVB_RTXT_H__

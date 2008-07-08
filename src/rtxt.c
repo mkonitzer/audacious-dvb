@@ -106,6 +106,24 @@ radiotext_init (void)
   return rt;
 }
 
+void
+radiotext_events_insert (rtstruct * rt, gchar * newtext)
+{
+  // Shift Radiotext events
+  int i;
+  if (rt->event[RT_EVNTS - 1])
+    g_free (rt->event[RT_EVNTS - 1]);
+  for (i = RT_EVNTS - 1; i > 0; --i)
+    rt->event[i] = rt->event[i - 1];
+  rt->event[0] = g_strdup (newtext);
+  // rt->event[RT_EVNTS] == NULL always holds (for g_strjoinv)
+}
+
+gchar *
+radiotext_events_to_text (rtstruct * rt)
+{
+  return g_strjoinv ("\n", rt->event);
+}
 
 static void
 radiotext_decode (rtstruct * rt)
@@ -148,8 +166,12 @@ radiotext_decode (rtstruct * rt)
 		   0x80) ? rds_addchar[mtext[9 + i] - 0x80] : mtext[9 + i];
 	    }
 	  memcpy (rt->plustext, temptext, RT_MEL - 1);
-	  if (is_updated (rt->plustext, &rt->radiotext, TRUE))
-	    rt->refresh = TRUE;
+	  if (rt->event[0] == NULL
+	      || (strcmp (rt->plustext, rt->event[0]) != 0))
+	    {
+	      radiotext_events_insert (rt, rt->plustext);
+	      rt->refresh = TRUE;
+	    }
 	  log_print (hlog, LOG_INFO, "Radiotext: %s", rt->plustext);
 	}
       else if (mtext[5] == 0x46)

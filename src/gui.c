@@ -100,6 +100,7 @@ dvb_configure (void)
   gint i;
   GtkWidget *hbox, *vbox;
 
+  // TODO: Replace by GladeXML equivalent
   GtkWidget *configBox = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   widgets.configBox = configBox;
   g_signal_connect (G_OBJECT (configBox), "destroy",
@@ -423,8 +424,8 @@ config_from_gui (cfgstruct * config)
 }
 
 void
-dvb_show_infobox (statstruct * station, rtstruct * rt, epgstruct * epg,
-		  mmstruct * mmusic)
+infobox_show (statstruct * station, rtstruct * rt, epgstruct * epg,
+	      mmstruct * mmusic)
 {
   if (widgets.infoBox)
     {
@@ -459,7 +460,7 @@ dvb_show_infobox (statstruct * station, rtstruct * rt, epgstruct * epg,
 
 
 void
-dvb_hide_infobox ()
+infobox_hide ()
 {
   if (widgets.infoBox == NULL)
     return;
@@ -467,6 +468,16 @@ dvb_hide_infobox ()
   gtk_widget_destroy (widgets.infoBox);
   widgets.infoBox = NULL;
   widgets.infoXml = NULL;
+}
+
+
+void
+infobox_redraw ()
+{
+  if (widgets.infoBox == NULL)
+    return;
+
+  gtk_widget_queue_draw (widgets.infoBox);
 }
 
 
@@ -498,21 +509,29 @@ infobox_update_radiotext (rtstruct * rt)
   if (widgets.infoBox == NULL)
     return;
 
-  GtkWidget *rtptitleEntry, *rtpartistEntry, *rtpptyEntry;
+  gchar *events = NULL;
+  GtkTextBuffer *rtevTextBuffer;
+  GtkWidget *rtptitleEntry, *rtpartistEntry, *rtpptyEntry, *rtevTextView;
   rtptitleEntry = glade_xml_get_widget (widgets.infoXml, "rttitleEntry");
   rtpartistEntry = glade_xml_get_widget (widgets.infoXml, "rtartistEntry");
   rtpptyEntry = glade_xml_get_widget (widgets.infoXml, "rtptyEntry");
+  rtevTextView = glade_xml_get_widget (widgets.infoXml, "rtevTextView");
+  rtevTextBuffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtevTextView));
   if (rt != NULL)
     {
       gtk_entry_set_text_safe (GTK_ENTRY (rtptitleEntry), rt->title);
       gtk_entry_set_text_safe (GTK_ENTRY (rtpartistEntry), rt->artist);
       gtk_entry_set_text_safe (GTK_ENTRY (rtpptyEntry), rt->pty);
+      events = radiotext_events_to_text (rt);
+      gtk_text_buffer_set_text (rtevTextBuffer, events, -1);
+      g_free (events);
     }
   else
     {
       gtk_entry_set_text_safe (GTK_ENTRY (rtptitleEntry), "");
       gtk_entry_set_text_safe (GTK_ENTRY (rtpartistEntry), "");
       gtk_entry_set_text_safe (GTK_ENTRY (rtpptyEntry), "");
+      gtk_text_buffer_set_text (rtevTextBuffer, "", -1);
     }
 }
 
@@ -616,6 +635,7 @@ infobox_update_dvb (dvbstatstruct * dvb)
   if (dvb != NULL)
     {
       gchar *text;
+      // TODO: Tuning information, Service ID
       gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbstrProgressBar),
 				     ((double) dvb->str) / 0xffff);
       text = g_strdup_printf ("%.1lf%%", ((double) dvb->str) * 100 / 0xffff);
@@ -643,6 +663,7 @@ infobox_update_dvb (dvbstatstruct * dvb)
     }
   else
     {
+      // TODO: Tuning information, Service ID
       gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbstrProgressBar), 0);
       gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbstrProgressBar), "");
       gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbsnrProgressBar), 0);

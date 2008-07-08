@@ -136,7 +136,7 @@ DECLARE_PLUGIN (dvb, NULL, NULL, dvb_iplist, NULL, NULL, NULL, NULL, NULL);
 static void
 dvb_file_info_box (gchar * s)
 {
-  dvb_show_infobox (station, rt, epg, mmusic);
+  infobox_show (station, rt, epg, mmusic);
 }
 
 
@@ -248,6 +248,7 @@ dvb_play (InputPlayback * playback)
   infobox_update_epg (NULL);
   infobox_update_mmusic (NULL);
   infobox_update_dvb (NULL);
+  infobox_redraw ();
 
   // Reset playback structures
   playing = TRUE;
@@ -424,6 +425,7 @@ dvb_stop (InputPlayback * playback)
       infobox_update_epg (NULL);
       infobox_update_mmusic (NULL);
       infobox_update_dvb (NULL);
+      infobox_redraw ();
 
       // Close output plugin
       playback->output->close_audio ();
@@ -854,6 +856,7 @@ dvb_build_file_title (void)
   if (dvbstat != NULL && dvbstat->refresh)
     {
       infobox_update_dvb (dvbstat);
+      infobox_redraw ();
       dvbstat->refresh = FALSE;
     }
 
@@ -862,6 +865,8 @@ dvb_build_file_title (void)
       g_free (title);
       return NULL;
     }
+
+  infobox_redraw ();
 
   return title;
 }
