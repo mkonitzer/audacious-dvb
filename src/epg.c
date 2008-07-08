@@ -195,7 +195,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 		  strcat (ll, hex);
 		}
 	    }
-	  log_print (hlog, LOG_INFO, "EIT: %s", ll);
+	  log_print (hlog, LOG_DEBUG, "EIT: %s", ll);
 	  break;
 	}
 
@@ -234,7 +234,7 @@ epg_read_data (epgstruct * epg, const guchar * sect, gint len)
 	  if (memcmp (un, p, dll + 12) != 0)
 	    {
 	      memcpy (un, p, dll + 12);
-	      log_print (hlog, LOG_INFO,
+	      log_print (hlog, LOG_DEBUG,
 			 "EIT: %02x%02x %02x%02x %02x%02x%02x %02x%02x%02x",
 			 p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8],
 			 p[9]);

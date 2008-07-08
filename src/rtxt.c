@@ -206,7 +206,7 @@ radiotext_decode (rtstruct * rt)
 	  rtp_typ[1] = (0x20 & mtext[12] << 5) | mtext[13] >> 3;
 	  rtp_start[1] = (0x38 & mtext[13] << 3) | mtext[14] >> 5;
 	  rtp_len[1] = 0x1f & mtext[14];
-	  log_print (hlog, LOG_DEBUG,
+	  log_print (hlog, LOG_INFO,
 		     "RTplus (tag=Typ/Start/Len):  Toggle/Run = %d/%d (was %d/%d),"
 		     "tag#1 = %d/%d/%d, tag#2 = %d/%d/%d",
 		     (mtext[10] & 0x10) > 0, (mtext[10] & 0x08) > 0,
