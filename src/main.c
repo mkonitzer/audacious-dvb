@@ -386,8 +386,7 @@ dvb_stop (InputPlayback * playback)
       // Stop all threads
       if (gt_feed != NULL)
 	{
-	  log_print (hlog, LOG_INFO,
-		     "Waiting for feed_thread() to die...");
+	  log_print (hlog, LOG_INFO, "Waiting for feed_thread() to die...");
 	  g_thread_join (gt_feed);
 	  gt_feed = NULL;
 	}

@@ -157,3 +157,9 @@ gtk_entry_printf (GtkWidget * w, const gchar * fmt, ...)
   gtk_entry_set_text (GTK_ENTRY (w), msg);
   g_free (msg);
 }
+
+inline void
+gtk_entry_set_text_safe (GtkEntry * entry, const gchar * text)
+{
+  gtk_entry_set_text (entry, (text ? text : ""));
+}

@@ -40,5 +40,6 @@ gchar *str_beautify (const gchar * s, gint len, gboolean ascii);
 gboolean is_updated (const gchar * oldtext, gchar ** newtextptr,
 		     gboolean ascii);
 void gtk_entry_printf (GtkWidget *, const gchar *, ...);
+inline void gtk_entry_set_text_safe (GtkEntry * entry, const gchar * text);
 
 #endif // __AUDACIOUS_DVB_UTIL_H__

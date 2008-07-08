@@ -37,6 +37,7 @@
 #include "rtxt.h"
 #include "mmusic.h"
 #include "config.h"
+#include "util.h"
 
 extern gpointer hlog;
 extern cfgstruct *config;
@@ -348,7 +349,7 @@ config_to_gui (cfgstruct * config)
 
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.recordCheck),
 				config->rec);
-  gtk_entry_set_text (GTK_ENTRY (widgets.fnameEntry), config->rec_fname);
+  gtk_entry_set_text_safe (GTK_ENTRY (widgets.fnameEntry), config->rec_fname);
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.appendCheck),
 				config->rec_append);
 
@@ -480,13 +481,13 @@ infobox_update_service (statstruct * st)
   statEntry = glade_xml_get_widget (widgets.infoXml, "stationEntry");
   if (st != NULL)
     {
-      gtk_entry_set_text (GTK_ENTRY (provEntry), st->prov_name);
-      gtk_entry_set_text (GTK_ENTRY (statEntry), st->svc_name);
+      gtk_entry_set_text_safe (GTK_ENTRY (provEntry), st->prov_name);
+      gtk_entry_set_text_safe (GTK_ENTRY (statEntry), st->svc_name);
     }
   else
     {
-      gtk_entry_set_text (GTK_ENTRY (provEntry), "");
-      gtk_entry_set_text (GTK_ENTRY (statEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (provEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (statEntry), "");
     }
 }
 
@@ -503,15 +504,15 @@ infobox_update_radiotext (rtstruct * rt)
   rtpptyEntry = glade_xml_get_widget (widgets.infoXml, "rtptyEntry");
   if (rt != NULL)
     {
-      gtk_entry_set_text (GTK_ENTRY (rtptitleEntry), rt->title);
-      gtk_entry_set_text (GTK_ENTRY (rtpartistEntry), rt->artist);
-      gtk_entry_set_text (GTK_ENTRY (rtpptyEntry), rt->pty);
+      gtk_entry_set_text_safe (GTK_ENTRY (rtptitleEntry), rt->title);
+      gtk_entry_set_text_safe (GTK_ENTRY (rtpartistEntry), rt->artist);
+      gtk_entry_set_text_safe (GTK_ENTRY (rtpptyEntry), rt->pty);
     }
   else
     {
-      gtk_entry_set_text (GTK_ENTRY (rtptitleEntry), "");
-      gtk_entry_set_text (GTK_ENTRY (rtpartistEntry), "");
-      gtk_entry_set_text (GTK_ENTRY (rtpptyEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (rtptitleEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (rtpartistEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (rtpptyEntry), "");
     }
 }
 
@@ -535,19 +536,21 @@ infobox_update_epg (epgstruct * epg)
     gtk_text_view_get_buffer (GTK_TEXT_VIEW (epgevddescTextView));
   if (epg != NULL)
     {
-      gtk_entry_set_text (GTK_ENTRY (epglangEntry), epg->lang);
-      gtk_entry_set_text (GTK_ENTRY (epgatypeEntry), epg->stream_type);
-      gtk_entry_set_text (GTK_ENTRY (epgevnameEntry), epg->short_ev_name);
-      gtk_entry_set_text (GTK_ENTRY (epgevdescEntry), epg->short_ev_text);
+      gtk_entry_set_text_safe (GTK_ENTRY (epglangEntry), epg->lang);
+      gtk_entry_set_text_safe (GTK_ENTRY (epgatypeEntry), epg->stream_type);
+      gtk_entry_set_text_safe (GTK_ENTRY (epgevnameEntry),
+			       epg->short_ev_name);
+      gtk_entry_set_text_safe (GTK_ENTRY (epgevdescEntry),
+			       epg->short_ev_text);
       if (epg->ext_ev_text != NULL)
 	gtk_text_buffer_set_text (epgevddescTextBuffer, epg->ext_ev_text, -1);
     }
   else
     {
-      gtk_entry_set_text (GTK_ENTRY (epglangEntry), "");
-      gtk_entry_set_text (GTK_ENTRY (epgatypeEntry), "");
-      gtk_entry_set_text (GTK_ENTRY (epgevnameEntry), "");
-      gtk_entry_set_text (GTK_ENTRY (epgevdescEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (epglangEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (epgatypeEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (epgevnameEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (epgevdescEntry), "");
       gtk_text_buffer_set_text (epgevddescTextBuffer, "", -1);
     }
 }
@@ -566,17 +569,17 @@ infobox_update_mmusic (mmstruct * mmusic)
   mmtrnumEntry = glade_xml_get_widget (widgets.infoXml, "mmtrnumEntry");
   if (mmusic != NULL)
     {
-      gtk_entry_set_text (GTK_ENTRY (mmtitleEntry), mmusic->title);
-      gtk_entry_set_text (GTK_ENTRY (mmartistEntry), mmusic->artist);
-      gtk_entry_set_text (GTK_ENTRY (mmalbumEntry), mmusic->album);
+      gtk_entry_set_text_safe (GTK_ENTRY (mmtitleEntry), mmusic->title);
+      gtk_entry_set_text_safe (GTK_ENTRY (mmartistEntry), mmusic->artist);
+      gtk_entry_set_text_safe (GTK_ENTRY (mmalbumEntry), mmusic->album);
       gtk_entry_printf (mmtrnumEntry, "%d", mmusic->trnum);
     }
   else
     {
-      gtk_entry_set_text (GTK_ENTRY (mmtitleEntry), "");
-      gtk_entry_set_text (GTK_ENTRY (mmartistEntry), "");
-      gtk_entry_set_text (GTK_ENTRY (mmalbumEntry), "");
-      gtk_entry_set_text (GTK_ENTRY (mmtrnumEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (mmtitleEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (mmartistEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (mmalbumEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (mmtrnumEntry), "");
     }
 }
 
@@ -644,8 +647,8 @@ infobox_update_dvb (dvbstatstruct * dvb)
       gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbstrProgressBar), "");
       gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbsnrProgressBar), 0);
       gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbsnrProgressBar), "");
-      gtk_entry_set_text (GTK_ENTRY (dvbuncEntry), "");
-      gtk_entry_set_text (GTK_ENTRY (dvbberEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (dvbuncEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (dvbberEntry), "");
       gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
 				    (dvbsignalCheckButton), FALSE);
       gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
