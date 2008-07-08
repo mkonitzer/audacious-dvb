@@ -429,7 +429,7 @@ infobox_show (statstruct * station, rtstruct * rt, epgstruct * epg,
 {
   if (widgets.infoBox)
     {
-      gdk_window_raise (GTK_WIDGET (widgets.infoBox)->window);
+      gtk_window_present (GTK_WINDOW (widgets.infoBox));
       return;
     }
 
@@ -479,6 +479,7 @@ infobox_redraw ()
 
   gtk_widget_queue_draw (widgets.infoBox);
 }
+
 
 inline gboolean
 infobox_is_visible ()
