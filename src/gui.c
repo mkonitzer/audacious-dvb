@@ -480,6 +480,12 @@ infobox_redraw ()
   gtk_widget_queue_draw (widgets.infoBox);
 }
 
+inline gboolean
+infobox_is_visible ()
+{
+  return (widgets.infoBox != NULL);
+}
+
 
 void
 infobox_update_service (statstruct * st)

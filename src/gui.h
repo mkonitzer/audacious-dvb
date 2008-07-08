@@ -74,6 +74,7 @@ void dvb_configure (void);
 void infobox_show (statstruct *, rtstruct *, epgstruct *, mmstruct *);
 void infobox_hide ();
 void infobox_redraw ();
+inline gboolean infobox_is_visible ();
 void infobox_update_service (statstruct *);
 void infobox_update_radiotext (rtstruct *);
 void infobox_update_epg (epgstruct *);
