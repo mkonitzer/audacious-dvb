@@ -78,7 +78,7 @@ str_beautify (const gchar * s, gint len, gboolean ascii)
   gint i, skip = 0;
   gchar from_enc[20];
   GRegex *mwsp;
-  gchar *newstr, last = '\0';
+  gchar *newstr, *tmp, last = '\0';
   // Remove/Replace all non-ascii/-printable characters
   if (ascii)
     {
@@ -113,10 +113,12 @@ str_beautify (const gchar * s, gint len, gboolean ascii)
       str_replace_non_printable (newstr);
     }
   // Remove leading and trailing spaces
-  newstr = g_strstrip (newstr);
+  tmp = g_strstrip (newstr);
   // Replace multiple whitespaces by single space
   mwsp = g_regex_new ("\\s+", 0, 0, NULL);
-  newstr = g_regex_replace (mwsp, newstr, -1, 0, " ", 0, NULL);
+  newstr = g_regex_replace_literal (mwsp, tmp, -1, 0, " ", 0, NULL);
+  g_regex_unref (mwsp);
+  g_free (tmp);
   return newstr;
 }
 
