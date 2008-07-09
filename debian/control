@@ -1,0 +1,20 @@
+Source: audacious-dvb
+Section: sound
+Priority: extra
+Maintainer: Marius Konitzer <m.konitzer@gmx.de>
+Build-Depends: cdbs, debhelper (>= 7), autotools-dev, libtool, libglib2.0-dev, linux-libc-dev, libgtk2.0-dev, libglade2-dev, audacious-dev, libmp3lame-dev
+Standards-Version: 3.8.0
+Homepage: http://audacious-dvb.sourceforge.net/
+
+Package: audacious-dvb
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Audacious plugin for DVB audio streams
+ Audacious-DVB is an input plugin for Audacious that enables Audacious to
+ playback and record audio streams from a DVB-S/-T/-C adapter. It is
+ based on Christian Motz's XMMS DVB Input Plugin.
+ .
+ It has since some improved abilities like parsing of EPG/EIT,
+ Radiotext[+] and MadMusic data (if supported by provider), display of
+ DVB status (reception quality etc.) and experimental support for DVB-T
+ and DVB-C adapters.
