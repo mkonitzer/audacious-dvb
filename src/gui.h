@@ -79,6 +79,6 @@ void infobox_update_service (statstruct *);
 void infobox_update_radiotext (rtstruct *);
 void infobox_update_epg (epgstruct *);
 void infobox_update_mmusic (mmstruct *);
-void infobox_update_dvb (dvbstatstruct *);
+void infobox_update_dvb (gpointer, dvbstatstruct *, tunestruct *);
 
 #endif // __AUDACIOUS_DVB_GUI_H__

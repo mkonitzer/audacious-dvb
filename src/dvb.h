@@ -141,5 +141,6 @@ gint dvb_get_status (gpointer, dvbstatstruct *);
 void dvb_tune_defaults (tunestruct *);
 gint dvb_tune (gpointer, tunestruct *);
 gint dvb_parse_url (const gchar *, tunestruct *);
+gchar *dvb_tunestruct_to_text (gpointer, tunestruct *);
 
 #endif // __AUDACIOUS_DVB_DVB_H__

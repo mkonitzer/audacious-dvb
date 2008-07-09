@@ -256,7 +256,7 @@ dvb_play (InputPlayback * playback)
       infobox_update_radiotext (NULL);
       infobox_update_epg (NULL);
       infobox_update_mmusic (NULL);
-      infobox_update_dvb (NULL);
+      infobox_update_dvb (NULL, NULL, NULL);
       infobox_redraw ();
       // Register infobox timer
       if (infobox_timer_id == 0)
@@ -451,7 +451,7 @@ dvb_stop (InputPlayback * playback)
 	  infobox_update_radiotext (NULL);
 	  infobox_update_epg (NULL);
 	  infobox_update_mmusic (NULL);
-	  infobox_update_dvb (NULL);
+	  infobox_update_dvb (NULL, NULL, NULL);
 	  infobox_redraw ();
 	}
 
@@ -1034,6 +1034,8 @@ get_name_thread (gpointer arg)
 
   while (playing)
     {
+      // for details see ETSI TR 101 211: "Digital Video Broadcasting (DVB);
+      // Guidelines on implementation and usage of Service Information (SI)"
       if ((rc = dvb_section (hdvb, 0x0011, 0x42, 0, sct, s, 10000)) != RC_OK)
 	{
 	  log_print (hlog, LOG_INFO, "dvb_section() returned %d", rc);
@@ -1063,7 +1065,7 @@ get_name_thread (gpointer arg)
 		  dt = *pp++;
 		  dl = *pp++;
 
-		  if (dt == 0x48)
+		  if (dt == 0x48)	// service_descriptor (SDT, SIT)
 		    {
 		      memcpy (prov, &pp[2], pp[1]);
 		      prov[pp[1]] = '\0';
@@ -1297,7 +1299,7 @@ infobox_timer (gpointer data)
     }
   if (dvbstat != NULL && dvbstat->refresh)
     {
-      infobox_update_dvb (dvbstat);
+      infobox_update_dvb (hdvb, dvbstat, tune);
       dvbstat->refresh = FALSE;
       refreshed = TRUE;
     }

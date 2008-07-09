@@ -53,6 +53,7 @@ typedef struct _HDVB
   gint dvb_admx;
   gint dvb_ddmx;
   struct dmx_pes_filter_params dvb_dmx;
+  struct dvb_frontend_info dvb_fe_info;
 } HDVB;
 
 
@@ -81,6 +82,7 @@ dvb_open (gint devnum)
       g_free (h);
       return NULL;
     }
+  h->dvb_fe_info.type = -1;
 
   return (gpointer *) h;
 }
@@ -857,11 +859,17 @@ dvb_tune (gpointer hdvb, tunestruct * t)
   if (h == NULL)
     return RC_NPE;
 
-  if ((res = ioctl (h->dvb_fedh, FE_GET_INFO, &fe_info) < 0))
+  // Do we already know the frontend type (DVB-S/-C/-T)?
+  if (h->dvb_fe_info.type == -1)
     {
-      log_print (hlog, LOG_ERR, "FE_GET_INFO failed in dvb_tune(),"
-		 " errno = %d (%s)", errno, g_strerror (errno));
-      return -1;
+      // Try to detect frontend type
+      if ((res = ioctl (h->dvb_fedh, FE_GET_INFO, &fe_info) < 0))
+	{
+	  log_print (hlog, LOG_ERR, "FE_GET_INFO failed in dvb_tune(),"
+		     " errno = %d (%s)", errno, g_strerror (errno));
+	  return -1;
+	}
+      memcpy (&(h->dvb_fe_info), &fe_info, sizeof (struct dvb_frontend_info));
     }
 
   log_print (hlog, LOG_INFO, "Using DVB card '%s'", fe_info.name);
@@ -905,6 +913,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
       else
 	{
 	  feparams.frequency = t->freq;
+	  hi_lo = 0;
 	  base = 0;
 	}
 
@@ -949,6 +958,43 @@ dvb_tune (gpointer hdvb, tunestruct * t)
     }
 
   return (check_status (hdvb, fe_info.type, &feparams, base));
+}
+
+
+gchar *
+dvb_tunestruct_to_text (gpointer hdvb, tunestruct * t)
+{
+  HDVB *h = (HDVB *) hdvb;
+  if (h == NULL)
+    return NULL;
+
+  gchar *text = NULL;
+  switch (h->dvb_fe_info.type)
+    {
+    case FE_OFDM:
+      text = g_strdup_printf ("%u Hz, Bandwidth: %d",
+			      t->freq, t->bandw == BANDWIDTH_8_MHZ ? 8 :
+			      (t->bandw == BANDWIDTH_7_MHZ ? 7 : 6));
+      break;
+    case FE_QPSK:
+      text = g_strdup_printf ("%u kHz, Pol:%c Srate=%d, 22kHz tone=%s, "
+			      "LNB: %d, SLOF %d, LOF1: %d, LOF2: %d",
+			      t->freq, t->pol, t->srate,
+			      (t->freq >= t->slof) ? "ON" : "OFF", t->diseqc,
+			      t->slof / 1000UL, t->lof1 / 1000UL,
+			      t->lof2 / 1000UL);
+      break;
+    case FE_QAM:
+      text = g_strdup_printf ("%d Hz, srate=%d", t->freq, t->srate);
+      break;
+#ifdef DVB_ATSC
+    case FE_ATSC:
+      text = g_strdup_printf ("%d Hz, modulation=%d", t->freq, t->mod);
+      break;
+#endif
+    }
+
+  return text;
 }
 
 gint

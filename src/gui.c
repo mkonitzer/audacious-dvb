@@ -610,7 +610,7 @@ infobox_update_mmusic (mmstruct * mmusic)
 }
 
 void
-infobox_update_dvb (dvbstatstruct * dvb)
+infobox_update_dvb (gpointer hdvb, dvbstatstruct * dvb, tunestruct * tune)
 {
   if (widgets.infoBox == NULL)
     return;
@@ -639,10 +639,24 @@ infobox_update_dvb (dvbstatstruct * dvb)
     glade_xml_get_widget (widgets.infoXml, "dvblockCheckButton");
   dvbtimedoutCheckButton =
     glade_xml_get_widget (widgets.infoXml, "dvbtimedoutCheckButton");
+  if (hdvb != NULL && tune != NULL)
+    {
+      gchar *text;
+      text = dvb_tunestruct_to_text (hdvb, tune);
+      gtk_entry_set_text_safe (GTK_ENTRY (dvbtuneEntry), text);
+      if (text)
+	g_free (text);
+      gtk_entry_printf (dvbpidEntry, "%d (%d, %d)", tune->sid, tune->apid,
+			tune->dpid);
+    }
+  else
+    {
+      gtk_entry_set_text_safe (GTK_ENTRY (dvbtuneEntry), "");
+      gtk_entry_set_text_safe (GTK_ENTRY (dvbpidEntry), "");
+    }
   if (dvb != NULL)
     {
       gchar *text;
-      // TODO: Tuning information, Service ID
       gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbstrProgressBar),
 				     ((double) dvb->str) / 0xffff);
       text = g_strdup_printf ("%.1lf%%", ((double) dvb->str) * 100 / 0xffff);
@@ -670,7 +684,6 @@ infobox_update_dvb (dvbstatstruct * dvb)
     }
   else
     {
-      // TODO: Tuning information, Service ID
       gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbstrProgressBar), 0);
       gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbstrProgressBar), "");
       gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbsnrProgressBar), 0);
