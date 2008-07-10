@@ -1,3 +1,4 @@
+AUTOMAKE_OPTIONS = gnu
 lib_LTLIBRARIES = libdvb.la
 
 AM_CFLAGS = @AUDACIOUS_CFLAGS@ @LIBGLADE_CFLAGS@ @GTK_CFLAGS@ @GLIB_CFLAGS@
@@ -7,6 +8,9 @@ libdir = @PLUGIN_DIR@
 
 libdvb_la_LDFLAGS = -module -avoid-version -no-undefined -export-dynamic -lmp3lame
 libdvb_la_SOURCES = main.c gui.c gui.h epg.c epg.h dvb.c dvb.h log.c log.h cfg.c cfg.h rtxt.c rtxt.h mmusic.c mmusic.h util.h util.c glwidgets.c
+
+BUILT_SOURCES = glwidgets.c
+MAINTAINERCLEANFILES = glwidgets.c
 
 glwidgets.c: ../audacious-dvb.glade
 	sed -e 's/\"/\\"/g' \
