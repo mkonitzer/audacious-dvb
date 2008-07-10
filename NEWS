@@ -1,5 +1,0 @@
-This is the latest release of the plugin that enables XMMS to play
-and record DVB audio services directly from a DVB adapter. It fixes
-some minor bugs and adds support for retrieval and display of EPG
-(Electronic Program Guide) information for the selected service
-(if provided by the broadcaster).
