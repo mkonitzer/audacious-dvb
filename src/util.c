@@ -129,10 +129,8 @@ str_replace_non_printable (gchar * s)
 gchar *
 str_beautify (const gchar * s, gint len, gboolean ascii)
 {
-  gint i, skip = 0;
-  gchar from_enc[20];
   GRegex *mwsp;
-  gchar *newstr, *tmp, last = '\0';
+  gchar from_enc[20], *newstr, *tmp;
 
   if (len > 0)
     newstr = g_strndup (s, len);

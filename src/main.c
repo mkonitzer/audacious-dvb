@@ -567,8 +567,6 @@ feed_thread (gpointer args)
 static gpointer
 dvb_status_thread (gpointer args)
 {
-  guchar pkt[3840];
-
   log_print (hlog, LOG_INFO, "dvb_status_thread() starting");
 
   static GStaticMutex gmt_dvbstat = G_STATIC_MUTEX_INIT;

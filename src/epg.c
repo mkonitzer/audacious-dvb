@@ -22,6 +22,7 @@
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
 #include <glib.h>
+#include <glib/gprintf.h>
 #include <string.h>
 
 #include "epg.h"
@@ -102,13 +103,13 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	  j = *q++;		// event_name_length
 	  if (j > 0)		// event_name_char
 	    {
-	      name = g_strndup (q, j);
+	      name = g_strndup ((gchar *) q, j);
 	      q += j;
 	    }
 
 	  j = *q++;		// text_length
 	  if (j > 0)		// text_char
-	    text = g_strndup (q, j);
+	    text = g_strndup ((gchar *) q, j);
 
 	  if (is_updated (name, &epg->short_ev_name, FALSE))
 	    epg->refresh = TRUE;
@@ -141,7 +142,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	  if (j > 0)
 	    {			// text_char
 	      gchar *tmp = exttext;
-	      newtext = g_strndup (q, j);
+	      newtext = g_strndup ((gchar *) q, j);
 
 	      exttext =
 		g_strconcat ((exttext != NULL ? exttext : ""), newtext, NULL);
@@ -213,7 +214,7 @@ gint
 epg_read_data (epgstruct * epg, const guchar * sect, gint len)
 {
   gint dll, rc, rst;
-  const guchar *p = NULL, *q = NULL;
+  const guchar *p;
   static guchar un[4096];
 
   if (len == 0)

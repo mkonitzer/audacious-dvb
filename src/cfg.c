@@ -93,6 +93,7 @@ config_from_db (cfgstruct * config)
   aud_cfg_db_get_bool (db, "dvb", "info.rt", &config->info_rt);
 
   aud_cfg_db_close (db);
+  return TRUE;
 }
 
 
@@ -125,6 +126,7 @@ config_to_db (cfgstruct * config)
   aud_cfg_db_set_bool (db, "dvb", "info.rt", config->info_rt);
 
   aud_cfg_db_close (db);
+  return TRUE;
 }
 
 

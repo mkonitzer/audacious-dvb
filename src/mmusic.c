@@ -23,9 +23,11 @@
 
 #include <glib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include "mmusic.h"
+#include "util.h"
 #include "log.h"
 
 extern gpointer hlog;
@@ -58,9 +60,9 @@ fix_bill_shit (guchar * s)
 
 
 static void
-replace_crlf (guchar * s)
+replace_crlf (gchar * s)
 {
-  while (*s)
+  while (*s != '\0')
     {
       if ((*s == '\n') || (*s == '\r'))
 	*s = ' ';
@@ -72,7 +74,7 @@ replace_crlf (guchar * s)
 void
 madmusic_read_data (mmstruct * mm, const guchar * buf, gint len)
 {
-  gint field, ftna, toai, trnum;
+  gint field = 0, ftna = 0, toai = 0, trnum = 0;
   gchar toan[32];
   guchar *p, *q, *r, *rr, wbuf[8192];
   gchar title[256], artist[256], album[256];
@@ -85,10 +87,8 @@ madmusic_read_data (mmstruct * mm, const guchar * buf, gint len)
   mm->mad_len = len;
   time (&mm->mad_time);
 
-  toai = 0;
   toan[toai] = '\0';
 
-  mm->trnum = 0;
   memset (artist, 0x00, sizeof (artist));
   memset (title, 0x00, sizeof (title));
   memset (album, 0x00, sizeof (album));
@@ -97,13 +97,10 @@ madmusic_read_data (mmstruct * mm, const guchar * buf, gint len)
   memcpy (wbuf, buf, len);
   fix_bill_shit (wbuf);
   p = wbuf;
-  field = 0;
-
-  ftna = 0;
 
   while (1)
     {
-      q = index (p, '|');
+      q = (guchar *) g_strstr_len ((gchar *) p, len, "|");
       if (q == NULL)
 	break;
 
@@ -113,23 +110,24 @@ madmusic_read_data (mmstruct * mm, const guchar * buf, gint len)
       switch (field)
 	{
 	case 3:
-	  strcpy (artist, p);
+	  strcpy (artist, (gchar *) p);
 	  replace_crlf (artist);
 	  break;
 	case 4:
-	  strcpy (title, p);
+	  strcpy (title, (gchar *) p);
 	  replace_crlf (title);
 	  ftna = 1;
 	  break;
 	case 5:
-	  strcpy (album, p);
+	  strcpy (album, (gchar *) p);
 	  replace_crlf (album);
 	  break;
 	}
 
       if (ftna)
 	{
-	  if ((r = strstr (p, title)) != NULL)
+	  r = (guchar *) g_strstr_len ((gchar *) p, len, title);
+	  if (r != NULL)
 	    {
 	      rr = r - 4;
 	      if (rr < p)
@@ -144,7 +142,7 @@ madmusic_read_data (mmstruct * mm, const guchar * buf, gint len)
 		  rr++;
 		}
 	      toan[toai] = '\0';
-	      mm->trnum = atoi (toan);
+	      trnum = atoi (toan);
 	    }
 	}
 
@@ -158,13 +156,13 @@ madmusic_read_data (mmstruct * mm, const guchar * buf, gint len)
 	ftna = 0;
     }
 
-  if (is_updated (artist, &mm->artist))
+  if (is_updated (artist, &mm->artist, TRUE))
     mm->refresh = TRUE;
 
-  if (is_updated (title, &mm->title))
+  if (is_updated (title, &mm->title, TRUE))
     mm->refresh = TRUE;
 
-  if (is_updated (album, &mm->album))
+  if (is_updated (album, &mm->album, TRUE))
     mm->refresh = TRUE;
 
   if (mm->trnum != trnum)
@@ -178,14 +176,5 @@ madmusic_read_data (mmstruct * mm, const guchar * buf, gint len)
 void
 madmusic_exit (mmstruct * mm)
 {
-/*  if (strlen (title) > 0)
-    {
-      if ((mad_time > 0) && (t_start <= mad_time))
-	log_print (hlog, LOG_INFO, "%d,%s,%s,%s", trnum, album, artist,
-		   title);
-      else
-	log_print (hlog, LOG_INFO, "Track info %d:%02d too old",
-		   (t_start - mad_time) / 60, (t_start - mad_time) % 60);
-    }*/
   g_free (mm);
 }
