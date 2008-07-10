@@ -1,3 +1,23 @@
+2008-07-10  Marius Konitzer  <m.konitzer@gmx.de>
+
+	Released 0.7.0.
+
+	* Essential stability bug-fixes:
+	    * Separated infobox update/redrawing (timer) from audio
+	      decoding (thread); greatly increases responsiveness
+	    * Replaced further non-glib structures/functions
+	    * Removed overlapping memory copies
+	    * Fixed possibly uninitialized variables
+	    * Fixed a few memory leaks
+	* Display even more information in infobox (aka track details):
+	    * Latest 20 Radiotext events
+	    * DVB tuning info
+	* Handle EPG/EIT encoding and control codes properly
+	* Enable/disable polling for DVB status info in preferences
+	* Make input plugin directory user-definable at compile-time
+	  (use ./configure --with-plugindir=DIR)
+	* Debianization
+
 2008-02-07  Marius Konitzer  <m.konitzer@gmx.de>
 
 	Released 0.6.1.
