@@ -5,6 +5,7 @@ AC_SUBST(VERSION, "0.6.1")
 
 AM_INIT_AUTOMAKE(audacious-dvb, $VERSION)
 AM_CONFIG_HEADER(src/config.h)
+AC_CONFIG_FILES([Makefile src/Makefile examples/Makefile])
 
 AC_PROG_CC
 AM_PROG_CC_STDC
@@ -20,8 +21,21 @@ AM_PATH_GTK_2_0(2.6.0, , AC_MSG_ERROR([*** GTK+ >= 2.6.0 not installed - please 
 # Audacious
 PKG_CHECK_MODULES(AUDACIOUS, [audacious >= 1.4.0], ,
 	AC_MSG_ERROR([*** Audacious >= 1.4.0 is not installed - please install first ***]))
-PLUGIN_DIR="`$PKG_CONFIG --variable=input_plugin_dir audacious`"
-AC_SUBST(PLUGIN_DIR)
+AC_MSG_CHECKING([for Audacious input plugin directory])
+AC_ARG_WITH(plugindir,
+	AC_HELP_STRING([--with-plugindir=DIR], [set the directory where Audacious-DVB will be installed @<:@default=autodetect@:>@]),
+	[ case "$withval" in
+	    [[\\/$]]*)
+		plugindir="$withval"
+		;;
+	    *)
+		AC_MSG_RESULT([failed])
+		AC_MSG_ERROR([expected an absolute directory name for --with-plugindir: $withval])
+		;;
+	esac ],
+	[plugindir="`$PKG_CONFIG --variable=input_plugin_dir audacious`"])
+AC_MSG_RESULT([$plugindir])
+AC_SUBST(PLUGIN_DIR, "$plugindir")
 
 # libglade
 PKG_CHECK_MODULES(LIBGLADE, [libglade-2.0 >= 2.3.1], ,
@@ -37,5 +51,4 @@ if test "${lame}" != 1; then
     AC_MSG_ERROR(Unable to find MP3Lame header and library)
 fi
 
-AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT
