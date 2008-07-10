@@ -9,8 +9,9 @@ Upstream Author:
 
 Copyright:
 
-    Copyright (C) 2007-now Marius Konitzer <m.konitzer@gmx.de>
-    Copyright (C) 2003-2004 Christian Motz <douleftis@users.sourceforge.net>
+    Copyright (C) 2007-now Marius Konitzer
+    Based on XMMS DVB Input Plugin (C) 2003-2004 Christian Motz
+    Radiotext based on VDR Radio plugin (C) 2004-2007 Uwe Hanke
 
 License:
 
