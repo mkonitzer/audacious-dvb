@@ -30,7 +30,8 @@ Installation:
 	make install
     
     triplet. If you just want to install audacious-dvb on a per-user basis,
-    just copy 'src/.libs/libdvb.so' to '~/.local/share/audacious/Plugins/'.
+    just type something like './configure --prefix=$HOME/local \
+    --with-plugindir=$HOME/.local/share/audacious/Plugins'.
 
 
 Runtime:
