@@ -4,7 +4,7 @@ Audacious DVB Input Plugin
 Introduction:
 
     This package contains the source code for an Audacious input plugin that
-    enables Audacious to play and record audio streams from a DVB-S/-T/-C
+    enables Audacious to playback and record audio streams from a DVB-S/-T/-C
     adapter (see below). audacious-dvb is based on Christian Motz's XMMS DVB
     Input Plugin (http://xmms-dvb.sourceforge.net).
     It has since some improved abilities like parsing of EPG/EIT, Radiotext[+]
