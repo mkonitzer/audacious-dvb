@@ -562,10 +562,16 @@ infobox_update_epg (epgstruct * epg)
     gtk_text_view_get_buffer (GTK_TEXT_VIEW (epgevddescTextView));
   if (epg != NULL)
     {
+      gchar *tmp;
       gtk_entry_set_text_safe (GTK_ENTRY (epglangEntry), epg->lang);
       gtk_entry_set_text_safe (GTK_ENTRY (epgatypeEntry), epg->stream_type);
-      gtk_entry_set_text_safe (GTK_ENTRY (epgevnameEntry),
-			       epg->short_ev_name);
+      if (epg->pil_mday != 0)
+	tmp = g_strdup_printf ("%s (Start: %02u:%02u)", epg->short_ev_name,
+			       epg->pil_hour, epg->pil_min);
+      else
+	tmp = g_strdup (epg->short_ev_name);
+      gtk_entry_set_text_safe (GTK_ENTRY (epgevnameEntry), tmp);
+      g_free (tmp);
       gtk_entry_set_text_safe (GTK_ENTRY (epgevdescEntry),
 			       epg->short_ev_text);
       if (epg->ext_ev_text != NULL)

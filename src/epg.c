@@ -79,13 +79,13 @@ stream_type (gint cnt, gint cty)
 static gint
 dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 {
-  gint dt, dl, i, j, cdn, ldn, loi, cnt, cty;
+  guint cnt, cty, dt, dl;
+  gint i, j, cdn, ldn, loi;
   gchar ll[1024], hex[16], lang[4];
   gchar *name = NULL, *text = NULL, *newtext = NULL, *exttext = NULL, *stype =
     NULL;
-  const guchar *p = NULL, *q = NULL;
-
-  p = d;
+  const guchar *p = d, *q = NULL;
+  guint pil_mday, pil_mon, pil_hour, pil_min;
 
   while (p < &d[l])
     {
@@ -96,6 +96,13 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
       switch (dt)
 	{
 	case 0x4d:		// short_event_descriptor
+	  if (dl < 5)
+	    {
+	      log_print (hlog, LOG_INFO, "EIT[short_event_descriptor]: "
+			 "wrong description length: %u (expected >=5)", dl);
+	      break;
+	    }
+
 	  memcpy (lang, q, 3);	// ISO_639_language_code
 	  lang[3] = '\0';
 	  q += 3;
@@ -118,8 +125,8 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	    epg->refresh = TRUE;
 
 	  if (epg->refresh)
-	    log_print (hlog, LOG_INFO, "EIT: %s,\"%s\",\"%s\"", lang, name,
-		       text);
+	    log_print (hlog, LOG_INFO, "EIT[short_event_descriptor]: "
+		       "%s,\"%s\",\"%s\"", lang, name, text);
 
 	  g_free (name);
 	  g_free (text);
@@ -127,6 +134,13 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	  break;
 
 	case 0x4e:		// extended_event_descriptor
+	  if (dl < 6)
+	    {
+	      log_print (hlog, LOG_INFO, "EIT[extended_event_descriptor]: "
+			 "wrong description length: %u (expected >=6)", dl);
+	      break;
+	    }
+
 	  cdn = q[0] >> 4;	// descriptor_number
 	  ldn = q[0] & 0xf;	// last_descriptor_number
 	  q++;
@@ -149,8 +163,8 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	      g_free (tmp);
 	    }
 
-	  log_print (hlog, LOG_INFO, "EIT: %d/%d,%s,\"%s\"", cdn, ldn, lang,
-		     newtext);
+	  log_print (hlog, LOG_INFO, "EIT[extended_event_descriptor]: "
+		     "%d/%d,%s,\"%s\"", cdn, ldn, lang, newtext);
 
 	  g_free (newtext);
 	  newtext = NULL;
@@ -167,6 +181,13 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	  break;
 
 	case 0x50:		// component_descriptor
+	  if (dl < 6)
+	    {
+	      log_print (hlog, LOG_INFO, "EIT[component_descriptor]: "
+			 "wrong description length: %u (expected >=6)", dl);
+	      break;
+	    }
+
 	  cnt = q[0] & 0xf;	// stream_content
 	  cty = q[1];		// component_type
 	  stype = stream_type (cnt, cty);
@@ -180,23 +201,55 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	  if (is_updated (lang, &epg->lang, FALSE))
 	    epg->refresh = TRUE;
 
+	  if (epg->refresh)
+	    log_print (hlog, LOG_INFO, "EIT[component_descriptor]: "
+		       "%s, %s (%lu,%lu)", lang, stype, cnt, cty);
+
 	  g_free (stype);
 	  stype = NULL;
 
 	  break;
 
+	case 0x69:		// PDC_descriptor
+	  if (dl != 3)
+	    {
+	      log_print (hlog, LOG_INFO, "EIT[PDC_descriptor]: "
+			 "wrong description length: %u (expected 3)", dl);
+	      break;
+	    }
+
+	  pil_mday = ((q[0] << 1) & 0x1e) | (q[1] >> 7);
+	  pil_mon = ((q[1] >> 3) & 0xf);
+	  pil_hour = ((q[1] << 2) & 0x1c) | (q[2] >> 6);
+	  pil_min = (q[2] & 0x1f);
+
+	  if (epg->pil_mday != pil_mday || epg->pil_mon != pil_mon
+	      || epg->pil_hour != pil_hour || epg->pil_min != pil_min)
+	    {
+	      epg->pil_mday = pil_mday;
+	      epg->pil_mon = pil_mon;
+	      epg->pil_hour = pil_hour;
+	      epg->pil_min = pil_min;
+	      epg->refresh = TRUE;
+	    }
+
+	  if (epg->refresh)
+	    log_print (hlog, LOG_INFO, "EIT[PDC_descriptor]: "
+		       "%02u.%02u. %02u:%02u", pil_mday, pil_mon, pil_hour,
+		       pil_min);
+	  break;
+
 	default:
-	  g_sprintf (ll, "%02x", dt);
+	  ll[0] = '\0';
 	  if (dl > 0)
 	    {
-	      strcat (ll, ":");
 	      for (i = 0; i < dl; i++)
 		{
 		  g_sprintf (hex, "%02x", p[i]);
 		  g_strlcat (ll, hex, sizeof (ll));
 		}
 	    }
-	  log_print (hlog, LOG_DEBUG, "EIT: %s", ll);
+	  log_print (hlog, LOG_DEBUG, "EIT[dt]: %s", ll);
 	  break;
 	}
 

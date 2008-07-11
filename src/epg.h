@@ -28,11 +28,15 @@
 
 typedef struct _epgstruct
 {
-  gchar *lang;
-  gchar *stream_type;
-  gchar *short_ev_name;
-  gchar *short_ev_text;
-  gchar *ext_ev_text;
+  gchar *lang;			//< component_descriptor.ISO_639_language_code
+  gchar *stream_type;		//< component_descriptor.{stream_content,component_type}
+  gchar *short_ev_name;		//< short_event_descriptor.event_name
+  gchar *short_ev_text;		//< short_event_descriptor.text
+  gchar *ext_ev_text;		//< extended_event_descriptor.text
+  guint pil_mday;		//< PDC_descriptor.pil (day of month)
+  guint pil_mon;		//< PDC_descriptor.pil (month)
+  guint pil_hour;		//< PDC_descriptor.pil (hour)
+  guint pil_min;		//< PDC_descriptor.pil (minute)
   gboolean refresh;
 } epgstruct;
 
