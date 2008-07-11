@@ -193,7 +193,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	      for (i = 0; i < dl; i++)
 		{
 		  g_sprintf (hex, "%02x", p[i]);
-		  strcat (ll, hex);
+		  g_strlcat (ll, hex, sizeof (ll));
 		}
 	    }
 	  log_print (hlog, LOG_DEBUG, "EIT: %s", ll);
