@@ -40,15 +40,8 @@ AC_SUBST(PLUGIN_DIR, "$plugindir")
 # libglade
 PKG_CHECK_MODULES(LIBGLADE, [libglade-2.0 >= 2.3.1], ,
 	AC_MSG_ERROR([*** libglade >= 2.3.1 is not installed - please install first ***]))
-AC_SUBST(LIBGLADE_CFLAGS)
-AC_SUBST(LIBGLADE_LIBS)
 
-# LAME
-AC_MSG_CHECKING(LAME library)
-AC_CHECK_LIB(mp3lame, lame_init, lame=1, lame=0, -lm)
-AC_CHECK_HEADER(lame/lame.h, , lame=0)
-if test "${lame}" != 1; then
-    AC_MSG_ERROR(Unable to find MP3Lame header and library)
-fi
+# libmad
+PKG_CHECK_MODULES(LIBMAD, [mad >= 0.15.0], , AC_MSG_ERROR([*** libmad >= 0.15.0 is not installed - please install first ***]))
 
 AC_OUTPUT

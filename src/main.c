@@ -34,7 +34,7 @@
 #include <audacious/plugin.h>
 #include <audacious/strings.h>
 #include <audacious/vfs.h>
-#include <lame/lame.h>
+#include <mad.h>
 
 #include "gui.h"
 #include "epg.h"
@@ -58,7 +58,7 @@ static void dvb_exit (void);
 
 static void dvb_pes_pkt (InputPlayback *, guchar *, gint, gint);
 static void dvb_payload (InputPlayback *, guchar *, gint, gint);
-static void dvb_mpeg_frame (InputPlayback *, guchar *, gint, gint);
+static void dvb_mpeg_frame (InputPlayback *, guchar *, guint);
 static void dvb_close_record (void);
 static gchar *dvb_build_file_title (void);
 
@@ -103,6 +103,10 @@ static GThread *gt_dvbstat = NULL;
 // Timers
 static guint infobox_timer_id = 0;
 
+// Audio stuff
+static struct mad_stream madstream;
+static struct mad_frame madframe;
+static struct mad_synth madsynth;
 static gint sap = 0;
 static gint sumarr[512];
 
@@ -340,7 +344,10 @@ dvb_play (InputPlayback * playback)
     }
 
   // Initialize MPEG decoder
-  lame_decode_init ();
+  mad_frame_init (&madframe);
+  mad_synth_init (&madsynth);
+  mad_stream_init (&madstream);
+  mad_stream_options (&madstream, MAD_OPTION_IGNORECRC);
 
   // Initialize MadMusic info retrieval
   if ((tune->dpid > 0) && config->info_mmusic)
@@ -444,17 +451,8 @@ dvb_stop (InputPlayback * playback)
 	  g_source_remove (infobox_timer_id);
 	  infobox_timer_id = 0;
 	}
-      // Update info box
-      if (infobox_is_visible ())
-	{
-	  infobox_update_service (NULL);
-	  infobox_update_radiotext (NULL);
-	  infobox_update_epg (NULL);
-	  infobox_update_mmusic (NULL);
-	  infobox_update_dvb (NULL, NULL, NULL);
-	  infobox_redraw ();
-	}
 
+      // Free DVB stuff
       if (hdvb != NULL)
 	{
 	  dvb_unfilter (hdvb);
@@ -462,6 +460,12 @@ dvb_stop (InputPlayback * playback)
 	  hdvb = NULL;
 	}
 
+      // Free MPEG decoder stuff
+      mad_synth_finish (&madsynth);
+      mad_frame_finish (&madframe);
+      mad_stream_finish (&madstream);
+
+      // Close record file
       if (rec_file)
 	dvb_close_record ();
     }
@@ -710,7 +714,7 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
   gint br, sf, fl, num_samples;
   gint i, mpv, mpl, crc, bri, tlu, sfi, pad;
   static gint bph = 0;
-  static guchar mpbuf[128 * 1024];
+  static guchar mpbuf[128 * 1024 + MAD_BUFFER_GUARD];
 
   if (reset)
     {
@@ -774,7 +778,7 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 
 	      if ((mpbuf[fl] == 0xff) && ((mpbuf[fl + 1] & 0xf0) == 0xf0))
 		{
-		  dvb_mpeg_frame (playback, mpbuf, fl, num_samples);
+		  dvb_mpeg_frame (playback, mpbuf, fl);
 		  if (rt != NULL)
 		    radiotext_read_data (rt, mpbuf, fl);
 		  g_memmove (mpbuf, &mpbuf[fl], bph - fl);
@@ -852,19 +856,57 @@ dvb_build_file_title (void)
 }
 
 
+void
+write_output (InputPlayback * playback, struct mad_pcm *pcm,
+	      struct mad_header *header)
+{
+  unsigned int nsamples;
+  mad_fixed_t const *left_ch, *right_ch;
+  mad_fixed_t *output;
+  int outlen = 0;
+  int outbyte = 0;
+  int pos = 0;
+
+  nsamples = pcm->length;
+  left_ch = pcm->samples[0];
+  right_ch = pcm->samples[1];
+  outlen = nsamples * MAD_NCHANNELS (header);
+  outbyte = outlen * sizeof (mad_fixed_t);
+
+  output = (mad_fixed_t *) g_malloc (outbyte);
+
+  while (nsamples--)
+    {
+      output[pos++] = *left_ch++;
+
+      if (MAD_NCHANNELS (header) == 2)
+	{
+	  output[pos++] = *right_ch++;
+	}
+    }
+
+  if (!playing)
+    {
+      g_free (output);
+      return;
+    }
+
+  playback->pass_audio (playback, FMT_FIXED32, MAD_NCHANNELS (header),
+			outbyte, output, NULL);
+  g_free (output);
+}
+
+
 static void
-dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
+dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
 {
   gint nout, i, vu, ms;
   gfloat dB;
   time_t t;
   static gshort left[34560], right[34560];
   static gshort stereo[sizeof (left) + sizeof (right)];
-  mp3data_struct mp3d;
 
   frm_ctr++;
-
-  memset (&mp3d, 0x00, sizeof (mp3d));
 
   if (config->rec)
     {
@@ -910,90 +952,61 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, gint len, gint smp)
 	fwrite (frame, sizeof (unsigned char), len, rec_file);
     }
 
-  nout = lame_decode_headers (frame, len, left, right, &mp3d);
-  if (nout <= 0)
-    return;
+  // pass buffer to libmad
+  mad_stream_buffer (&madstream, frame, len + MAD_BUFFER_GUARD);
 
-  if (mp3d.header_parsed == 1)
+  // parse frame header
+  if (mad_header_decode (&madframe.header, &madstream) == -1)
     {
-      gchar *newtitle;
-      if (audio == 0)
-	audio = playback->output->open_audio (FMT_S16_NE, mp3d.samplerate, 2);
-
-      newtitle = dvb_build_file_title ();
-      if (title == NULL
-	  || (newtitle != NULL && strcmp (newtitle, title) != 0))
+      if (!MAD_RECOVERABLE (madstream.error))
 	{
-	  dvb_ip.set_info (aud_str_to_utf8 (newtitle), -1,
-			   mp3d.bitrate * 1000, mp3d.samplerate, mp3d.stereo);
-	  if (title)
-	    g_free (title);
-	  title = newtitle;
+	  log_print (hlog, LOG_WARNING,
+		     "unrecovered error decoding header: %s",
+		     mad_stream_errorstr (&madstream));
+	  return;
 	}
+
+      log_print (hlog, LOG_WARNING, "recovered error decoding header: %s",
+		 mad_stream_errorstr (&madstream));
     }
 
-  /*
-   * Unfortunately Audacious' output wants sample data interleaved,
-   * not separate, so we have to rearrange it accordingly. But
-   * that's ok, we need to look at the PCM data to determine
-   * the energy level anyway :)
-   */
-  vu = 0;
-  for (i = 0; i < nout; i++)
+  // decode frame
+  if (mad_frame_decode (&madframe, &madstream) == -1)
     {
-      if (mp3d.stereo == 2)
+      if (!MAD_RECOVERABLE (madstream.error))
 	{
-	  stereo[2 * i] = left[i];
-	  stereo[2 * i + 1] = right[i];
-	  vu += (abs (left[i]) + abs (right[i])) / 2;
+	  log_print (hlog, LOG_WARNING,
+		     "unrecovered error decoding frame %d: %s",
+		     mad_stream_errorstr (&madstream));
+	  return;
 	}
-      else
-	{
-	  stereo[2 * i] = left[i];
-	  stereo[2 * i + 1] = left[i];
-	  vu += abs (left[i]);
-	}
+
+      log_print (hlog, LOG_WARNING, "recovered error decoding frame %d: %s",
+		 mad_stream_errorstr (&madstream));
+    }
+  mad_synth_frame (&madsynth, &madframe);
+
+  // open audio card (if not already done)
+  if (audio == 0)
+    audio =
+      playback->output->open_audio (FMT_FIXED32, madframe.header.samplerate,
+				    MAD_NCHANNELS (&madframe.header));
+
+  // look if file title has changed
+  gchar *newtitle;
+  newtitle = dvb_build_file_title ();
+  if (title == NULL || (newtitle != NULL && strcmp (newtitle, title) != 0))
+    {
+      dvb_ip.set_info (aud_str_to_utf8 (newtitle), -1,
+		       madframe.header.bitrate, madframe.header.samplerate,
+		       MAD_NCHANNELS (&madframe.header));
+      if (title)
+	g_free (title);
+      title = newtitle;
     }
 
-  vu /= nout;
-
-  playback->pass_audio (playback, FMT_S16_NE, 2, nout << 2, stereo, NULL);
-
-  sumarr[sap++] = vu;
-  ms = (sap * nout) / mp3d.bitrate;
-  if (ms >= config->vsplit_dur)
-    {
-      vu = 0;
-
-      for (i = 0; i < sap; i++)
-	vu += sumarr[i];
-
-      vu /= sap;
-
-      dB = 20 * log10 ((float) vu / 32767);
-
-      if (dB < config->vsplit_vol)
-	{
-	  time (&t);
-	  if ((t - isplit_last) >= config->vsplit_minlen)
-	    {
-	      log_print (hlog, LOG_INFO,
-			 "Avg: %.2f dB (%d) / %d ms (%d f) / %d:%02d.",
-			 dB, vu, ms, sap, (t - isplit_last) / 60,
-			 (t - isplit_last) % 60);
-	      time (&isplit_last);
-
-	      if (config->vsplit && config->rec)
-		dvb_close_record ();
-
-	      sap = 1;
-	      memset (sumarr, 0x00, sizeof (sumarr));
-	    }
-	}
-
-      g_memmove (sumarr, &sumarr[1], sizeof (int) * (sap - 1));
-      sap--;
-    }
+  // TODO: add vu/sap/sumarr-calculation again!
+  write_output (playback, &madsynth.pcm, &madframe.header);
 }
 
 
