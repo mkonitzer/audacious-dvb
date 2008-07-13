@@ -43,6 +43,7 @@
 #include "cfg.h"
 #include "rtxt.h"
 #include "mmusic.h"
+#include "record.h"
 #include "util.h"
 #include "config.h"
 
@@ -59,7 +60,6 @@ static void dvb_exit (void);
 static void dvb_pes_pkt (InputPlayback *, guchar *, gint, gint);
 static void dvb_payload (InputPlayback *, guchar *, gint, gint);
 static void dvb_mpeg_frame (InputPlayback *, guchar *, guint);
-static void dvb_close_record (void);
 static gchar *dvb_build_file_title (void);
 
 // Thread functions
@@ -86,12 +86,10 @@ epgstruct *epg = NULL;
 statstruct *station = NULL;
 tunestruct *tune = NULL;
 dvbstatstruct *dvbstat = NULL;
+recstruct *record = NULL;
 
-static gint audio = 0, file_index = 0, frm_ctr = 0;
-static gchar erfn[MAXPATHLEN];
+static gint audio = 0;
 static gchar *title = NULL;
-static FILE *rec_file = NULL;
-static time_t t_start = 0, isplit_last = 0;
 
 // Threads
 static GThread *gt_feed = NULL;
@@ -108,8 +106,7 @@ static struct mad_stream madstream;
 static struct mad_frame madframe;
 static struct mad_synth madsynth;
 static gint sap = 0;
-static gint sumarr[512];
-
+static gdouble sumarr[512];
 static gint brt[] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0,
@@ -124,6 +121,10 @@ static gint brt[] = {
 static gint sft[] = {
   22050, 24000, 16000, 0, 44100, 48000, 32000, 0
 };
+
+// Recording stuff
+time_t isplit_last = 0;
+time_t vsplit_last = 0;
 
 InputPlugin dvb_ip = {
   .description = "DVB Input Plugin",
@@ -245,8 +246,6 @@ static void
 dvb_play (InputPlayback * playback)
 {
   gint rc;
-  gchar tfn[MAXPATHLEN];
-  struct stat st;
 
   if (playing)
     return;
@@ -269,19 +268,8 @@ dvb_play (InputPlayback * playback)
 
   // Reset playback structures
   playing = TRUE;
-  t_start = frm_ctr = sap = file_index = 0;
+  isplit_last = vsplit_last = sap = 0;
   memset (sumarr, 0x00, sizeof (sumarr));
-  if (rec_file == NULL)
-    memset (erfn, 0x00, sizeof (erfn));
-  if (config->isplit || config->vsplit)
-    {
-      if (index (config->rec_fname, '%'))
-	{
-	  g_sprintf (tfn, config->rec_fname, file_index);
-	  while (stat (tfn, &st) >= 0)
-	    g_sprintf (tfn, config->rec_fname, ++file_index);
-	}
-    }
 
   // Open DVB device
   if ((hdvb = dvb_open (config->devno)) == NULL)
@@ -330,7 +318,7 @@ dvb_play (InputPlayback * playback)
   if ((gt_get_name =
        g_thread_create (get_name_thread, (gpointer) & tune->sid, TRUE,
 			NULL)) == NULL)
-    log_print (hlog, LOG_WARNING, "Failed to start dvb_get_name() thread");
+    log_print (hlog, LOG_WARNING, "Failed to start dvb_get_name() thread.");
 
   // Set audio PES-filter
   if ((rc = dvb_apid (hdvb, tune->apid)) != RC_OK)
@@ -343,14 +331,38 @@ dvb_play (InputPlayback * playback)
       return;
     }
 
-  // Initialize MPEG decoder
-  mad_frame_init (&madframe);
-  mad_synth_init (&madsynth);
-  mad_stream_init (&madstream);
-  mad_stream_options (&madstream, MAD_OPTION_IGNORECRC);
+  // Initialize recording
+  if (config->rec)
+    {
+      record = record_init ();
+      if (record != NULL)
+	{
+	  // TODO: implement config->rec_overwrite
+	  if (record_open
+	      (record, config->rec_fname, config->rec_append, TRUE) != TRUE)
+	    {
+	      log_print (hlog, LOG_INFO, "record_open(%s, %d) failed.",
+			 config->rec_fname, config->rec_append);
+	      record_exit (record);
+	      record = NULL;
+	    }
+	  
+	  // Last splitting (=start time) occured now
+	  if (config->isplit)
+	    time (&isplit_last);
+	  if (config->vsplit)
+	    time (&vsplit_last);
+	}
+      else
+	log_print (hlog, LOG_INFO, "record_init() failed.");
+    }
+
+  // Initialize Radiotext retrieval
+  if (config->info_rt)
+    rt = radiotext_init ();
 
   // Initialize MadMusic info retrieval
-  if ((tune->dpid > 0) && config->info_mmusic)
+  if (tune->dpid > 0 && config->info_mmusic)
     {
       log_print (hlog, LOG_INFO,
 		 "Data service associated on PID %d (0x%04x).", tune->dpid,
@@ -361,7 +373,7 @@ dvb_play (InputPlayback * playback)
 	  if ((gt_mmusic =
 	       g_thread_create (mmusic_thread, 0, TRUE, NULL)) == NULL)
 	    log_print (hlog, LOG_ERR,
-		       "g_thread_create() failed for mmusic_thread()");
+		       "g_thread_create() failed for mmusic_thread().");
 	}
       else
 	log_print (hlog, LOG_ERR, "dvb_dpid() returned %d.", rc);
@@ -373,7 +385,7 @@ dvb_play (InputPlayback * playback)
       if ((gt_epg = g_thread_create (epg_thread, (gpointer) & tune->sid, TRUE,
 				     NULL)) == NULL)
 	log_print (hlog, LOG_ERR,
-		   "g_thread_create() failed for epg_thread()");
+		   "g_thread_create() failed for epg_thread().");
     }
 
   // Initialize DVB status info retrieval (signal strength, ...)
@@ -382,13 +394,19 @@ dvb_play (InputPlayback * playback)
       if ((gt_dvbstat = g_thread_create (dvb_status_thread, NULL, TRUE,
 					 NULL)) == NULL)
 	log_print (hlog, LOG_ERR,
-		   "g_thread_create() failed for dvb_status_thread()");
+		   "g_thread_create() failed for dvb_status_thread().");
     }
+
+  // Initialize MPEG decoder
+  mad_frame_init (&madframe);
+  mad_synth_init (&madsynth);
+  mad_stream_init (&madstream);
+  mad_stream_options (&madstream, MAD_OPTION_IGNORECRC);
 
   // Initialize audio packet retrieval (including Radiotext info)
   if ((gt_feed = g_thread_self ()) == NULL)
     {
-      log_print (hlog, LOG_CRIT, "g_thread_self() failed for dvb_play()");
+      log_print (hlog, LOG_CRIT, "g_thread_self() failed for dvb_play().");
       dvb_stop (playback);
       return;
     }
@@ -439,9 +457,21 @@ dvb_stop (InputPlayback * playback)
 	  gt_epg = NULL;
 	}
 
-      // Close output plugin
-      playback->output->close_audio ();
+      // Free Radiotext structures
+      if (rt != NULL)
+	{
+	  radiotext_exit (rt);
+	  rt = NULL;
+	}
 
+      // Free record structures
+      if (record != NULL)
+	{
+	  record_exit (record);
+	  record = NULL;
+	}
+
+      // Free station info
       g_free (station);
       station = NULL;
 
@@ -465,11 +495,10 @@ dvb_stop (InputPlayback * playback)
       mad_frame_finish (&madframe);
       mad_stream_finish (&madstream);
 
-      // Close record file
-      if (rec_file)
-	dvb_close_record ();
+      // Close output plugin
+      playback->output->close_audio ();
     }
-  log_print (hlog, LOG_DEBUG, "dvb_stop() finished");
+  log_print (hlog, LOG_DEBUG, "dvb_stop() finished.");
 }
 
 
@@ -494,28 +523,25 @@ dvb_get_time (InputPlayback * playback)
 static gpointer
 feed_thread (gpointer args)
 {
-  gint rc, ar, toctr;
+  gint rc, ar, toctr = 0;
   guchar pkt[3840];
   InputPlayback *playback;
 
   playback = (InputPlayback *) args;
   log_print (hlog, LOG_INFO, "feed_thread() starting");
 
+  // Prevent feed_thread from being called twice
   static GStaticMutex gmt_feed = G_STATIC_MUTEX_INIT;
   g_static_mutex_lock (&gmt_feed);
 
-  if (config->info_rt)
-    rt = radiotext_init ();
-
+  // Initialize stream demuxer
   dvb_pes_pkt (playback, NULL, 0, 1);
   dvb_payload (playback, NULL, 0, 1);
 
-  time (&isplit_last);
-
-  toctr = 0;
-
+  // Main decoding loop
   while (playing)
     {
+      // Try to fetch an audio packet from DVB card
       rc = dvb_apkt (hdvb, pkt, sizeof (pkt), 1000, &ar);
       if (rc == RC_OK)
 	{
@@ -547,19 +573,8 @@ feed_thread (gpointer args)
 
   log_print (hlog, LOG_DEBUG, "play-loop terminated");
 
-  t_start = 0;
-
-  if (rec_file != NULL)
-    dvb_close_record ();
-
   playback->output->close_audio ();
   audio = 0;
-
-  if (rt != NULL)
-    {
-      radiotext_exit (rt);
-      rt = NULL;
-    }
 
   log_print (hlog, LOG_INFO, "feed_thread() stopping");
 
@@ -712,7 +727,7 @@ static void
 dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 {
   gint br, sf, fl, num_samples;
-  gint i, mpv, mpl, crc, bri, tlu, sfi, pad;
+  gint i, mpv, mpl, bri, tlu, sfi, pad;
   static gint bph = 0;
   static guchar mpbuf[128 * 1024 + MAD_BUFFER_GUARD];
 
@@ -734,7 +749,7 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 	  /* Is there a next one yet? */
 	  for (i = 1; i < (bph - 4); i++)
 	    {
-	      if ((mpbuf[i] == 0xff) && ((mpbuf[i + 1] & 0xf0) == 0xf0))
+	      if (mpbuf[i] == 0xff && (mpbuf[i + 1] & 0xf0) == 0xf0)
 		break;
 	    }
 
@@ -743,7 +758,6 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 	      /* yes, we may have an entire frame */
 	      mpv = (mpbuf[1] >> 3) & 1;
 	      mpl = (mpbuf[1] >> 1) & 3;
-	      crc = mpbuf[1] & 1;
 	      bri = (mpbuf[2] >> 4) & 0xf;
 	      sfi = (mpbuf[2] >> 2) & 3;
 	      pad = (mpbuf[2] >> 1) & 1;
@@ -754,7 +768,7 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 	      tlu = sfi | (mpv << 2);
 	      sf = sft[tlu];
 
-	      if ((sf == 0) || (br == 0))
+	      if (sf == 0 || br == 0)
 		{
 		  /* Uhm, no, this is not it */
 		  memcpy (mpbuf, &mpbuf[i], bph - i);
@@ -860,35 +874,78 @@ void
 write_output (InputPlayback * playback, struct mad_pcm *pcm,
 	      struct mad_header *header)
 {
-  unsigned int nsamples;
   mad_fixed_t const *left_ch, *right_ch;
   mad_fixed_t *output;
-  int outlen = 0;
-  int outbyte = 0;
-  int pos = 0;
+  guint nsamples, outlen = 0, outbyte = 0, pos = 0, i, ms;
+  gdouble vu = 0, dB;
 
   nsamples = pcm->length;
   left_ch = pcm->samples[0];
   right_ch = pcm->samples[1];
   outlen = nsamples * MAD_NCHANNELS (header);
   outbyte = outlen * sizeof (mad_fixed_t);
-
   output = (mad_fixed_t *) g_malloc (outbyte);
 
+  // Merge samples to inverleaved audio, calculate audio energy level
   while (nsamples--)
     {
-      output[pos++] = *left_ch++;
+      output[pos++] = *left_ch;
 
       if (MAD_NCHANNELS (header) == 2)
 	{
-	  output[pos++] = *right_ch++;
+	  output[pos++] = *right_ch;
+	  vu +=
+	    fabs (mad_f_todouble (*left_ch)) +
+	    fabs (mad_f_todouble (*right_ch));
+	  right_ch++;
 	}
+      else
+	vu += fabs (mad_f_todouble (*left_ch));
+      left_ch++;
     }
+  if (MAD_NCHANNELS (header) == 2)
+    vu /= 2 * pcm->length;
+  else
+    vu /= pcm->length;
 
-  if (!playing)
+  // Check audio energy level if we need to split files
+  if (config->vsplit && config->rec)
     {
-      g_free (output);
-      return;
+      sumarr[sap++] = vu;
+      ms = sap * pcm->length * 1000 / header->bitrate;
+      if (ms >= config->vsplit_dur)
+	{
+	  vu = 0;
+	  for (i = 0; i < sap; i++)
+	    vu += sumarr[i];
+	  vu /= sap;
+
+	  dB = 20 * log10 (vu);
+
+	  if (dB < config->vsplit_vol)
+	    {
+	      time_t t;
+	      time (&t);
+	      if ((t - vsplit_last) >= config->vsplit_minlen)
+		{
+		  log_print (hlog, LOG_INFO,
+			     "Avg: %.2f dB (%d) / %d ms (%d f) / %d:%02d.",
+			     dB, vu, ms, sap, (t - vsplit_last) / 60,
+			     (t - vsplit_last) % 60);
+		  vsplit_last = t;
+
+		  // Split record file
+		  // TODO: implement config->rec_overwrite
+		  record_next (record, config->rec_append, TRUE);
+
+		  // Reset energy level structures
+		  sap = 1;
+		  memset (sumarr, 0x00, sizeof (sumarr));
+		}
+	    }
+
+	  g_memmove (sumarr, &sumarr[1], sizeof (int) * --sap);
+	}
     }
 
   playback->pass_audio (playback, FMT_FIXED32, MAD_NCHANNELS (header),
@@ -900,56 +957,23 @@ write_output (InputPlayback * playback, struct mad_pcm *pcm,
 static void
 dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
 {
-  gint nout, i, vu, ms;
-  gfloat dB;
-  time_t t;
-  static gshort left[34560], right[34560];
-  static gshort stereo[sizeof (left) + sizeof (right)];
-
-  frm_ctr++;
-
-  if (config->rec)
+  // Only if we're recording to file
+  if (record != NULL)
     {
+      // Get current time
+      time_t t;
       time (&t);
 
-      if (config->isplit && (t_start > 0) &&
-	  (rec_file != NULL) && (config->isplit_ival > 0))
-	{
-	  if ((t - t_start) >= config->isplit_ival)
-	    dvb_close_record ();
-	}
+      // Split audio file (in fixed interval mode)
+      if (config->isplit && (t - isplit_last) >= config->isplit_ival)
+      {
+	// TODO: implement config->rec_overwrite
+	record_next (record, config->rec_append, TRUE);
+	isplit_last = t;
+      }
 
-      if (rec_file == NULL)
-	{
-	  if (config->isplit || config->vsplit)
-	    g_sprintf (erfn, config->rec_fname, file_index);
-	  else
-	    g_sprintf (erfn, config->rec_fname, 0);
-
-	  if (config->rec_append)
-	    {
-	      log_print (hlog, LOG_INFO, "opening record \"%s\" for append",
-			 erfn);
-	      rec_file = fopen (erfn, "ab");
-	    }
-	  else
-	    {
-	      log_print (hlog, LOG_INFO, "opening record \"%s\"", erfn);
-	      rec_file = fopen (erfn, "wb");
-	    }
-
-	  if (config->isplit || config->vsplit)
-	    {
-	      if (rec_file != NULL)
-		{
-		  time (&t_start);
-		  file_index++;
-		}
-	    }
-	}
-
-      if (rec_file != NULL)
-	fwrite (frame, sizeof (unsigned char), len, rec_file);
+      // Write MPEG frame to file
+      record_write (record, frame, len);
     }
 
   // pass buffer to libmad
@@ -1005,25 +1029,7 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
       title = newtitle;
     }
 
-  // TODO: add vu/sap/sumarr-calculation again!
   write_output (playback, &madsynth.pcm, &madframe.header);
-}
-
-
-void
-dvb_close_record (void)
-{
-  if (rec_file != NULL)
-    {
-      log_print (hlog, LOG_INFO, "closing record \"%s\"", erfn);
-      fclose (rec_file);
-      rec_file = NULL;
-      sap = 0;
-      memset (sumarr, 0x00, sizeof (sumarr));
-
-      if (mmusic != NULL)
-	madmusic_exit (mmusic);
-    }
 }
 
 
