@@ -46,6 +46,7 @@ typedef struct _Widgets
   GtkWidget *fnameEntry;
   GtkWidget *fnameLabel;
   GtkWidget *appendCheck;
+  GtkWidget *overwriteCheck;
   GtkWidget *splitFrame;
   GtkWidget *isplitCheck;
   GtkWidget *isplitSpin;

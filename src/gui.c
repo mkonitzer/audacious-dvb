@@ -182,8 +182,12 @@ dvb_configure (void)
   gtk_box_pack_start (GTK_BOX (hbox), fnameEntry, TRUE, TRUE, 0);
   gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
 
+  GtkWidget *overwriteCheck =
+    gtk_check_button_new_with_label ("Overwrite existing file(s)");
+  widgets.overwriteCheck = overwriteCheck;
+  gtk_box_pack_start (GTK_BOX (vbox), overwriteCheck, FALSE, FALSE, 0);
   GtkWidget *appendCheck =
-    gtk_check_button_new_with_label ("Append to existing file");
+    gtk_check_button_new_with_label ("Append to existing file(s)");
   widgets.appendCheck = appendCheck;
   gtk_box_pack_start (GTK_BOX (vbox), appendCheck, FALSE, FALSE, 0);
 
@@ -312,6 +316,7 @@ recordClicked (GtkWidget * w, gpointer user_data)
   gtk_widget_set_sensitive (widgets.fnameLabel, b);
   gtk_widget_set_sensitive (widgets.fnameEntry, b);
   gtk_widget_set_sensitive (widgets.appendCheck, b);
+  gtk_widget_set_sensitive (widgets.overwriteCheck, b);
   gtk_widget_set_sensitive (widgets.splitFrame, b);
 }
 
@@ -353,6 +358,8 @@ config_to_gui (cfgstruct * config)
   gtk_entry_set_text_safe (GTK_ENTRY (widgets.fnameEntry), config->rec_fname);
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.appendCheck),
 				config->rec_append);
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.overwriteCheck),
+				config->rec_overwrite);
 
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.isplitCheck),
 				config->isplit);
@@ -398,6 +405,8 @@ config_from_gui (cfgstruct * config)
     g_strdup (gtk_entry_get_text (GTK_ENTRY (widgets.fnameEntry)));
   config->rec_append =
     gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.appendCheck));
+  config->rec_overwrite =
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.overwriteCheck));
 
   config->isplit =
     gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.isplitCheck));

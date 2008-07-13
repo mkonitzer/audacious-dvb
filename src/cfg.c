@@ -38,6 +38,7 @@ config_init (void)
   config->rec = FALSE;
   config->rec_fname = g_strdup ("/tmp/audacious-dvb-rec.mp2");
   config->rec_append = FALSE;
+  config->rec_overwrite = TRUE;
 
   config->isplit = FALSE;
   config->isplit_ival = 0;
@@ -77,6 +78,7 @@ config_from_db (cfgstruct * config)
   if (config->rec_fname == NULL)
     config->rec_fname = g_strdup ("/tmp/audacious-dvb-rec.mp2");
   aud_cfg_db_get_bool (db, "dvb", "rec.append", &config->rec_append);
+  aud_cfg_db_get_bool (db, "dvb", "rec.overwrite", &config->rec_overwrite);
 
   aud_cfg_db_get_bool (db, "dvb", "isplit", &config->isplit);
   aud_cfg_db_get_int (db, "dvb", "isplit.ival", &config->isplit_ival);
@@ -111,6 +113,7 @@ config_to_db (cfgstruct * config)
   aud_cfg_db_set_bool (db, "dvb", "rec", config->rec);
   aud_cfg_db_set_string (db, "dvb", "rec.fname", config->rec_fname);
   aud_cfg_db_set_bool (db, "dvb", "rec.append", config->rec_append);
+  aud_cfg_db_set_bool (db, "dvb", "rec.overwrite", config->rec_overwrite);
 
   aud_cfg_db_set_bool (db, "dvb", "isplit", config->isplit);
   aud_cfg_db_set_int (db, "dvb", "isplit.ival", config->isplit_ival);

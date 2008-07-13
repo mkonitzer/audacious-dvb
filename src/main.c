@@ -337,16 +337,16 @@ dvb_play (InputPlayback * playback)
       record = record_init ();
       if (record != NULL)
 	{
-	  // TODO: implement config->rec_overwrite
 	  if (record_open
-	      (record, config->rec_fname, config->rec_append, TRUE) != TRUE)
+	      (record, config->rec_fname, config->rec_append,
+	       config->rec_overwrite) != TRUE)
 	    {
 	      log_print (hlog, LOG_INFO, "record_open(%s, %d) failed.",
 			 config->rec_fname, config->rec_append);
 	      record_exit (record);
 	      record = NULL;
 	    }
-	  
+
 	  // Last splitting (=start time) occured now
 	  if (config->isplit)
 	    time (&isplit_last);
@@ -935,8 +935,8 @@ write_output (InputPlayback * playback, struct mad_pcm *pcm,
 		  vsplit_last = t;
 
 		  // Split record file
-		  // TODO: implement config->rec_overwrite
-		  record_next (record, config->rec_append, TRUE);
+		  record_next (record, config->rec_append,
+			       config->rec_overwrite);
 
 		  // Reset energy level structures
 		  sap = 1;
@@ -966,11 +966,10 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
 
       // Split audio file (in fixed interval mode)
       if (config->isplit && (t - isplit_last) >= config->isplit_ival)
-      {
-	// TODO: implement config->rec_overwrite
-	record_next (record, config->rec_append, TRUE);
-	isplit_last = t;
-      }
+	{
+	  record_next (record, config->rec_append, config->rec_overwrite);
+	  isplit_last = t;
+	}
 
       // Write MPEG frame to file
       record_write (record, frame, len);

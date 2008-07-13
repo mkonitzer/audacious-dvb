@@ -71,7 +71,7 @@ record_open (recstruct * rec, const gchar * filename, gboolean append,
 		g_strdup_printf ("%s-%u%s", rec->fn_prefix, ++rec->fn_idx,
 				 rec->fn_suffix);
 	    }
-	  while (g_file_test (filename, G_FILE_TEST_EXISTS)
+	  while (g_file_test (tmp, G_FILE_TEST_EXISTS)
 		 && rec->fn_idx < RECORD_INDEX_MAX);
 	  if (rec->fn_idx >= RECORD_INDEX_MAX)
 	    {

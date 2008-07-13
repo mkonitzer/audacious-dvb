@@ -34,6 +34,7 @@ typedef struct _cfgstruct
   gboolean rec;			/* Activate recording of stream? */
   gchar *rec_fname;		/* Filename for recording */
   gboolean rec_append;		/* Append to existing file? */
+  gboolean rec_overwrite;	/* Overwrite existing file? */
 
   gboolean isplit;		/* Activate interval-split? */
   gint isplit_ival;		/* Length of interval */
