@@ -37,7 +37,7 @@ config_init (void)
 
   config->rec = FALSE;
   config->rec_fname = g_strdup ("/tmp/audacious-dvb-rec.mp2");
-  config->rec_append = FALSE;
+  config->rec_append = TRUE;
   config->rec_overwrite = TRUE;
 
   config->isplit = FALSE;
