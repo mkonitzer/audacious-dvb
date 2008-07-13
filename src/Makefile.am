@@ -7,7 +7,7 @@ LIBS = @AUDACIOUS_LIBS@ @LIBGLADE_LIBS@ @GTK_LIBS@ @GLIB_LIBS@ @LIBMAD_LIBS@
 libdir = @PLUGIN_DIR@
 
 libdvb_la_LDFLAGS = -module -avoid-version -no-undefined -export-dynamic
-libdvb_la_SOURCES = main.c gui.c gui.h epg.c epg.h dvb.c dvb.h log.c log.h cfg.c cfg.h rtxt.c rtxt.h mmusic.c mmusic.h util.h util.c glwidgets.c
+libdvb_la_SOURCES = main.c gui.c gui.h epg.c epg.h dvb.c dvb.h log.c log.h cfg.c cfg.h rtxt.c rtxt.h mmusic.c mmusic.h record.c record.h util.h util.c glwidgets.c
 
 BUILT_SOURCES = glwidgets.c
 MAINTAINERCLEANFILES = glwidgets.c
