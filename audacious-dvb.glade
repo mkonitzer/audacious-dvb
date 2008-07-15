@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sun Jul  6 23:03:56 2008 -->
+<!--Generated with glade3 3.4.5 on Tue Jul 15 02:38:41 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="fileinfo">
-    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
     <property name="title" translatable="yes">DVB Stream Information</property>
     <property name="window_position">GTK_WIN_POS_CENTER</property>
     <property name="destroy_with_parent">True</property>
@@ -1206,6 +1205,570 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="position">2</property>
+              </packing>
+            </child>
+          </widget>
+        </child>
+      </widget>
+    </child>
+  </widget>
+  <widget class="GtkWindow" id="config">
+    <property name="title" translatable="yes">DVB Plugin Configuration</property>
+    <property name="window_position">GTK_WIN_POS_CENTER</property>
+    <property name="destroy_with_parent">True</property>
+    <child>
+      <widget class="GtkAlignment" id="cfgAlignment">
+        <property name="visible">True</property>
+        <property name="top_padding">6</property>
+        <property name="bottom_padding">6</property>
+        <property name="left_padding">4</property>
+        <property name="right_padding">4</property>
+        <child>
+          <widget class="GtkVBox" id="cfgVbox">
+            <property name="visible">True</property>
+            <child>
+              <widget class="GtkNotebook" id="cfgnotebook">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <child>
+                  <widget class="GtkFrame" id="generalFrame">
+                    <property name="visible">True</property>
+                    <property name="label_xalign">0</property>
+                    <property name="shadow_type">GTK_SHADOW_OUT</property>
+                    <child>
+                      <widget class="GtkAlignment" id="generalAlignment">
+                        <property name="visible">True</property>
+                        <property name="top_padding">6</property>
+                        <property name="bottom_padding">6</property>
+                        <property name="left_padding">12</property>
+                        <property name="right_padding">4</property>
+                        <child>
+                          <widget class="GtkVBox" id="generalVbox">
+                            <property name="visible">True</property>
+                            <child>
+                              <widget class="GtkLabel" id="devLabel">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="yalign">0</property>
+                                <property name="label" translatable="yes">DVB device:</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkSpinButton" id="devnoSpin">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="adjustment">0 0 9 1 10 10</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkLabel" id="logLabel">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="yalign">0</property>
+                                <property name="label" translatable="yes">Log level:</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkComboBox" id="loggingCombo">
+                                <property name="visible">True</property>
+                                <property name="items" translatable="yes">No logging (0)\n
+Alert (1)\n
+Critical (2)\n
+Error (3)\n
+Warning (4)\n
+Notice (5)\n
+Info (6)\n
+Debug (7)</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">3</property>
+                              </packing>
+                            </child>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkLabel" id="generalLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">&lt;b&gt;General settings&lt;/b&gt;</property>
+                        <property name="use_markup">True</property>
+                      </widget>
+                      <packing>
+                        <property name="type">label_item</property>
+                      </packing>
+                    </child>
+                  </widget>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="notebookGeneralLabel">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">General</property>
+                  </widget>
+                  <packing>
+                    <property name="type">tab</property>
+                    <property name="tab_fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkFrame" id="recordFrame">
+                    <property name="visible">True</property>
+                    <property name="label_xalign">0</property>
+                    <property name="shadow_type">GTK_SHADOW_OUT</property>
+                    <child>
+                      <widget class="GtkAlignment" id="recordAlignment">
+                        <property name="visible">True</property>
+                        <property name="top_padding">6</property>
+                        <property name="bottom_padding">6</property>
+                        <property name="left_padding">12</property>
+                        <property name="right_padding">4</property>
+                        <child>
+                          <widget class="GtkVBox" id="recordVbox">
+                            <property name="visible">True</property>
+                            <child>
+                              <widget class="GtkCheckButton" id="recordCheck">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="label" translatable="yes">Record stream while playing</property>
+                                <property name="response_id">0</property>
+                                <property name="draw_indicator">True</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkLabel" id="fnameLabel">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="yalign">0</property>
+                                <property name="label" translatable="yes">Filename:</property>
+                              </widget>
+                              <packing>
+                                <property name="fill">False</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkEntry" id="fnameEntry">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                              </widget>
+                              <packing>
+                                <property name="position">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkCheckButton" id="overwriteCheck">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="label" translatable="yes">Overwrite existing file(s)</property>
+                                <property name="response_id">0</property>
+                                <property name="draw_indicator">True</property>
+                              </widget>
+                              <packing>
+                                <property name="fill">False</property>
+                                <property name="position">3</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkCheckButton" id="appendCheck">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="label" translatable="yes">Append to existing file(s)</property>
+                                <property name="response_id">0</property>
+                                <property name="draw_indicator">True</property>
+                              </widget>
+                              <packing>
+                                <property name="fill">False</property>
+                                <property name="position">4</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkFrame" id="splitFrame">
+                                <property name="visible">True</property>
+                                <property name="label_xalign">0</property>
+                                <property name="shadow_type">GTK_SHADOW_OUT</property>
+                                <child>
+                                  <widget class="GtkAlignment" id="splitAlignment">
+                                    <property name="visible">True</property>
+                                    <property name="left_padding">12</property>
+                                    <child>
+                                      <widget class="GtkTable" id="splitTable">
+                                        <property name="visible">True</property>
+                                        <property name="n_rows">4</property>
+                                        <property name="n_columns">3</property>
+                                        <child>
+                                          <widget class="GtkLabel" id="vsplit5Label">
+                                            <property name="visible">True</property>
+                                            <property name="xalign">0</property>
+                                            <property name="yalign">0</property>
+                                            <property name="xpad">10</property>
+                                            <property name="label" translatable="yes">s.</property>
+                                          </widget>
+                                          <packing>
+                                            <property name="left_attach">2</property>
+                                            <property name="right_attach">3</property>
+                                            <property name="top_attach">3</property>
+                                            <property name="bottom_attach">4</property>
+                                            <property name="x_options">GTK_FILL</property>
+                                            <property name="y_options">GTK_EXPAND</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <widget class="GtkLabel" id="vsplit3Label">
+                                            <property name="visible">True</property>
+                                            <property name="xalign">0</property>
+                                            <property name="yalign">0</property>
+                                            <property name="xpad">10</property>
+                                            <property name="label" translatable="yes">ms</property>
+                                          </widget>
+                                          <packing>
+                                            <property name="left_attach">2</property>
+                                            <property name="right_attach">3</property>
+                                            <property name="top_attach">2</property>
+                                            <property name="bottom_attach">3</property>
+                                            <property name="x_options">GTK_FILL</property>
+                                            <property name="y_options">GTK_EXPAND</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <widget class="GtkLabel" id="vsplit1Label">
+                                            <property name="visible">True</property>
+                                            <property name="xalign">0</property>
+                                            <property name="yalign">0</property>
+                                            <property name="xpad">10</property>
+                                            <property name="label" translatable="yes">dB</property>
+                                          </widget>
+                                          <packing>
+                                            <property name="left_attach">2</property>
+                                            <property name="right_attach">3</property>
+                                            <property name="top_attach">1</property>
+                                            <property name="bottom_attach">2</property>
+                                            <property name="x_options">GTK_FILL</property>
+                                            <property name="y_options">GTK_EXPAND</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <widget class="GtkLabel" id="isplitLabel">
+                                            <property name="visible">True</property>
+                                            <property name="xalign">0</property>
+                                            <property name="yalign">0</property>
+                                            <property name="xpad">10</property>
+                                            <property name="label" translatable="yes">s.</property>
+                                          </widget>
+                                          <packing>
+                                            <property name="left_attach">2</property>
+                                            <property name="right_attach">3</property>
+                                            <property name="x_options">GTK_FILL</property>
+                                            <property name="y_options">GTK_EXPAND</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <widget class="GtkSpinButton" id="vsplitminlenSpin">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="adjustment">0 0 999 1 10 10</property>
+                                          </widget>
+                                          <packing>
+                                            <property name="left_attach">1</property>
+                                            <property name="right_attach">2</property>
+                                            <property name="top_attach">3</property>
+                                            <property name="bottom_attach">4</property>
+                                            <property name="y_options">GTK_EXPAND</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <widget class="GtkSpinButton" id="vsplitdurSpin">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="adjustment">0 0 999 1 10 10</property>
+                                          </widget>
+                                          <packing>
+                                            <property name="left_attach">1</property>
+                                            <property name="right_attach">2</property>
+                                            <property name="top_attach">2</property>
+                                            <property name="bottom_attach">3</property>
+                                            <property name="y_options">GTK_EXPAND</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <widget class="GtkSpinButton" id="vsplitSpin">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="adjustment">0 -999 99 0.5 10 10</property>
+                                          </widget>
+                                          <packing>
+                                            <property name="left_attach">1</property>
+                                            <property name="right_attach">2</property>
+                                            <property name="top_attach">1</property>
+                                            <property name="bottom_attach">2</property>
+                                            <property name="y_options">GTK_EXPAND</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <widget class="GtkSpinButton" id="isplitSpin">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="adjustment">0 0 9999 1 10 10</property>
+                                          </widget>
+                                          <packing>
+                                            <property name="left_attach">1</property>
+                                            <property name="right_attach">2</property>
+                                            <property name="y_options">GTK_EXPAND</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <widget class="GtkLabel" id="vsplit4Label">
+                                            <property name="visible">True</property>
+                                            <property name="xalign">0</property>
+                                            <property name="yalign">0</property>
+                                            <property name="xpad">22</property>
+                                            <property name="label" translatable="yes">with a minimum file length of:</property>
+                                          </widget>
+                                          <packing>
+                                            <property name="top_attach">3</property>
+                                            <property name="bottom_attach">4</property>
+                                            <property name="x_options">GTK_FILL</property>
+                                            <property name="y_options">GTK_EXPAND</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <widget class="GtkLabel" id="vsplit2Label">
+                                            <property name="visible">True</property>
+                                            <property name="xalign">0</property>
+                                            <property name="yalign">0</property>
+                                            <property name="xpad">22</property>
+                                            <property name="label" translatable="yes">for at least:</property>
+                                          </widget>
+                                          <packing>
+                                            <property name="top_attach">2</property>
+                                            <property name="bottom_attach">3</property>
+                                            <property name="x_options">GTK_FILL</property>
+                                            <property name="y_options">GTK_EXPAND</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <widget class="GtkCheckButton" id="vsplitCheck">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="label" translatable="yes">Split when volume is below:</property>
+                                            <property name="response_id">0</property>
+                                            <property name="draw_indicator">True</property>
+                                          </widget>
+                                          <packing>
+                                            <property name="top_attach">1</property>
+                                            <property name="bottom_attach">2</property>
+                                            <property name="x_options">GTK_FILL</property>
+                                            <property name="y_options">GTK_EXPAND</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <widget class="GtkCheckButton" id="isplitCheck">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="label" translatable="yes">Split into intervals of:</property>
+                                            <property name="response_id">0</property>
+                                            <property name="draw_indicator">True</property>
+                                          </widget>
+                                          <packing>
+                                            <property name="x_options">GTK_FILL</property>
+                                            <property name="y_options">GTK_EXPAND</property>
+                                          </packing>
+                                        </child>
+                                      </widget>
+                                    </child>
+                                  </widget>
+                                </child>
+                                <child>
+                                  <widget class="GtkLabel" id="splitLabel">
+                                    <property name="visible">True</property>
+                                    <property name="label" translatable="yes">&lt;b&gt;Splitting&lt;/b&gt;</property>
+                                    <property name="use_markup">True</property>
+                                  </widget>
+                                  <packing>
+                                    <property name="type">label_item</property>
+                                  </packing>
+                                </child>
+                              </widget>
+                              <packing>
+                                <property name="position">5</property>
+                              </packing>
+                            </child>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkLabel" id="recordLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">&lt;b&gt;Recording settings&lt;/b&gt;</property>
+                        <property name="use_markup">True</property>
+                      </widget>
+                      <packing>
+                        <property name="type">label_item</property>
+                      </packing>
+                    </child>
+                  </widget>
+                  <packing>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="notebookRecordLabel">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Recording</property>
+                  </widget>
+                  <packing>
+                    <property name="type">tab</property>
+                    <property name="position">1</property>
+                    <property name="tab_fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkFrame" id="infoFrame">
+                    <property name="visible">True</property>
+                    <property name="label_xalign">0</property>
+                    <property name="shadow_type">GTK_SHADOW_OUT</property>
+                    <child>
+                      <widget class="GtkAlignment" id="infoAlignment">
+                        <property name="visible">True</property>
+                        <property name="top_padding">6</property>
+                        <property name="bottom_padding">6</property>
+                        <property name="left_padding">12</property>
+                        <property name="right_padding">4</property>
+                        <child>
+                          <widget class="GtkVBox" id="infoVbox">
+                            <property name="visible">True</property>
+                            <child>
+                              <widget class="GtkCheckButton" id="dvbCheck">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="label" translatable="yes">DVB status</property>
+                                <property name="response_id">0</property>
+                                <property name="draw_indicator">True</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkCheckButton" id="rtCheck">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="label" translatable="yes">RDS-Radiotext[+]</property>
+                                <property name="response_id">0</property>
+                                <property name="draw_indicator">True</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkCheckButton" id="epgCheck">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="label" translatable="yes">Electronic Program Guide (EPG)</property>
+                                <property name="response_id">0</property>
+                                <property name="draw_indicator">True</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkCheckButton" id="madCheck">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="label" translatable="yes">MadMusic OpenTV Application</property>
+                                <property name="response_id">0</property>
+                                <property name="draw_indicator">True</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">3</property>
+                              </packing>
+                            </child>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkLabel" id="infoLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">&lt;b&gt;Information retrieval settings&lt;/b&gt;</property>
+                        <property name="use_markup">True</property>
+                      </widget>
+                      <packing>
+                        <property name="type">label_item</property>
+                      </packing>
+                    </child>
+                  </widget>
+                  <packing>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="notebookInfoLabel">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Information</property>
+                  </widget>
+                  <packing>
+                    <property name="type">tab</property>
+                    <property name="position">2</property>
+                    <property name="tab_fill">False</property>
+                  </packing>
+                </child>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkHButtonBox" id="cfgHbuttonbox">
+                <property name="visible">True</property>
+                <property name="spacing">5</property>
+                <property name="layout_style">GTK_BUTTONBOX_END</property>
+                <child>
+                  <widget class="GtkButton" id="cancelButton">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="label" translatable="yes">gtk-cancel</property>
+                    <property name="use_stock">True</property>
+                    <property name="response_id">0</property>
+                  </widget>
+                </child>
+                <child>
+                  <widget class="GtkButton" id="okButton">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="label" translatable="yes">gtk-ok</property>
+                    <property name="use_stock">True</property>
+                    <property name="response_id">0</property>
+                  </widget>
+                  <packing>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </widget>
+              <packing>
+                <property name="fill">False</property>
+                <property name="padding">5</property>
+                <property name="position">1</property>
               </packing>
             </child>
           </widget>
