@@ -39,30 +39,8 @@
 typedef struct _Widgets
 {
   // Configuration Window
+  GladeXML *configXml;
   GtkWidget *configBox;
-  GtkWidget *loggingCombo;
-  GtkWidget *devnoSpin;
-  GtkWidget *recordCheck;
-  GtkWidget *fnameEntry;
-  GtkWidget *fnameLabel;
-  GtkWidget *appendCheck;
-  GtkWidget *overwriteCheck;
-  GtkWidget *splitFrame;
-  GtkWidget *isplitCheck;
-  GtkWidget *isplitSpin;
-  GtkWidget *vsplitCheck;
-  GtkWidget *vsplitvolSpin;
-  GtkWidget *vsplit1Label;
-  GtkWidget *vsplit2Label;
-  GtkWidget *vsplitdurSpin;
-  GtkWidget *vsplit3Label;
-  GtkWidget *vsplit4Label;
-  GtkWidget *vsplitminlenSpin;
-  GtkWidget *vsplit5Label;
-  GtkWidget *dvbCheck;
-  GtkWidget *rtCheck;
-  GtkWidget *epgCheck;
-  GtkWidget *madCheck;
 
   // Information Window
   GladeXML *infoXml;

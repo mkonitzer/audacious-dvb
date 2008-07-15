@@ -93,206 +93,44 @@ dvb_configure (void)
 {
   if (widgets.configBox)
     {
-      gdk_window_raise (GTK_WIDGET (widgets.configBox)->window);
+      gtk_window_present (GTK_WINDOW (widgets.configBox));
       return;
     }
 
-  gint i;
-  GtkWidget *hbox, *vbox;
+  // Create configuration box
+  widgets.configXml =
+    glade_xml_new_from_buffer (glwidgets, strlen (glwidgets), "config", NULL);
+  glade_xml_signal_autoconnect (widgets.configXml);
+  widgets.configBox = glade_xml_get_widget (widgets.configXml, "config");
 
-  // TODO: Replace by GladeXML equivalent
-  GtkWidget *configBox = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-  widgets.configBox = configBox;
-  g_signal_connect (G_OBJECT (configBox), "destroy",
+  // Register signal handlers
+  g_signal_connect (G_OBJECT (widgets.configBox), "destroy",
 		    G_CALLBACK (gtk_widget_destroyed), &widgets.configBox);
-  gtk_window_set_title (GTK_WINDOW (configBox), "DVB Plugin Configuration");
-  gtk_container_border_width (GTK_CONTAINER (configBox), 10);
-
-  GtkWidget *notebook = gtk_notebook_new ();
-  vbox = gtk_vbox_new (FALSE, 10);
-  gtk_box_pack_start (GTK_BOX (vbox), notebook, TRUE, TRUE, 0);
-  gtk_container_add (GTK_CONTAINER (configBox), vbox);
-
-  // Buttons
-  hbox = gtk_hbutton_box_new ();
-  gtk_button_box_set_layout (GTK_BUTTON_BOX (hbox), GTK_BUTTONBOX_END);
-  gtk_button_box_set_spacing (GTK_BUTTON_BOX (hbox), 5);
-  GtkWidget *cancelButton = gtk_button_new_from_stock (GTK_STOCK_CANCEL);
-  g_signal_connect_swapped (G_OBJECT (cancelButton), "clicked",
+  g_signal_connect_swapped (G_OBJECT
+			    (glade_xml_get_widget
+			     (widgets.configXml, "cancelButton")), "clicked",
 			    G_CALLBACK (gtk_widget_destroy),
 			    GTK_OBJECT (widgets.configBox));
-  gtk_box_pack_start (GTK_BOX (hbox), cancelButton, TRUE, TRUE, 0);
-  GtkWidget *okButton = gtk_button_new_from_stock (GTK_STOCK_OK);
-  g_signal_connect (G_OBJECT (okButton), "clicked",
+  g_signal_connect (G_OBJECT (glade_xml_get_widget
+			      (widgets.configXml, "okButton")), "clicked",
 		    G_CALLBACK (dvb_configure_ok), NULL);
-  gtk_box_pack_start (GTK_BOX (hbox), okButton, TRUE, TRUE, 0);
-  gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
 
-  // General settings
-  GtkWidget *generalFrame = gtk_frame_new ("General Settings");
-  gtk_container_border_width (GTK_CONTAINER (generalFrame), 5);
-  vbox = gtk_vbox_new (FALSE, 10);
-  gtk_container_border_width (GTK_CONTAINER (vbox), 5);
-  gtk_container_add (GTK_CONTAINER (generalFrame), vbox);
-
-  hbox = gtk_hbox_new (FALSE, 5);
-  GtkWidget *devLabel = gtk_label_new ("DVB device:");
-  gtk_box_pack_start (GTK_BOX (hbox), devLabel, FALSE, FALSE, 0);
-  GtkWidget *devnoSpin = gtk_spin_button_new_with_range (0, 9, 1);
-  widgets.devnoSpin = devnoSpin;
-  gtk_box_pack_start (GTK_BOX (hbox), devnoSpin, TRUE, TRUE, 0);
-  gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
-
-  hbox = gtk_hbox_new (FALSE, 5);
-  GtkWidget *logLabel = gtk_label_new ("Log level:");
-  gtk_box_pack_start (GTK_BOX (hbox), logLabel, FALSE, FALSE, 0);
-  GtkWidget *loggingCombo = gtk_combo_box_new_text ();
-  widgets.loggingCombo = loggingCombo;
-  const gchar *log_name[] = { "No logging (0)", "Alert (1)", "Critical (2)",
-    "Error (3)", "Warning (4)", "Notice (5)", "Info (6)", "Debug (7)"
-  };
-  for (i = 0; i < 8; i++)
-    gtk_combo_box_append_text (GTK_COMBO_BOX (loggingCombo), log_name[i]);
-  gtk_box_pack_start (GTK_BOX (hbox), loggingCombo, TRUE, TRUE, 0);
-  gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
-
-  gtk_notebook_append_page (GTK_NOTEBOOK (notebook), generalFrame,
-			    gtk_label_new ("General"));
-
-  // Recording settings
-  GtkWidget *recordFrame = gtk_frame_new ("Recording Settings");
-  gtk_container_border_width (GTK_CONTAINER (recordFrame), 5);
-  vbox = gtk_vbox_new (FALSE, 10);
-  gtk_container_border_width (GTK_CONTAINER (vbox), 5);
-  gtk_container_add (GTK_CONTAINER (recordFrame), vbox);
-
-  GtkWidget *recordCheck =
-    gtk_check_button_new_with_label ("Record stream while playing");
-  widgets.recordCheck = recordCheck;
-  gtk_signal_connect (GTK_OBJECT (recordCheck), "clicked",
+  gtk_signal_connect (GTK_OBJECT
+		      (glade_xml_get_widget
+		       (widgets.configXml, "recordCheck")), "clicked",
 		      G_CALLBACK (recordClicked), NULL);
-  gtk_box_pack_start (GTK_BOX (vbox), recordCheck, FALSE, FALSE, 0);
-
-  hbox = gtk_hbox_new (FALSE, 5);
-  GtkWidget *fnameLabel = gtk_label_new ("Filename:");
-  widgets.fnameLabel = fnameLabel;
-  gtk_box_pack_start (GTK_BOX (hbox), fnameLabel, FALSE, FALSE, 0);
-  GtkWidget *fnameEntry = gtk_entry_new_with_max_length (50);
-  widgets.fnameEntry = fnameEntry;
-  gtk_box_pack_start (GTK_BOX (hbox), fnameEntry, TRUE, TRUE, 0);
-  gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
-
-  GtkWidget *overwriteCheck =
-    gtk_check_button_new_with_label ("Overwrite existing file(s)");
-  widgets.overwriteCheck = overwriteCheck;
-  gtk_box_pack_start (GTK_BOX (vbox), overwriteCheck, FALSE, FALSE, 0);
-  GtkWidget *appendCheck =
-    gtk_check_button_new_with_label ("Append to existing file(s)");
-  widgets.appendCheck = appendCheck;
-  gtk_box_pack_start (GTK_BOX (vbox), appendCheck, FALSE, FALSE, 0);
-
-  // Splitting
-  GtkWidget *splitFrame = gtk_frame_new ("Splitting");
-  widgets.splitFrame = splitFrame;
-  gtk_container_border_width (GTK_CONTAINER (splitFrame), 5);
-  gtk_container_add (GTK_CONTAINER (vbox), splitFrame);
-  vbox = gtk_vbox_new (FALSE, 10);
-  gtk_container_border_width (GTK_CONTAINER (vbox), 5);
-  gtk_container_add (GTK_CONTAINER (splitFrame), vbox);
-
-  hbox = gtk_hbox_new (FALSE, 5);
-  GtkWidget *isplitCheck =
-    gtk_check_button_new_with_label ("Split into intervals of:");
-  widgets.isplitCheck = isplitCheck;
-  gtk_signal_connect (GTK_OBJECT (isplitCheck), "clicked",
+  gtk_signal_connect (GTK_OBJECT
+		      (glade_xml_get_widget
+		       (widgets.configXml, "isplitCheck")), "clicked",
 		      G_CALLBACK (isplitClicked), NULL);
-  gtk_box_pack_start (GTK_BOX (hbox), isplitCheck, FALSE, FALSE, 0);
-  GtkWidget *isplitSpin = gtk_spin_button_new_with_range (0, 9999, 1);
-  widgets.isplitSpin = isplitSpin;
-  gtk_box_pack_start (GTK_BOX (hbox), isplitSpin, FALSE, FALSE, 0);
-  GtkWidget *isplitLabel = gtk_label_new ("s.");
-  gtk_box_pack_start (GTK_BOX (hbox), isplitLabel, FALSE, FALSE, 0);
-  gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
-
-  hbox = gtk_hbox_new (FALSE, 5);
-  GtkWidget *vsplitCheck =
-    gtk_check_button_new_with_label ("Split when volume is below:");
-  widgets.vsplitCheck = vsplitCheck;
-  gtk_signal_connect (GTK_OBJECT (vsplitCheck), "clicked",
+  gtk_signal_connect (GTK_OBJECT
+		      (glade_xml_get_widget
+		       (widgets.configXml, "vsplitCheck")), "clicked",
 		      G_CALLBACK (vsplitClicked), NULL);
-  gtk_box_pack_start (GTK_BOX (hbox), vsplitCheck, FALSE, FALSE, 0);
-  GtkWidget *vsplitvolSpin = gtk_spin_button_new_with_range (-999, 99, 0.5);
-  widgets.vsplitvolSpin = vsplitvolSpin;
-  gtk_box_pack_start (GTK_BOX (hbox), vsplitvolSpin, FALSE, FALSE, 0);
-  GtkWidget *vsplit1Label = gtk_label_new ("dB");
-  widgets.vsplit1Label = vsplit1Label;
-  gtk_box_pack_start (GTK_BOX (hbox), vsplit1Label, FALSE, FALSE, 0);
-  gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
-
-  hbox = gtk_hbox_new (FALSE, 5);
-  GtkWidget *vsplit2Label = gtk_label_new ("for at least:");
-  widgets.vsplit2Label = vsplit2Label;
-  GtkWidget *vsplit2Align = gtk_alignment_new (0.5, 0.5, 1, 1);
-  gtk_alignment_set_padding (GTK_ALIGNMENT (vsplit2Align), 0, 0, 20, 0);
-  gtk_container_add (GTK_CONTAINER (vsplit2Align), vsplit2Label);
-  gtk_box_pack_start (GTK_BOX (hbox), vsplit2Align, FALSE, FALSE, 0);
-  GtkWidget *vsplitdurSpin = gtk_spin_button_new_with_range (0, 999, 1);
-  widgets.vsplitdurSpin = vsplitdurSpin;
-  gtk_box_pack_start (GTK_BOX (hbox), vsplitdurSpin, FALSE, FALSE, 0);
-  GtkWidget *vsplit3Label = gtk_label_new ("ms");
-  widgets.vsplit3Label = vsplit3Label;
-  gtk_box_pack_start (GTK_BOX (hbox), vsplit3Label, FALSE, FALSE, 0);
-  gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
-
-  hbox = gtk_hbox_new (FALSE, 5);
-  GtkWidget *vsplit4Label = gtk_label_new ("with a minimum file length of:");
-  widgets.vsplit4Label = vsplit4Label;
-  GtkWidget *vsplit4Align = gtk_alignment_new (0.5, 0.5, 1, 1);
-  gtk_alignment_set_padding (GTK_ALIGNMENT (vsplit4Align), 0, 0, 20, 0);
-  gtk_container_add (GTK_CONTAINER (vsplit4Align), vsplit4Label);
-  gtk_box_pack_start (GTK_BOX (hbox), vsplit4Align, FALSE, FALSE, 0);
-  GtkWidget *vsplitminlenSpin = gtk_spin_button_new_with_range (0, 999, 1);
-  widgets.vsplitminlenSpin = vsplitminlenSpin;
-  gtk_box_pack_start (GTK_BOX (hbox), vsplitminlenSpin, FALSE, FALSE, 0);
-  GtkWidget *vsplit5Label = gtk_label_new ("s.");
-  widgets.vsplit5Label = vsplit5Label;
-  gtk_box_pack_start (GTK_BOX (hbox), vsplit5Label, FALSE, FALSE, 0);
-  gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
-
-  gtk_notebook_append_page (GTK_NOTEBOOK (notebook), recordFrame,
-			    gtk_label_new ("Recording"));
-
-  // Information retrieval
-  GtkWidget *infoFrame = gtk_frame_new ("Information Retrieval");
-  gtk_container_border_width (GTK_CONTAINER (infoFrame), 5);
-  vbox = gtk_vbox_new (FALSE, 10);
-  gtk_container_border_width (GTK_CONTAINER (vbox), 5);
-  gtk_container_add (GTK_CONTAINER (infoFrame), vbox);
-
-  GtkWidget *dvbCheck = gtk_check_button_new_with_label ("DVB status");
-  widgets.dvbCheck = dvbCheck;
-  gtk_box_pack_start (GTK_BOX (vbox), dvbCheck, FALSE, FALSE, 0);
-
-  GtkWidget *rtCheck = gtk_check_button_new_with_label ("RDS-Radiotext[+]");
-  widgets.rtCheck = rtCheck;
-  gtk_box_pack_start (GTK_BOX (vbox), rtCheck, FALSE, FALSE, 0);
-
-  GtkWidget *epgCheck =
-    gtk_check_button_new_with_label ("Electronic Program Guide (EPG)");
-  widgets.epgCheck = epgCheck;
-  gtk_box_pack_start (GTK_BOX (vbox), epgCheck, FALSE, FALSE, 0);
-
-  GtkWidget *madCheck =
-    gtk_check_button_new_with_label ("MadMusic OpenTV Application");
-  widgets.madCheck = madCheck;
-  gtk_box_pack_start (GTK_BOX (vbox), madCheck, FALSE, FALSE, 0);
-
-  gtk_notebook_append_page (GTK_NOTEBOOK (notebook), infoFrame,
-			    gtk_label_new ("Information"));
 
   config_to_gui (config);
 
-  gtk_widget_show_all (configBox);
+  gtk_widget_show_all (widgets.configBox);
 }
 
 
@@ -312,12 +150,20 @@ static void
 recordClicked (GtkWidget * w, gpointer user_data)
 {
   gboolean b;
-  b = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.recordCheck));
-  gtk_widget_set_sensitive (widgets.fnameLabel, b);
-  gtk_widget_set_sensitive (widgets.fnameEntry, b);
-  gtk_widget_set_sensitive (widgets.appendCheck, b);
-  gtk_widget_set_sensitive (widgets.overwriteCheck, b);
-  gtk_widget_set_sensitive (widgets.splitFrame, b);
+  b =
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "recordCheck")));
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "fnameEntry"), b);
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "fnameLabel"), b);
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "appendCheck"), b);
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "overwriteCheck"), b);
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "splitFrame"), b);
 }
 
 
@@ -325,8 +171,12 @@ static void
 isplitClicked (GtkWidget * w, gpointer user_data)
 {
   gboolean b;
-  b = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.isplitCheck));
-  gtk_widget_set_sensitive (widgets.isplitSpin, b);
+  b =
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "isplitCheck")));
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "isplitSpin"), b);
 }
 
 
@@ -334,54 +184,98 @@ static void
 vsplitClicked (GtkWidget * w, gpointer user_data)
 {
   gboolean b;
-  b = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.vsplitCheck));
-  gtk_widget_set_sensitive (widgets.vsplitvolSpin, b);
-  gtk_widget_set_sensitive (widgets.vsplit1Label, b);
-  gtk_widget_set_sensitive (widgets.vsplit2Label, b);
-  gtk_widget_set_sensitive (widgets.vsplitdurSpin, b);
-  gtk_widget_set_sensitive (widgets.vsplit3Label, b);
-  gtk_widget_set_sensitive (widgets.vsplit4Label, b);
-  gtk_widget_set_sensitive (widgets.vsplitminlenSpin, b);
-  gtk_widget_set_sensitive (widgets.vsplit5Label, b);
+  b =
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "vsplitCheck")));
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "vsplitvolSpin"), b);
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "vsplit1Label"), b);
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "vsplit2Label"), b);
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "vsplitdurSpin"), b);
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "vsplit3Label"), b);
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "vsplit4Label"), b);
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "vsplitminlenSpin"), b);
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "vsplit5Label"), b);
 }
 
 static void
 config_to_gui (cfgstruct * config)
 {
-  gtk_spin_button_set_value (GTK_SPIN_BUTTON (widgets.devnoSpin),
+  gtk_spin_button_set_value (GTK_SPIN_BUTTON
+			     (glade_xml_get_widget
+			      (widgets.configXml, "devnoSpin")),
 			     config->devno);
-  gtk_combo_box_set_active (GTK_COMBO_BOX (widgets.loggingCombo),
+  gtk_combo_box_set_active (GTK_COMBO_BOX
+			    (glade_xml_get_widget
+			     (widgets.configXml, "loggingCombo")),
 			    config->loglvl);
 
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.recordCheck),
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				(glade_xml_get_widget
+				 (widgets.configXml, "recordCheck")),
 				config->rec);
-  gtk_entry_set_text_safe (GTK_ENTRY (widgets.fnameEntry), config->rec_fname);
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.appendCheck),
+  gtk_entry_set_text_safe (GTK_ENTRY
+			   (glade_xml_get_widget
+			    (widgets.configXml, "fnameEntry")),
+			   config->rec_fname);
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				(glade_xml_get_widget
+				 (widgets.configXml, "appendCheck")),
 				config->rec_append);
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.overwriteCheck),
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				(glade_xml_get_widget
+				 (widgets.configXml, "overwriteCheck")),
 				config->rec_overwrite);
 
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.isplitCheck),
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				(glade_xml_get_widget
+				 (widgets.configXml, "isplitCheck")),
 				config->isplit);
-  gtk_spin_button_set_value (GTK_SPIN_BUTTON (widgets.isplitSpin),
+  gtk_spin_button_set_value (GTK_SPIN_BUTTON
+			     (glade_xml_get_widget
+			      (widgets.configXml, "isplitSpin")),
 			     config->isplit_ival);
 
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.vsplitCheck),
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				(glade_xml_get_widget
+				 (widgets.configXml, "vsplitCheck")),
 				config->vsplit);
-  gtk_spin_button_set_value (GTK_SPIN_BUTTON (widgets.vsplitvolSpin),
+  gtk_spin_button_set_value (GTK_SPIN_BUTTON
+			     (glade_xml_get_widget
+			      (widgets.configXml, "vsplitvolSpin")),
 			     config->vsplit_vol);
-  gtk_spin_button_set_value (GTK_SPIN_BUTTON (widgets.vsplitdurSpin),
+  gtk_spin_button_set_value (GTK_SPIN_BUTTON
+			     (glade_xml_get_widget
+			      (widgets.configXml, "vsplitdurSpin")),
 			     config->vsplit_dur);
-  gtk_spin_button_set_value (GTK_SPIN_BUTTON (widgets.vsplitminlenSpin),
+  gtk_spin_button_set_value (GTK_SPIN_BUTTON
+			     (glade_xml_get_widget
+			      (widgets.configXml, "vsplitminlenSpin")),
 			     config->vsplit_minlen);
 
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.dvbCheck),
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				(glade_xml_get_widget
+				 (widgets.configXml, "dvbCheck")),
 				config->info_dvbstat);
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.rtCheck),
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				(glade_xml_get_widget
+				 (widgets.configXml, "rtCheck")),
 				config->info_rt);
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.epgCheck),
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				(glade_xml_get_widget
+				 (widgets.configXml, "epgCheck")),
 				config->info_epg);
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widgets.madCheck),
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				(glade_xml_get_widget
+				 (widgets.configXml, "madCheck")),
 				config->info_mmusic);
 
   isplitClicked (NULL, NULL);
@@ -393,43 +287,75 @@ static void
 config_from_gui (cfgstruct * config)
 {
   config->devno =
-    gtk_spin_button_get_value (GTK_SPIN_BUTTON (widgets.devnoSpin));
+    gtk_spin_button_get_value (GTK_SPIN_BUTTON
+			       (glade_xml_get_widget
+				(widgets.configXml, "devnoSpin")));
   config->loglvl =
-    gtk_combo_box_get_active (GTK_COMBO_BOX (widgets.loggingCombo));
+    gtk_combo_box_get_active (GTK_COMBO_BOX
+			      (glade_xml_get_widget
+			       (widgets.configXml, "loggingCombo")));
 
   config->rec =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.recordCheck));
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "recordCheck")));
   if (config->rec_fname != NULL)
     g_free (config->rec_fname);
   config->rec_fname =
-    g_strdup (gtk_entry_get_text (GTK_ENTRY (widgets.fnameEntry)));
+    g_strdup (gtk_entry_get_text
+	      (GTK_ENTRY
+	       (glade_xml_get_widget (widgets.configXml, "fnameEntry"))));
   config->rec_append =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.appendCheck));
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "appendCheck")));
   config->rec_overwrite =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.overwriteCheck));
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "overwriteCheck")));
 
   config->isplit =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.isplitCheck));
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "isplitCheck")));
   config->isplit_ival =
-    gtk_spin_button_get_value (GTK_SPIN_BUTTON (widgets.isplitSpin));
+    gtk_spin_button_get_value (GTK_SPIN_BUTTON
+			       (glade_xml_get_widget
+				(widgets.configXml, "isplitSpin")));
 
   config->vsplit =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.vsplitCheck));
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "vsplitCheck")));
   config->vsplit_vol =
-    gtk_spin_button_get_value (GTK_SPIN_BUTTON (widgets.vsplitvolSpin));
+    gtk_spin_button_get_value (GTK_SPIN_BUTTON
+			       (glade_xml_get_widget
+				(widgets.configXml, "vsplitvolSpin")));
   config->vsplit_dur =
-    gtk_spin_button_get_value (GTK_SPIN_BUTTON (widgets.vsplitdurSpin));
+    gtk_spin_button_get_value (GTK_SPIN_BUTTON
+			       (glade_xml_get_widget
+				(widgets.configXml, "vsplitdurSpin")));
   config->vsplit_minlen =
-    gtk_spin_button_get_value (GTK_SPIN_BUTTON (widgets.vsplitminlenSpin));
+    gtk_spin_button_get_value (GTK_SPIN_BUTTON
+			       (glade_xml_get_widget
+				(widgets.configXml, "vsplitminlenSpin")));
 
   config->info_dvbstat =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.dvbCheck));
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "dvbCheck")));
   config->info_rt =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.rtCheck));
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "rtCheck")));
   config->info_epg =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.epgCheck));
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "epgCheck")));
   config->info_mmusic =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widgets.madCheck));
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "madCheck")));
 }
 
 void
