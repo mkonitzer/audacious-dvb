@@ -163,6 +163,8 @@ radiotext_decode (rtstruct * rt)
 			 "RT-Error: Length = 0 or not correct !");
 	      return;
 	    }
+
+	  // Decode Radiotext event
 	  if (temptext != NULL)
 	    g_free (temptext);
 	  temptext = g_malloc0 (mtext[8]);
@@ -176,19 +178,20 @@ radiotext_decode (rtstruct * rt)
 	  if (rt->plustext)
 	    g_free (rt->plustext);
 	  rt->plustext = g_strndup (temptext, RT_MEL - 1);
-	  if (rt->event[0] == NULL
-	      || (strcmp (rt->plustext, rt->event[0]) != 0))
+	  log_print (hlog, LOG_INFO, "Radiotext: %s", rt->plustext);
+	  if (temptext)
+	    g_free (temptext);
+
+	  // Update event list if we have a new Radiotext event
+	  temptext = str_beautify (rt->plustext, 0, DVB_STRING_RADIOTEXT);
+	  if (rt->event[0] == NULL || (strcmp (temptext, rt->event[0]) != 0))
 	    {
 	      // Beautify radiotext string and add it to event list
-	      gchar *tmp;
-	      tmp = str_beautify (rt->plustext, 0, DVB_STRING_RADIOTEXT);
-	      log_print (hlog, LOG_INFO, "Beautified Radiotext: %s", tmp);
-	      radiotext_events_insert (rt, tmp);
+	      radiotext_events_insert (rt, temptext);
 	      rt->refresh = TRUE;
-	      if (tmp != NULL)
-		g_free (tmp);
 	    }
-	  log_print (hlog, LOG_INFO, "Radiotext: %s", rt->plustext);
+	  if (temptext)
+	    g_free (temptext);
 	}
       else if (mtext[5] == 0x46)
 	{
