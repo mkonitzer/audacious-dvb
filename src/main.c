@@ -1085,12 +1085,14 @@ get_name_thread (gpointer arg)
 		    {
 		      memcpy (prov, &pp[2], pp[1]);
 		      prov[pp[1]] = '\0';
-		      if (is_updated (prov, &station->prov_name, FALSE))
+		      if (is_updated
+			  (prov, &station->prov_name, DVB_STRING_DVBSI))
 			station->refresh = TRUE;
 
 		      memcpy (name, &pp[3 + pp[1]], pp[2 + pp[1]]);
 		      name[pp[2 + pp[1]]] = '\0';
-		      if (is_updated (name, &station->svc_name, FALSE))
+		      if (is_updated
+			  (name, &station->svc_name, DVB_STRING_DVBSI))
 			station->refresh = TRUE;
 
 		      if (station->refresh)

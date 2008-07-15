@@ -156,13 +156,13 @@ madmusic_read_data (mmstruct * mm, const guchar * buf, gint len)
 	ftna = 0;
     }
 
-  if (is_updated (artist, &mm->artist, TRUE))
+  if (is_updated (artist, &mm->artist, DVB_STRING_ASCII))
     mm->refresh = TRUE;
 
-  if (is_updated (title, &mm->title, TRUE))
+  if (is_updated (title, &mm->title, DVB_STRING_ASCII))
     mm->refresh = TRUE;
 
-  if (is_updated (album, &mm->album, TRUE))
+  if (is_updated (album, &mm->album, DVB_STRING_ASCII))
     mm->refresh = TRUE;
 
   if (mm->trnum != trnum)

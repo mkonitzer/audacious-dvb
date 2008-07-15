@@ -36,7 +36,9 @@ str_remove_non_ascii (gchar * s)
   if (s == NULL)
     return;
 
-  g_strcanon (s, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,?'\"!@#$%^&*()-_=+;:<>/\\|}{[]`~", ' ');
+  g_strcanon (s,
+	      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,?'\"!@#$%^&*()-_=+;:<>/\\|}{[]`~",
+	      ' ');
 }
 
 
@@ -48,7 +50,7 @@ str_remove_dvbsi_control_codes (gchar * s)
 
   if (s == NULL)
     return;
-  
+
   len = strlen (s);
   if ((ws = g_malloc (1 + len)) != NULL)
     {
@@ -118,30 +120,53 @@ str_replace_non_printable (gchar * s)
 
 
 gchar *
-str_beautify (const gchar * s, gint len, gboolean ascii)
+str_beautify (const gchar * s, gint len, enum dvb_strtype type)
 {
-  GRegex *mwsp;
-  gchar from_enc[20], *newstr, *tmp;
+  GRegex *mwsp = NULL;
+  gchar from_enc[20], *newstr, *tmp = NULL;
 
   if (len > 0)
     newstr = g_strndup (s, len);
   else
     newstr = g_strdup (s);
 
-  // Operate in ASCII- or any-encoding-mode?
-  if (ascii)
+  // Different string sources need different string handling
+  switch (type)
     {
+      /*
+       * Handle standard ISO_646 (ASCII) string
+       */
+    case DVB_STRING_ASCII:
       // Remove/Replace all non-ascii/-printable characters
       str_remove_non_ascii (newstr);
-    }
-  else
-    {
+      break;
+
+      /*
+       * Handle Radiotext message string
+       * (see IEC 62106:1999, Annex E, code table E.1)
+       */
+    case DVB_STRING_RADIOTEXT:
+      /*
+       * Normally Radiotext strings have a unique encoding defined
+       * in the a.m. RDS specification. Unfortunately most radio
+       * stations don't give a fuck and send ISO_8859-15 anyway. :-(
+       */
+      tmp = g_convert (newstr, -1, "UTF-8", "ISO_8859-15", NULL, NULL, NULL);
+      g_free (newstr);
+      newstr = tmp;
+      tmp = NULL;
+      break;
+
+      /*
+       * Handle DVB service information string
+       * (see ETSI EN 300 468, Annex A.2)
+       */
+    case DVB_STRING_DVBSI:
       // Remove all control codes
       str_remove_dvbsi_control_codes (newstr);
       tmp = newstr;
 
       // First byte(s) of string may reveal used character table
-      // (see ETSI EN 300 468, Annex A.2)
       switch (tmp[0])
 	{
 	case 0x01:		// ISO/IEC 8859-5
@@ -198,24 +223,36 @@ str_beautify (const gchar * s, gint len, gboolean ascii)
 	  newstr = g_convert (tmp, -1, "UTF-8", from_enc, NULL, NULL, NULL);
 	}
       g_free (tmp);
-      if (!g_utf8_validate (newstr, -1, NULL))
-	strcpy (newstr, "");
-      str_replace_non_printable (newstr);
+      tmp = NULL;
+      break;
+
+    default:
+      // Should never happen
+      g_assert (FALSE);
     }
 
-  // Remove leading and trailing spaces
-  tmp = g_strstrip (newstr);
-  // Replace multiple whitespaces by single space
-  mwsp = g_regex_new ("\\s+", 0, 0, NULL);
-  newstr = g_regex_replace_literal (mwsp, tmp, -1, 0, " ", 0, NULL);
-  g_regex_unref (mwsp);
-  g_free (tmp);
+  // Is string a valid UTF-8 string?
+  if (g_utf8_validate (newstr, -1, NULL))
+    {
+      // Remove non-printable characters
+      str_replace_non_printable (newstr);
+      // Remove leading and trailing spaces
+      tmp = g_strstrip (newstr);
+      // Replace multiple whitespaces by single space
+      mwsp = g_regex_new ("\\s+", 0, 0, NULL);
+      newstr = g_regex_replace_literal (mwsp, tmp, -1, 0, " ", 0, NULL);
+      g_regex_unref (mwsp);
+      g_free (tmp);
+    }
+  else
+    strcpy (newstr, "");
+
   return newstr;
 }
 
 
 gboolean
-is_updated (const gchar * newtext, gchar ** oldtextptr, gboolean ascii)
+is_updated (const gchar * newtext, gchar ** oldtextptr, enum dvb_strtype type)
 {
   gboolean refresh = TRUE;
 
@@ -229,7 +266,7 @@ is_updated (const gchar * newtext, gchar ** oldtextptr, gboolean ascii)
     {
       if (*oldtextptr)
 	g_free (*oldtextptr);
-      *oldtextptr = str_beautify (newtext, -1, ascii);
+      *oldtextptr = str_beautify (newtext, -1, type);
     }
 
   return refresh;

@@ -34,12 +34,12 @@ typedef struct _statstruct
   gboolean refresh;
 } statstruct;
 
-
-void str_remove_non_ascii (gchar * s);
-gchar *str_beautify (const gchar * s, gint len, gboolean ascii);
-gboolean is_updated (const gchar * oldtext, gchar ** newtextptr,
-		     gboolean ascii);
+enum dvb_strtype
+{ DVB_STRING_ASCII, DVB_STRING_RADIOTEXT, DVB_STRING_DVBSI };
+void str_remove_non_ascii (gchar *);
+gchar *str_beautify (const gchar *, gint, enum dvb_strtype);
+gboolean is_updated (const gchar *, gchar **, enum dvb_strtype);
 void gtk_entry_printf (GtkWidget *, const gchar *, ...);
-inline void gtk_entry_set_text_safe (GtkEntry * entry, const gchar * text);
+inline void gtk_entry_set_text_safe (GtkEntry *, const gchar *);
 
 #endif // __AUDACIOUS_DVB_UTIL_H__

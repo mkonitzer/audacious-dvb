@@ -106,6 +106,7 @@ radiotext_init (void)
   return rt;
 }
 
+
 void
 radiotext_events_insert (rtstruct * rt, gchar * newtext)
 {
@@ -119,58 +120,20 @@ radiotext_events_insert (rtstruct * rt, gchar * newtext)
   g_assert (rt->event[RT_EVNTS] == NULL);
 }
 
+
 gchar *
 radiotext_events_to_text (rtstruct * rt)
 {
   return (rt != NULL ? g_strjoinv ("\n", rt->event) : NULL);
 }
 
-/*
- * Partial IEC 62106:1999 character code conversion table
- * (see IEC 62106:1999, Annex E, code table E.1)
- */
-static gchar* iec62106[16*16] = {
-  "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",   // column 0 (undefined)
-  "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",   // column 1 (undefined)
-  " ", "!", "\"", "#", "¤", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/",  // column 2
-  "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ":", ";", "<", "=", ">", "?",   // column 3
-  "@", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O",   // column 4
-  "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "[", "\\", "]", " ", " ",  // column 5
-  " ", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o",   // column 6
-  "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "{", "|", "}", " ", " ",   // column 7
-  "á", "à", "é", "è", "í", "ì", "ó", "ò", "ú", "ù", "Ñ", "Ç", "Ş", "ß", "¡", "Ĳ",   // column 8
-  "â", "ä", "ê", "ë", "î", "ï", "ô", "ö", "û", "ü", "ñ", "ç", "ş", "ğ", "¹", "ĳ",   // column 9
-  "a", "α", "©", "‰", "Ğ", "ĕ", "ň", "ő", " ", " ", " ", " ", " ", " ", " ", " ",   // column 10
-  " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ",   // column 11
-  " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ",   // column 12
-  " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ",   // column 13
-  " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ",   // column 14
-  " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ",   // column 15
-};
-
-gchar *
-radiotext_iec62106_to_utf8 (gchar *s, gint len)
-{
-  if (s == NULL)
-    return NULL;
-  if (len == 0)
-    while (s[len] != '\0') len++;
-
-  int i;
-  gchar *tmp = g_malloc0 (len * 2);
-  for (i = 0; i < len; i++)
-    g_strlcat (tmp, iec62106[(guchar) s[i]], len*2);
-  gchar *res = g_strdup (tmp);
-  g_free (tmp);
-  return res;
-}
 
 static void
 radiotext_decode (rtstruct * rt)
 {
   gint i, ii;
   gchar *temptext = NULL;
- 
+
   if (rt == NULL)
     return;
 
@@ -216,16 +179,14 @@ radiotext_decode (rtstruct * rt)
 	  if (rt->event[0] == NULL
 	      || (strcmp (rt->plustext, rt->event[0]) != 0))
 	    {
-	      // Convert event's encoding, beautify and to event list
-	      gchar *tmp, *tmp2;
-	      tmp = radiotext_iec62106_to_utf8 (rt->plustext, RT_MEL - 1);
-	      tmp2 = str_beautify (tmp, -1, FALSE);
-	      radiotext_events_insert (rt, tmp2);
+	      // Beautify radiotext string and add it to event list
+	      gchar *tmp;
+	      tmp = str_beautify (rt->plustext, 0, DVB_STRING_RADIOTEXT);
+	      log_print (hlog, LOG_INFO, "Beautified Radiotext: %s", tmp);
+	      radiotext_events_insert (rt, tmp);
 	      rt->refresh = TRUE;
 	      if (tmp != NULL)
 		g_free (tmp);
-	      if (tmp2 != NULL)
-		g_free (tmp2);
 	    }
 	  log_print (hlog, LOG_INFO, "Radiotext: %s", rt->plustext);
 	}
@@ -287,15 +248,19 @@ radiotext_decode (rtstruct * rt)
 		    {
 		      if (temptext != NULL)
 			g_free (temptext);
-		      temptext = radiotext_iec62106_to_utf8 (rt->plustext + rtp_start[i], rtp_len[i] + 1);
+		      temptext =
+			g_strndup (rt->plustext + rtp_start[i],
+				   rtp_len[i] + 1);
 		      switch (rtp_typ[i])
 			{
 			case 1:	// title
-			  if (is_updated (temptext, &rt->title, FALSE))
+			  if (is_updated
+			      (temptext, &rt->title, DVB_STRING_RADIOTEXT))
 			    rt->refresh = TRUE;
 			  break;
 			case 4:	// artist
-			  if (is_updated (temptext, &rt->artist, FALSE))
+			  if (is_updated
+			      (temptext, &rt->artist, DVB_STRING_RADIOTEXT))
 			    rt->refresh = TRUE;
 			  break;
 			}

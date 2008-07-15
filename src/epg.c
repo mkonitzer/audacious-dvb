@@ -118,10 +118,10 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	  if (j > 0)		// text_char
 	    text = g_strndup ((gchar *) q, j);
 
-	  if (is_updated (name, &epg->short_ev_name, FALSE))
+	  if (is_updated (name, &epg->short_ev_name, DVB_STRING_DVBSI))
 	    epg->refresh = TRUE;
 
-	  if (is_updated (text, &epg->short_ev_text, FALSE))
+	  if (is_updated (text, &epg->short_ev_text, DVB_STRING_DVBSI))
 	    epg->refresh = TRUE;
 
 	  if (epg->refresh)
@@ -172,7 +172,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	  // Free exttext if we just processed the last ext. packet
 	  if (cdn == ldn)
 	    {
-	      if (is_updated (exttext, &epg->ext_ev_text, FALSE))
+	      if (is_updated (exttext, &epg->ext_ev_text, DVB_STRING_DVBSI))
 		epg->refresh = TRUE;
 
 	      g_free (exttext);
@@ -196,9 +196,9 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	  memcpy (lang, q, 3);	// ISO_639_language_code
 	  lang[3] = '\0';
 
-	  if (is_updated (stype, &epg->stream_type, FALSE))
+	  if (is_updated (stype, &epg->stream_type, DVB_STRING_DVBSI))
 	    epg->refresh = TRUE;
-	  if (is_updated (lang, &epg->lang, FALSE))
+	  if (is_updated (lang, &epg->lang, DVB_STRING_DVBSI))
 	    epg->refresh = TRUE;
 
 	  if (epg->refresh)
