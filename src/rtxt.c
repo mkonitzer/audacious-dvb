@@ -116,21 +116,63 @@ radiotext_events_insert (rtstruct * rt, gchar * newtext)
   for (i = RT_EVNTS - 1; i > 0; --i)
     rt->event[i] = rt->event[i - 1];
   rt->event[0] = g_strdup (newtext);
-  // rt->event[RT_EVNTS] == NULL always holds (for g_strjoinv)
+  g_assert (rt->event[RT_EVNTS] == NULL);
 }
 
 gchar *
 radiotext_events_to_text (rtstruct * rt)
 {
-  return g_strjoinv ("\n", rt->event);
+  return (rt != NULL ? g_strjoinv ("\n", rt->event) : NULL);
+}
+
+/*
+ * Partial IEC 62106:1999 character code conversion table
+ * (see IEC 62106:1999, Annex E, code table E.1)
+ */
+static gchar* iec62106[16*16] = {
+  "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",   // column 0 (undefined)
+  "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",   // column 1 (undefined)
+  " ", "!", "\"", "#", "¤", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/",  // column 2
+  "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ":", ";", "<", "=", ">", "?",   // column 3
+  "@", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O",   // column 4
+  "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "[", "\\", "]", " ", " ",  // column 5
+  " ", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o",   // column 6
+  "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "{", "|", "}", " ", " ",   // column 7
+  "á", "à", "é", "è", "í", "ì", "ó", "ò", "ú", "ù", "Ñ", "Ç", "Ş", "ß", "¡", "Ĳ",   // column 8
+  "â", "ä", "ê", "ë", "î", "ï", "ô", "ö", "û", "ü", "ñ", "ç", "ş", "ğ", "¹", "ĳ",   // column 9
+  "a", "α", "©", "‰", "Ğ", "ĕ", "ň", "ő", " ", " ", " ", " ", " ", " ", " ", " ",   // column 10
+  " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ",   // column 11
+  " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ",   // column 12
+  " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ",   // column 13
+  " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ",   // column 14
+  " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ",   // column 15
+};
+
+gchar *
+radiotext_iec62106_to_utf8 (gchar *s, gint len)
+{
+  if (s == NULL)
+    return NULL;
+  if (len == 0)
+    while (s[len] != '\0') len++;
+
+  int i;
+  gchar *tmp = g_malloc0 (len * 2);
+  for (i = 0; i < len; i++)
+    g_strlcat (tmp, iec62106[(guchar) s[i]], len*2);
+  gchar *res = g_strdup (tmp);
+  g_free (tmp);
+  return res;
 }
 
 static void
 radiotext_decode (rtstruct * rt)
 {
   gint i, ii;
-  gchar temptext[RT_MEL];
-  guchar *mtext = rt->mtext;
+  gchar *temptext = NULL;
+ 
+  if (rt == NULL)
+    return;
 
   /*
    * byte 1+2 = ADD (10bit SiteAdress + 6bit EncoderAdress)
@@ -138,6 +180,7 @@ radiotext_decode (rtstruct * rt)
    * byte 4 = MFL (Message Field Length)
    * byte 5 = MEC (Message Element Code, 0x0a for RT, 0x46 for RTplus)
    */
+  guchar *mtext = rt->mtext;
   gint leninfo = mtext[4];
   if (rt->index >= leninfo + 7)
     {
@@ -157,7 +200,9 @@ radiotext_decode (rtstruct * rt)
 			 "RT-Error: Length = 0 or not correct !");
 	      return;
 	    }
-	  memset (temptext, 0, RT_MEL - 1);
+	  if (temptext != NULL)
+	    g_free (temptext);
+	  temptext = g_malloc0 (mtext[8]);
 	  for (i = 1, ii = 0; i < mtext[8]; i++)
 	    {
 	      if (mtext[9 + i] <= 0xfe)
@@ -165,12 +210,22 @@ radiotext_decode (rtstruct * rt)
 		  (mtext[9 + i] >=
 		   0x80) ? rds_addchar[mtext[9 + i] - 0x80] : mtext[9 + i];
 	    }
-	  memcpy (rt->plustext, temptext, RT_MEL - 1);
+	  if (rt->plustext)
+	    g_free (rt->plustext);
+	  rt->plustext = g_strndup (temptext, RT_MEL - 1);
 	  if (rt->event[0] == NULL
 	      || (strcmp (rt->plustext, rt->event[0]) != 0))
 	    {
-	      radiotext_events_insert (rt, rt->plustext);
+	      // Convert event's encoding, beautify and to event list
+	      gchar *tmp, *tmp2;
+	      tmp = radiotext_iec62106_to_utf8 (rt->plustext, RT_MEL - 1);
+	      tmp2 = str_beautify (tmp, -1, FALSE);
+	      radiotext_events_insert (rt, tmp2);
 	      rt->refresh = TRUE;
+	      if (tmp != NULL)
+		g_free (tmp);
+	      if (tmp2 != NULL)
+		g_free (tmp2);
 	    }
 	  log_print (hlog, LOG_INFO, "Radiotext: %s", rt->plustext);
 	}
@@ -230,22 +285,24 @@ radiotext_decode (rtstruct * rt)
 		{
 		  if (rtp_start[i] + rtp_len[i] + 1 < RT_MEL)
 		    {
-		      memset (temptext, 0, RT_MEL - 1);
-		      memmove (temptext, rt->plustext + rtp_start[i],
-			       rtp_len[i] + 1);
+		      if (temptext != NULL)
+			g_free (temptext);
+		      temptext = radiotext_iec62106_to_utf8 (rt->plustext + rtp_start[i], rtp_len[i] + 1);
 		      switch (rtp_typ[i])
 			{
 			case 1:	// title
-			  if (is_updated (temptext, &rt->title, TRUE))
+			  if (is_updated (temptext, &rt->title, FALSE))
 			    rt->refresh = TRUE;
 			  break;
 			case 4:	// artist
-			  if (is_updated (temptext, &rt->artist, TRUE))
+			  if (is_updated (temptext, &rt->artist, FALSE))
 			    rt->refresh = TRUE;
 			  break;
 			}
 		      log_print (hlog, LOG_INFO, "RTplus[%d]: %s (type %d)",
 				 i, temptext, rtp_typ[i]);
+		      g_free (temptext);
+		      temptext = NULL;
 		    }
 		}
 	    }

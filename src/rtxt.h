@@ -40,7 +40,7 @@ typedef struct _rtstruct
   gboolean refresh;
   /* Don't touch the following! */
   guchar mtext[263 + 1];
-  gchar plustext[RT_MEL];
+  gchar *plustext;
   gint rt_start, rt_bstuff;
   gint index;
   gint mec;

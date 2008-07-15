@@ -33,31 +33,22 @@ extern gpointer hlog;
 void
 str_remove_non_ascii (gchar * s)
 {
-  gint i, l = 0;
-  gchar *ws;
+  if (s == NULL)
+    return;
 
-  if ((ws = g_malloc (1 + strlen (s))) != NULL)
-    {
-      for (i = 0; i < strlen (s); i++)
-	{
-	  if ((s[i] & 0x7f) >= 32)
-	    ws[l++] = s[i];
-	  else
-	    ws[l++] = ' ';
-	}
-      ws[l] = '\0';
-      strcpy (s, ws);
-      g_free (ws);
-    }
+  g_strcanon (s, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,?'\"!@#$%^&*()-_=+;:<>/\\|}{[]`~", ' ');
 }
 
 
 void
-str_remove_control_codes (gchar * s)
+str_remove_dvbsi_control_codes (gchar * s)
 {
   gint i, l = 0, len;
   gchar *ws;
 
+  if (s == NULL)
+    return;
+  
   len = strlen (s);
   if ((ws = g_malloc (1 + len)) != NULL)
     {
@@ -146,7 +137,7 @@ str_beautify (const gchar * s, gint len, gboolean ascii)
   else
     {
       // Remove all control codes
-      str_remove_control_codes (newstr);
+      str_remove_dvbsi_control_codes (newstr);
       tmp = newstr;
 
       // First byte(s) of string may reveal used character table
