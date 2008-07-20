@@ -247,7 +247,8 @@ radiotext_decode (rtstruct * rt)
 	    {
 	      for (i = 0; i < 2; i++)
 		{
-		  if (rtp_start[i] + rtp_len[i] + 1 < RT_MEL)
+		  if (rt->plustext != NULL &&
+		      rtp_start[i] + rtp_len[i] <= strlen (rt->plustext))
 		    {
 		      if (temptext != NULL)
 			g_free (temptext);
