@@ -159,8 +159,7 @@ dvb_file_info_box (gchar * s)
 static void
 dvb_init (void)
 {
-  if (config == NULL)
-    config = config_init ();
+  config = config_init ();
   config_from_db (config);
 
   if (log_open (&hlog, "auddacious-dvb", config->loglvl) != RC_OK)
@@ -179,41 +178,6 @@ static void
 dvb_exit (void)
 {
   log_print (hlog, LOG_INFO, "shutting down");
-  if (mmusic != NULL)
-    {
-      madmusic_exit (mmusic);
-      mmusic = NULL;
-    }
-  if (dvbstat != NULL)
-    {
-      g_free (dvbstat);
-      dvbstat = NULL;
-    }
-  if (rt != NULL)
-    {
-      radiotext_exit (rt);
-      rt = NULL;
-    }
-  if (epg != NULL)
-    {
-      epg_exit (epg);
-      epg = NULL;
-    }
-  if (station != NULL)
-    {
-      g_free (station);
-      station = NULL;
-    }
-  if (tune != NULL)
-    {
-      g_free (tune);
-      tune = NULL;
-    }
-  if (hdvb != NULL)
-    {
-      dvb_close (hdvb);
-      hdvb = NULL;
-    }
   if (config != NULL)
     {
       config_exit (config);
