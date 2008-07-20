@@ -250,7 +250,7 @@ dvb_play (InputPlayback * playback)
   if (playing)
     return;
 
-  log_print (hlog, LOG_DEBUG, "dvb_play(\"%s\");", playback->filename);
+  log_print (hlog, LOG_INFO, "dvb_play(\"%s\");", playback->filename);
 
   // Update info box
   if (infobox_is_visible ())
@@ -274,6 +274,7 @@ dvb_play (InputPlayback * playback)
   // Open DVB device
   if ((hdvb = dvb_open (config->devno)) == NULL)
     {
+      log_print (hlog, LOG_ERR, "dvb_open() failed.");
       playing = FALSE;
       return;
     }
@@ -282,13 +283,18 @@ dvb_play (InputPlayback * playback)
   tune = g_malloc0 (sizeof (tunestruct));
   if ((rc = dvb_parse_url (playback->filename, tune)) != RC_OK)
     {
-      log_print (hlog, LOG_INFO, "dvb_parse_url() returned rc = %d", rc);
+      log_print (hlog, LOG_ERR, "dvb_parse_url() returned %d.", rc);
+      playing = FALSE;
+      g_free (tune);
+      dvb_close (hdvb);
+      hdvb = NULL;
       return;
     }
 
   // Tune DVB device to stations's frequency
   if ((rc = dvb_tune (hdvb, tune)) != RC_OK)
     {
+      log_print (hlog, LOG_ERR, "dvb_tune() returned %d.", rc);
       playing = FALSE;
       g_free (tune);
       dvb_close (hdvb);
@@ -297,16 +303,14 @@ dvb_play (InputPlayback * playback)
     }
 
   // Initialize service info
-  if (station == NULL)
-    station = g_malloc0 (sizeof (statstruct));
-  g_free (station->svc_name);
+  station = g_malloc0 (sizeof (statstruct));
   station->svc_name = g_strdup (playback->filename);
 
   // Get audio PIDs from SID
   if ((rc =
        dvb_get_pid (hdvb, tune->sid, &(tune->apid), &(tune->dpid))) != RC_OK)
     {
-      log_print (hlog, LOG_WARNING, "dvb_get_pid() returned %d.", rc);
+      log_print (hlog, LOG_ERR, "dvb_get_pid() returned %d.", rc);
       playing = FALSE;
       g_free (tune);
       dvb_close (hdvb);
@@ -341,7 +345,7 @@ dvb_play (InputPlayback * playback)
 	      (record, config->rec_fname, config->rec_append,
 	       config->rec_overwrite) != TRUE)
 	    {
-	      log_print (hlog, LOG_INFO, "record_open(%s, %d) failed.",
+	      log_print (hlog, LOG_WARNING, "record_open(%s, %d) failed.",
 			 config->rec_fname, config->rec_append);
 	      record_exit (record);
 	      record = NULL;
@@ -354,12 +358,17 @@ dvb_play (InputPlayback * playback)
 	    time (&vsplit_last);
 	}
       else
-	log_print (hlog, LOG_INFO, "record_init() failed.");
+	log_print (hlog, LOG_WARNING, "record_init() failed.");
     }
 
   // Initialize Radiotext retrieval
   if (config->info_rt)
-    rt = radiotext_init ();
+    {
+      rt = radiotext_init ();
+      if (rt == NULL)
+	log_print (hlog, LOG_WARNING, "radiotext_init() failed.");
+    }
+
 
   // Initialize MadMusic info retrieval
   if (tune->dpid > 0 && config->info_mmusic)
@@ -372,11 +381,11 @@ dvb_play (InputPlayback * playback)
 	{
 	  if ((gt_mmusic =
 	       g_thread_create (mmusic_thread, 0, TRUE, NULL)) == NULL)
-	    log_print (hlog, LOG_ERR,
+	    log_print (hlog, LOG_WARNING,
 		       "g_thread_create() failed for mmusic_thread().");
 	}
       else
-	log_print (hlog, LOG_ERR, "dvb_dpid() returned %d.", rc);
+	log_print (hlog, LOG_WARNING, "dvb_dpid() returned %d.", rc);
     }
 
   // Initialize EPG info retrieval
@@ -384,7 +393,7 @@ dvb_play (InputPlayback * playback)
     {
       if ((gt_epg = g_thread_create (epg_thread, (gpointer) & tune->sid, TRUE,
 				     NULL)) == NULL)
-	log_print (hlog, LOG_ERR,
+	log_print (hlog, LOG_WARNING,
 		   "g_thread_create() failed for epg_thread().");
     }
 
@@ -393,7 +402,7 @@ dvb_play (InputPlayback * playback)
     {
       if ((gt_dvbstat = g_thread_create (dvb_status_thread, NULL, TRUE,
 					 NULL)) == NULL)
-	log_print (hlog, LOG_ERR,
+	log_print (hlog, LOG_WARNING,
 		   "g_thread_create() failed for dvb_status_thread().");
     }
 
@@ -498,7 +507,7 @@ dvb_stop (InputPlayback * playback)
       // Close output plugin
       playback->output->close_audio ();
     }
-  log_print (hlog, LOG_DEBUG, "dvb_stop() finished.");
+  log_print (hlog, LOG_INFO, "dvb_stop() finished.");
 }
 
 
