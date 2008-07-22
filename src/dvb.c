@@ -854,7 +854,7 @@ check_status (gpointer hdvb, gint type,
 	ok = 1;
     }
 
-  if (festatus & FE_HAS_LOCK == 0)
+  if ((festatus & FE_HAS_LOCK) == 0)
     {
       log_print (hlog, LOG_ERR,
 		 "Not able to lock to the signal on the given frequency!");
