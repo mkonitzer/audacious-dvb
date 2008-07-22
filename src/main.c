@@ -1007,7 +1007,7 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
 static gpointer
 get_name_thread (gpointer arg)
 {
-  gint sct, rc, len, sid, dt, dl, svc_sid;
+  gint sct = 0, rc, len, sid, dt, dl, svc_sid;
   gchar prov[256], name[256];
   guchar s[4096], *p, *q, *pp, *qq;
 
@@ -1017,8 +1017,6 @@ get_name_thread (gpointer arg)
 
   static GStaticMutex gmt_get_name = G_STATIC_MUTEX_INIT;
   g_static_mutex_lock (&gmt_get_name);
-
-  sct = 0;
 
   while (playing)
     {
@@ -1035,7 +1033,7 @@ get_name_thread (gpointer arg)
       p = &s[11];
       q = (s + len) - 4;
 
-      while ((p < q) && playing)
+      while (p < q)
 	{
 	  sid = (p[0] << 8) | p[1];
 	  len = ((p[3] << 8) | p[4]) & 0xfff;
@@ -1048,7 +1046,7 @@ get_name_thread (gpointer arg)
 	      pp = p;
 	      qq = pp + len;
 
-	      while ((pp < qq) && playing)
+	      while (pp < qq)
 		{
 		  dt = *pp++;
 		  dl = *pp++;
@@ -1138,11 +1136,11 @@ epg_thread (gpointer arg)
 	  if (rc != RC_DVB_TIMEOUT)
 	    break;
 
-	  log_print (hlog, LOG_DEBUG, "epg_thread() timeout");
+	  log_print (hlog, LOG_DEBUG, "dvb_section() timeout");
 	  if (++toctr > 9)
 	    {
 	      log_print (hlog, LOG_DEBUG,
-			 "epg_thread() timed out too often, giving up");
+			 "dvb_section() timed out too often, giving up");
 	      break;
 	    }
 	}
@@ -1201,11 +1199,11 @@ mmusic_thread (gpointer arg)
 	  if (rc != RC_DVB_TIMEOUT)
 	    break;
 
-	  log_print (hlog, LOG_DEBUG, "mmusic_thread() timeout");
+	  log_print (hlog, LOG_DEBUG, "dvb_dpkt() timeout");
 	  if (++toctr > 9)
 	    {
 	      log_print (hlog, LOG_DEBUG,
-			 "mmusic_thread() timed out too often, giving up");
+			 "dvb_dpkt() timed out too often, giving up");
 	      break;
 	    }
 	}
