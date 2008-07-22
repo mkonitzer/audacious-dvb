@@ -26,10 +26,6 @@
 
 #include <glib.h>
 
-#ifndef RC_OK
-#define RC_OK                         0
-#endif
-
 #define RC_LOG_OPEN_PREFIX_NPE	      3000
 #define RC_LOG_OPEN_HLOG_NPE	      3001
 #define RC_LOG_OPEN_MALLOC_FAILED     3002
@@ -38,20 +34,21 @@
 #define RC_LOG_PRINT_HANDLE_INVALID   3200
 #define RC_LOG_SET_LVL_HANDLE_INVALID 3300
 
+enum lvltype
+{ LOG_EMERG = 0,
+  LOG_ALERT = 1,
+  LOG_CRIT = 2,
+  LOG_ERR = 3,
+  LOG_WARNING = 4,
+  LOG_NOTICE = 5,
+  LOG_INFO = 6,
+  LOG_DEBUG = 7
+};
 
-#define LOG_EMERG   0
-#define LOG_ALERT   1
-#define LOG_CRIT    2
-#define LOG_ERR     3
-#define LOG_WARNING 4
-#define LOG_NOTICE  5
-#define LOG_INFO    6
-#define LOG_DEBUG   7
 
-
-gint log_open (gpointer *, gchar *, gint);
+gint log_open (gpointer *, gchar *, enum lvltype);
 gint log_close (gpointer);
-gint log_print (gpointer, gint, const gchar *, ...);
-gint log_set_level (gpointer hlog, gint lvl);
+gint log_print (gpointer, enum lvltype, const gchar *, ...);
+gint log_set_level (gpointer hlog, enum lvltype);
 
 #endif // __AUDACIOUS_DVB_LOG_H__

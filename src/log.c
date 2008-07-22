@@ -25,17 +25,18 @@
 #include <string.h>
 
 #include "log.h"
+#include "util.h"
 
 
 typedef struct _HLOG
 {
   gchar hl_pfx[256];
-  gint hl_level;
+  enum lvltype hl_level;
 } HLOG;
 
 
 gint
-log_open (gpointer * hlog, gchar * pfx, gint lvl)
+log_open (gpointer * hlog, gchar * pfx, enum lvltype lvl)
 {
   HLOG *hl;
 
@@ -83,7 +84,7 @@ log_close (gpointer hlog)
 
 
 gint
-log_print (gpointer hlog, gint lvl, const gchar * fmt, ...)
+log_print (gpointer hlog, enum lvltype lvl, const gchar * fmt, ...)
 {
   HLOG *hl;
   gchar *msg;
@@ -107,7 +108,7 @@ log_print (gpointer hlog, gint lvl, const gchar * fmt, ...)
 }
 
 gint
-log_set_level (gpointer hlog, gint lvl)
+log_set_level (gpointer hlog, enum lvltype lvl)
 {
   HLOG *hl = (HLOG *) hlog;
   if (hl == NULL)
