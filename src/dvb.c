@@ -228,6 +228,12 @@ dvb_unfilter (gpointer hdvb)
   if (h == NULL)
     return RC_NPE;
 
+  if (h->dvb_dmxdh <= 0)
+    return RC_OK;
+
+  if (ioctl (h->dvb_dmxdh, DMX_STOP) < 0)
+    return RC_OK;
+
   close (h->dvb_dmxdh);
   h->dvb_dmxdh = 0;
   return RC_OK;
