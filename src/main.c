@@ -57,9 +57,9 @@ static gint dvb_get_time (InputPlayback *);
 static void dvb_file_info_box (gchar * s);
 static void dvb_exit (void);
 
-static void dvb_pes_pkt (InputPlayback *, guchar *, gint, gint);
-static void dvb_payload (InputPlayback *, guchar *, gint, gint);
-static void dvb_mpeg_frame (InputPlayback *, guchar *, guint);
+static gboolean dvb_pes_pkt (InputPlayback *, guchar *, gint, gint);
+static gboolean dvb_payload (InputPlayback *, guchar *, gint, gint);
+static gboolean dvb_mpeg_frame (InputPlayback *, guchar *, guint);
 static gchar *dvb_build_file_title (void);
 
 // Thread functions
@@ -490,7 +490,7 @@ static gint
 dvb_get_time (InputPlayback * playback)
 {
   if (playing)
-    return (playback->output->output_time ());
+    return playback->output->output_time ();
 
   return 0;
 }
@@ -524,7 +524,10 @@ feed_thread (gpointer args)
 	{
 	  toctr = 0;
 	  if (!paused)
-	    dvb_pes_pkt (playback, pkt, ar, 0);
+	    {
+	      if (!dvb_pes_pkt (playback, pkt, ar, 0))
+		break;
+	    }
 	}
       else
 	{
@@ -535,14 +538,14 @@ feed_thread (gpointer args)
 		{
 		  log_print (hlog, LOG_DEBUG,
 			     "dvb_apkt() timed out too often, giving up");
-		  playing = FALSE;
+		  break;
 		}
 	    }
 	  else
 	    {
 	      log_print (hlog, LOG_ERR,
 			 "dvb_apkt() returned rc = %d, giving up", rc);
-	      playing = FALSE;
+	      break;
 	    }
 	}
     }
@@ -592,7 +595,7 @@ dvb_status_thread (gpointer args)
 }
 
 
-static void
+static gboolean
 dvb_pes_pkt (InputPlayback * playback, guchar * buf, gint len, gint reset)
 {
   gint i, stream_id, PES_packet_length, j, pp_len;
@@ -604,7 +607,7 @@ dvb_pes_pkt (InputPlayback * playback, guchar * buf, gint len, gint reset)
     {
       pbh = pbl = 0;
       memset (pesbuf, 0x00, sizeof (pesbuf));
-      return;
+      return TRUE;
     }
 
   if ((pbh + len) > sizeof (pesbuf))
@@ -612,7 +615,7 @@ dvb_pes_pkt (InputPlayback * playback, guchar * buf, gint len, gint reset)
       log_print (hlog, LOG_CRIT, "PES buffer overflow imminent, flushing!");
       pbh = pbl = 0;
       memset (pesbuf, 0x00, sizeof (pesbuf));
-      return;
+      return TRUE;
     }
 
   memcpy (&pesbuf[pbh], buf, len);
@@ -660,7 +663,7 @@ dvb_pes_pkt (InputPlayback * playback, guchar * buf, gint len, gint reset)
 			  if (j < (pbh - 4))
 			    PES_packet_length = j - i - 6;
 			  else
-			    return;
+			    return TRUE;
 			}
 
 		      if ((pbh - pbl) > (PES_packet_length + 6))
@@ -669,7 +672,8 @@ dvb_pes_pkt (InputPlayback * playback, guchar * buf, gint len, gint reset)
 			  p = &pesbuf[i];
 			  pp = p + 9 + p[8];
 			  pp_len = PES_packet_length - 3 - p[8];
-			  dvb_payload (playback, pp, pp_len, 0);
+			  if (!dvb_payload (playback, pp, pp_len, 0))
+			    return FALSE;
 
 			  g_memmove (pesbuf,
 				     &pesbuf[i + 6 + PES_packet_length],
@@ -678,7 +682,7 @@ dvb_pes_pkt (InputPlayback * playback, guchar * buf, gint len, gint reset)
 			  pbh -= (i + 6 + PES_packet_length);
 			}
 		      else
-			return;
+			return TRUE;
 		    }
 		}
 	      else
@@ -686,23 +690,24 @@ dvb_pes_pkt (InputPlayback * playback, guchar * buf, gint len, gint reset)
 		  memcpy (pesbuf, &pesbuf[i], pbh - i);
 		  pbl = 0;
 		  pbh -= i;
-		  return;
+		  return TRUE;
 		}
 	    }
 	  else
-	    return;
+	    return TRUE;
 	}
       else
 	{
 	  pbl = 0;
 	  pbh = 0;
-	  return;
+	  return TRUE;
 	}
     }
+  return TRUE;
 }
 
 
-static void
+static gboolean
 dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 {
   gint br, sf, fl, num_samples;
@@ -714,7 +719,7 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
     {
       bph = 0;
       memset (mpbuf, 0x00, sizeof (mpbuf));
-      return;
+      return TRUE;
     }
 
   memcpy (&mpbuf[bph], buf, len);
@@ -752,7 +757,7 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 		  /* Uhm, no, this is not it */
 		  memcpy (mpbuf, &mpbuf[i], bph - i);
 		  bph -= i;
-		  return;
+		  return TRUE;
 		}
 
 	      if (mpl == 3)
@@ -767,11 +772,12 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 		}
 
 	      if (fl > bph)
-		return;
+		return TRUE;
 
 	      if ((mpbuf[fl] == 0xff) && ((mpbuf[fl + 1] & 0xf0) == 0xf0))
 		{
-		  dvb_mpeg_frame (playback, mpbuf, fl);
+		  if (!dvb_mpeg_frame (playback, mpbuf, fl))
+		    return FALSE;
 		  if (rt != NULL)
 		    radiotext_read_data (rt, mpbuf, fl);
 		  g_memmove (mpbuf, &mpbuf[fl], bph - fl);
@@ -785,7 +791,7 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 	    }
 	  else
 	    /* whoops, that sucks */
-	    return;
+	    return TRUE;
 	}
       else
 	{
@@ -802,9 +808,10 @@ dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
 	    }
 	  else
 	    /* No sync in buffer yet, that hurts */
-	    return;
+	    return TRUE;
 	}
     }
+  return TRUE;
 }
 
 
@@ -849,9 +856,9 @@ dvb_build_file_title (void)
 }
 
 
-void
-write_output (InputPlayback * playback, struct mad_pcm *pcm,
-	      struct mad_header *header)
+gboolean
+write_output (InputPlayback * playback, struct mad_pcm * pcm,
+	      struct mad_header * header)
 {
   mad_fixed_t const *left_ch, *right_ch;
   mad_fixed_t *output;
@@ -927,13 +934,16 @@ write_output (InputPlayback * playback, struct mad_pcm *pcm,
 	}
     }
 
-  playback->pass_audio (playback, FMT_FIXED32, MAD_NCHANNELS (header),
-			outbyte, output, NULL);
+  if (audio_opened)
+    playback->pass_audio (playback, FMT_FIXED32, MAD_NCHANNELS (header),
+			  outbyte, output, NULL);
+
   g_free (output);
+  return audio_opened;
 }
 
 
-static void
+static gboolean
 dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
 {
   // Only if we're recording to file
@@ -965,7 +975,7 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
 	  log_print (hlog, LOG_WARNING,
 		     "unrecovered error decoding header: %s",
 		     mad_stream_errorstr (&madstream));
-	  return;
+	  return FALSE;
 	}
 
       log_print (hlog, LOG_WARNING, "recovered error decoding header: %s",
@@ -980,7 +990,7 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
 	  log_print (hlog, LOG_WARNING,
 		     "unrecovered error decoding frame %d: %s",
 		     mad_stream_errorstr (&madstream));
-	  return;
+	  return FALSE;
 	}
 
       log_print (hlog, LOG_WARNING, "recovered error decoding frame %d: %s",
@@ -991,12 +1001,12 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
   // open audio card (if not already done)
   if (!audio_opened)
     {
-      if (!playback->output->
-	  open_audio (FMT_FIXED32, madframe.header.samplerate,
-		      MAD_NCHANNELS (&madframe.header)))
-	playing = FALSE;
-      else
-	audio_opened = TRUE;
+      if (!playback->
+	  output->open_audio (FMT_FIXED32, madframe.header.samplerate,
+			      MAD_NCHANNELS (&madframe.header)))
+	return FALSE;
+
+      audio_opened = TRUE;
     }
 
   // look if file title has changed
@@ -1012,7 +1022,7 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
       title = newtitle;
     }
 
-  write_output (playback, &madsynth.pcm, &madframe.header);
+  return write_output (playback, &madsynth.pcm, &madframe.header);
 }
 
 
