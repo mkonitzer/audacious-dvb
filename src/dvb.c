@@ -79,13 +79,16 @@ dvb_open (gint devnum)
     return NULL;
 
   h->dvb_num = devnum;
+  h->dvb_fe_info.type = -1;
   h->dvb_fedn = g_strdup_printf ("/dev/dvb/adapter%d/frontend0", h->dvb_num);
   if ((h->dvb_fedh = open (h->dvb_fedn, O_RDWR)) < 0)
     {
+      log_print (hlog, LOG_ERR,
+		 "open(%s) failed in dvb_open(), errno = %d (%s)",
+		 h->dvb_fedn, errno, g_strerror (errno));
       g_free (h);
       return NULL;
     }
-  h->dvb_fe_info.type = -1;
 
   return (gpointer *) h;
 }
@@ -98,7 +101,10 @@ dvb_close (gpointer hdvb)
   if (h == NULL)
     return RC_NPE;
 
-  ioctl (h->dvb_fedh, FE_SET_VOLTAGE, SEC_VOLTAGE_OFF);
+  if (ioctl (h->dvb_fedh, FE_SET_VOLTAGE, SEC_VOLTAGE_OFF) < 0)
+    log_print (hlog, LOG_WARNING,
+	       "FE_SET_VOLTAGE failed in dvb_close(), errno = %d (%s)",
+	       errno, g_strerror (errno));
 
   if (h->dvb_admx > 0)
     close (h->dvb_admx);
@@ -119,20 +125,26 @@ dvb_filter (gpointer hdvb, gint pid)
   if (h == NULL)
     return RC_NPE;
 
-  g_free (h->dvb_dmxdn);
+  if (h->dvb_dmxdn != NULL)
+    g_free (h->dvb_dmxdn);
   h->dvb_dmxdn = g_strdup_printf ("/dev/dvb/adapter%d/demux0", h->dvb_num);
 
   if ((h->dvb_dmxdh = open (h->dvb_dmxdn, O_RDWR)) < 0)
     {
       log_print (hlog, LOG_ERR,
-		 "open() failed in dvb_filter(), errno = %d (%s)", errno,
-		 g_strerror (errno));
+		 "open(%s) failed in dvb_filter(), errno = %d (%s)",
+		 h->dvb_dmxdn, errno, g_strerror (errno));
+      h->dvb_dmxdh = 0;
       return RC_DVB_FILTER_OPEN_DEMUX;
     }
 
   if (ioctl (h->dvb_dmxdh, DMX_SET_BUFFER_SIZE, 256 * 1024) < 0)
     {
+      log_print (hlog, LOG_ERR,
+		 "DMX_SET_BUFFER_SIZE failed in dvb_filter(), errno = %d (%s)",
+		 errno, g_strerror (errno));
       close (h->dvb_dmxdh);
+      h->dvb_dmxdh = 0;
       return RC_DVB_FILTER_SET_BUFFER_SIZE;
     }
 
@@ -148,6 +160,7 @@ dvb_filter (gpointer hdvb, gint pid)
 		 "DMX_SET_PES_FILTER failed in dvb_filter(), errno = %d (%s)",
 		 errno, g_strerror (errno));
       close (h->dvb_dmxdh);
+      h->dvb_dmxdh = 0;
       return RC_DVB_FILTER_SET_FAILED;
     }
 
@@ -158,7 +171,7 @@ dvb_filter (gpointer hdvb, gint pid)
 gint
 dvb_packet (gpointer hdvb, guchar * pkt, gint t)
 {
-  int r, s;
+  gint r, sel;
   fd_set rfd;
   struct timeval tv;
 
@@ -175,19 +188,31 @@ dvb_packet (gpointer hdvb, guchar * pkt, gint t)
 
   do
     {
-      s = select (h->dvb_dmxdh + 1, &rfd, NULL, NULL, &tv);
+      sel = select (h->dvb_dmxdh + 1, &rfd, NULL, NULL, &tv);
     }
-  while (s < 0 && errno == EINTR);
-  if (s <= 0)
+  while (sel < 0 && errno == EINTR);
+
+  if (sel < 0)
     {
-      if (s == 0)
-	return RC_DVB_PACKET_SELECT_TIMEOUT;
-      else
-	return RC_DVB_PACKET_SELECT_FAILED;
+      log_print (hlog, LOG_WARNING,
+		 "select() failed in dvb_packet(), errno = %d (%s)",
+		 errno, g_strerror (errno));
+      return RC_DVB_PACKET_SELECT_FAILED;
+    }
+
+  if (sel == 0)
+    {
+      log_print (hlog, LOG_DEBUG, "select() timed out in dvb_packet()");
+      return RC_DVB_PACKET_SELECT_TIMEOUT;
     }
 
   if ((r = read (h->dvb_dmxdh, pkt, 184)) <= 0)
-    return RC_DVB_PACKET_READ_FAILED;
+    {
+      log_print (hlog, LOG_WARNING,
+		 "read() failed in dvb_packet(), errno = %d (%s)",
+		 errno, g_strerror (errno));
+      return RC_DVB_PACKET_READ_FAILED;
+    }
 
   return RC_OK;
 }
@@ -200,11 +225,8 @@ dvb_unfilter (gpointer hdvb)
   if (h == NULL)
     return RC_NPE;
 
-  if (ioctl (h->dvb_dmxdh, DMX_STOP) < 0)
-    return RC_OK;
-
   close (h->dvb_dmxdh);
-
+  h->dvb_dmxdh = 0;
   return RC_OK;
 }
 
@@ -229,8 +251,8 @@ dvb_section (gpointer hdvb, gint pid, gint sect, gint sid, gint sct,
   if ((fd = open (h->dvb_dmxdn, O_RDWR)) < 0)
     {
       log_print (hlog, LOG_ERR,
-		 "open failed in dvb_section(), errno = %d (%s)", errno,
-		 g_strerror (errno));
+		 "open(%s) failed in dvb_section(), errno = %d (%s)",
+		 h->dvb_dmxdn, errno, g_strerror (errno));
       return RC_DVB_SECTION_OPEN_DEMUX;
     }
 
@@ -271,6 +293,9 @@ dvb_section (gpointer hdvb, gint pid, gint sect, gint sid, gint sct,
 
   if (ioctl (fd, DMX_SET_FILTER, &fp) < 0)
     {
+      log_print (hlog, LOG_ERR,
+		 "DMX_SET_FILTER failed in dvb_section(), errno = %d (%s)",
+		 errno, g_strerror (errno));
       close (fd);
       return RC_DVB_SECTION_DMX_SET_FILTER;
     }
@@ -287,38 +312,32 @@ dvb_section (gpointer hdvb, gint pid, gint sect, gint sid, gint sct,
     }
   while (sel < 0 && errno == EINTR);
 
-  if (sel > 0)
+  if (sel < 0)
     {
-      if ((r = read (fd, s, 4096)) < 0)
-	{
-	  close (fd);
-	  return RC_DVB_SECTION_READ_FAILED;
-	}
+      log_print (hlog, LOG_ERR,
+		 "select() failed in dvb_section(), errno = %d (%s)",
+		 errno, g_strerror (errno));
       close (fd);
-      return RC_OK;
+      return RC_DVB_SECTION_SELECT_FAILED;
     }
-  else
-    {
-      close (fd);
 
-      if (sel < 0)
-	{
-	  log_print (hlog, LOG_WARNING,
-		     "select() failed in dvb_section(), errno = %d (%s)",
-		     errno, g_strerror (errno));
-	  log_print (hlog, LOG_DEBUG, "%04x %04x %02x %d", pid, sect, sct, t);
-	  return RC_DVB_SECTION_SELECT_FAILED;
-	}
-      else
-	{
-	  log_print (hlog, LOG_DEBUG, "select() timed out in dvb_section()");
-	  log_print (hlog, LOG_DEBUG, "%04x %04x %02x %d", pid, sect, sct, t);
-	  return RC_DVB_SECTION_SELECT_TIMEOUT;
-	}
+  if (sel == 0)
+    {
+      log_print (hlog, LOG_DEBUG, "select() timed out in dvb_section()");
+      close (fd);
+      return RC_DVB_SECTION_SELECT_TIMEOUT;
+    }
+
+  if ((r = read (fd, s, 4096)) < 0)
+    {
+      log_print (hlog, LOG_ERR,
+		 "read() failed in dvb_section(), errno = %d (%s)", errno,
+		 g_strerror (errno));
+      close (fd);
+      return RC_DVB_SECTION_READ_FAILED;
     }
 
   close (fd);
-
   return RC_OK;
 }
 
@@ -327,6 +346,7 @@ gint
 dvb_apid (gpointer hdvb, guint pid)
 {
   struct dmx_pes_filter_params fp;
+  gint rc;
 
   HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
@@ -341,12 +361,17 @@ dvb_apid (gpointer hdvb, guint pid)
       log_print (hlog, LOG_ERR,
 		 "open() failed in dvb_apid(), errno = %d (%s)", errno,
 		 g_strerror (errno));
+      h->dvb_admx = 0;
       return RC_DVB_APID_OPEN_DEMUX;
     }
 
-  if (ioctl (h->dvb_admx, DMX_SET_BUFFER_SIZE, 256 * 1024) < 0)
+  if ((rc = ioctl (h->dvb_admx, DMX_SET_BUFFER_SIZE, 256 * 1024)) < 0)
     {
+      log_print (hlog, LOG_WARNING,
+		 "DMX_SET_BUFFER_SIZE failed in dvb_apid(), errno = %d (%s)",
+		 errno, g_strerror (errno));
       close (h->dvb_admx);
+      h->dvb_admx = 0;
       return RC_DVB_APID_SET_BUFFER_SIZE;
     }
 
@@ -357,8 +382,15 @@ dvb_apid (gpointer hdvb, guint pid)
   fp.pes_type = DMX_PES_AUDIO;
   fp.flags = DMX_IMMEDIATE_START;
 
-  if (ioctl (h->dvb_admx, DMX_SET_PES_FILTER, &fp) < 0)
-    return RC_DVB_APID_SETFILTER_FAILED;
+  if ((rc = ioctl (h->dvb_admx, DMX_SET_PES_FILTER, &fp)) < 0)
+    {
+      log_print (hlog, LOG_WARNING,
+		 "DMX_SET_PES_FILTER failed in dvb_apid(), errno = %d (%s)",
+		 errno, g_strerror (errno));
+      close (h->dvb_admx);
+      h->dvb_admx = 0;
+      return RC_DVB_APID_SETFILTER_FAILED;
+    }
 
   return RC_OK;
 }
@@ -389,21 +421,28 @@ dvb_apkt (gpointer hdvb, guchar * pkt, guint len, guint t, gint * rcvd)
   while (sel < 0 && errno == EINTR);
 
   if (sel < 0)
-    return RC_DVB_APKT_SELECT_FAILED;
-  if (sel == 0)
-    return RC_DVB_APKT_SELECT_TIMEOUT;
-
-  r = read (h->dvb_admx, pkt, len);
-
-  if (r <= 0)
     {
-      log_print (hlog, LOG_ERR, "read() failed, errno = %d (%s)", errno,
+      log_print (hlog, LOG_ERR,
+		 "select() failed in dvb_apkt(), errno = %d (%s)", errno,
+		 g_strerror (errno));
+      return RC_DVB_APKT_SELECT_FAILED;
+    }
+
+  if (sel == 0)
+    {
+      log_print (hlog, LOG_DEBUG, "select() timed out in dvb_apkt()");
+      return RC_DVB_APKT_SELECT_TIMEOUT;
+    }
+
+  if ((r = read (h->dvb_admx, pkt, len)) <= 0)
+    {
+      log_print (hlog, LOG_ERR,
+		 "read() failed in dvb_apkt(), errno = %d (%s)", errno,
 		 g_strerror (errno));
       return RC_DVB_APKT_READ_FAILED;
     }
 
   *rcvd = r;
-
   return RC_OK;
 }
 
@@ -427,12 +466,17 @@ dvb_dpid (gpointer hdvb, guint pid)
       log_print (hlog, LOG_ERR,
 		 "open() failed in dvb_dpid(), errno = %d (%s)", errno,
 		 g_strerror (errno));
+      h->dvb_ddmx = 0;
       return RC_DVB_DPID_OPEN_DEMUX;
     }
 
   if (ioctl (h->dvb_ddmx, DMX_SET_BUFFER_SIZE, 131072) < 0)
     {
+      log_print (hlog, LOG_WARNING,
+		 "DMX_SET_BUFFER_SIZE failed in dvb_dpid(), errno = %d (%s)",
+		 errno, g_strerror (errno));
       close (h->dvb_ddmx);
+      h->dvb_ddmx = 0;
       return RC_DVB_DPID_SET_BUFFER_SIZE;
     }
 
@@ -444,24 +488,35 @@ dvb_dpid (gpointer hdvb, guint pid)
   pfp.flags = DMX_IMMEDIATE_START;
 
   if (ioctl (h->dvb_ddmx, DMX_SET_PES_FILTER, &pfp) < 0)
-    return RC_DVB_DPID_SETFILTER_FAILED;
+    {
+      log_print (hlog, LOG_WARNING,
+		 "DMX_SET_PES_FILTER failed in dvb_dpid(), errno = %d (%s)",
+		 errno, g_strerror (errno));
+      close (h->dvb_ddmx);
+      h->dvb_ddmx = 0;
+      return RC_DVB_DPID_SETFILTER_FAILED;
+    }
 
   memset (&fp, 0x00, sizeof (fp));
   fp.pid = pid;
   fp.timeout = 0;
   fp.flags = DMX_IMMEDIATE_START | DMX_CHECK_CRC;
-
   fp.filter.filter[0] = 0x80;
   fp.filter.mask[0] = 0xff;
-
   fp.filter.filter[1] = 0x00;
   fp.filter.mask[1] = 0xff;
-
   fp.filter.filter[2] = 0x02;
   fp.filter.mask[2] = 0xff;
 
   if (ioctl (h->dvb_ddmx, DMX_SET_FILTER, &fp) < 0)
-    return RC_DVB_DPID_SETFILTER_FAILED;
+    {
+      log_print (hlog, LOG_WARNING,
+		 "DMX_SET_FILTER failed in dvb_dpid(), errno = %d (%s)",
+		 errno, g_strerror (errno));
+      close (h->dvb_ddmx);
+      h->dvb_ddmx = 0;
+      return RC_DVB_DPID_SETFILTER_FAILED;
+    }
 
   return RC_OK;
 }
@@ -491,23 +546,30 @@ dvb_dpkt (void *hdvb, guchar * s, gint len, gint t, gint * rcvd)
     }
   while (sel < 0 && errno == EINTR);
 
-  if (sel > 0)
+  if (sel < 0)
     {
-      if ((r = read (h->dvb_ddmx, s, len)) < 0)
-	{
-	  log_print (hlog, LOG_ERR, "Fuck, data read failed, errno = %d (%s)",
-		     errno, g_strerror (errno));
-	  return RC_DVB_DPKT_READ_FAILED;
-	}
-
-      *rcvd = r;
-      return RC_OK;
+      log_print (hlog, LOG_ERR,
+		 "select() failed in dvb_dpkt(), errno = %d (%s)", errno,
+		 g_strerror (errno));
+      return RC_DVB_DPKT_SELECT_FAILED;
     }
 
   if (sel == 0)
-    return RC_DVB_DPKT_SELECT_TIMEOUT;
+    {
+      log_print (hlog, LOG_DEBUG, "select() timed out in dvb_dpkt()");
+      return RC_DVB_DPKT_SELECT_TIMEOUT;
+    }
 
-  return RC_DVB_DPKT_SELECT_FAILED;
+  if ((r = read (h->dvb_ddmx, s, len)) < 0)
+    {
+      log_print (hlog, LOG_ERR,
+		 "read() failed in dvb_dpkt(), errno = %d (%s)", errno,
+		 g_strerror (errno));
+      return RC_DVB_DPKT_READ_FAILED;
+    }
+
+  *rcvd = r;
+  return RC_OK;
 }
 
 
@@ -519,7 +581,11 @@ dvb_get_pid (gpointer hdvb, gint s, guint * apid, guint * dpid)
   guchar sct[4096], *p, *q;
 
   if ((rc = dvb_section (hdvb, 0, 0, 0, 0, sct, 10000)) != RC_OK)
-    return rc;
+    {
+      log_print (hlog, LOG_ERR,
+		 "dvb_section() failed in dvb_get_pid(), rc = %d", rc);
+      return rc;
+    }
 
   len = 3 + (((sct[1] << 8) | sct[2]) & 0xfff);
   p = &sct[8];
@@ -534,54 +600,59 @@ dvb_get_pid (gpointer hdvb, gint s, guint * apid, guint * dpid)
 
       if (sid == s)
 	{
-	  if ((rc = dvb_section (hdvb, pmt, 2, sid, 0, sct, 10000)) == RC_OK)
+	  if ((rc = dvb_section (hdvb, pmt, 2, sid, 0, sct, 10000)) != RC_OK)
 	    {
-	      len = 3 + (((sct[1] << 8) | sct[2]) & 0xfff);
-	      pil = ((sct[10] << 8) | sct[11]) & 0xfff;
-	      p = sct + 12 + pil;
-	      q = sct + len - 4;
-
-	      while (p < q)
-		{
-		  es = ((p[1] << 8) | p[2]) & 0x1fff;
-		  es_type = p[0];
-		  pil = ((p[3] << 8) | p[4]) & 0xfff;
-		  p += 5;
-
-		  if ((es_type == 0x03) || (es_type == 0x04))
-		    {
-		      if (es_audio < 0)
-			{
-			  log_print (hlog, LOG_INFO,
-				     "Service Audio PID = %d (0x%04x)", es,
-				     es);
-			  es_audio = es;
-			}
-		    }
-
-		  if (es_type == 0x05)
-		    {
-		      if (es_data < 0)
-			{
-			  log_print (hlog, LOG_INFO,
-				     "Service Data PID = %d (0x%04x)", es,
-				     es);
-			  es_data = es;
-			}
-		    }
-
-		  p += pil;
-		}
+	      log_print (hlog, LOG_ERR,
+			 "dvb_section() failed in dvb_get_pid(), rc = %d",
+			 rc);
+	      return rc;
 	    }
-	  else
-	    return rc;
+
+	  len = 3 + (((sct[1] << 8) | sct[2]) & 0xfff);
+	  pil = ((sct[10] << 8) | sct[11]) & 0xfff;
+	  p = sct + 12 + pil;
+	  q = sct + len - 4;
+
+	  while (p < q)
+	    {
+	      es = ((p[1] << 8) | p[2]) & 0x1fff;
+	      es_type = p[0];
+	      pil = ((p[3] << 8) | p[4]) & 0xfff;
+	      p += 5;
+
+	      if ((es_type == 0x03) || (es_type == 0x04))
+		{
+		  if (es_audio < 0)
+		    {
+		      log_print (hlog, LOG_INFO,
+				 "Service Audio PID = %d (0x%04x)", es, es);
+		      es_audio = es;
+		    }
+		}
+
+	      if (es_type == 0x05)
+		{
+		  if (es_data < 0)
+		    {
+		      log_print (hlog, LOG_INFO,
+				 "Service Data PID = %d (0x%04x)", es, es);
+		      es_data = es;
+		    }
+		}
+
+	      p += pil;
+	    }
 	}
 
       p += 4;
     }
 
   if (es_audio < 0)
-    return RC_DVB_GET_PID_SID_NOT_IN_PAT;
+    {
+      log_print (hlog, LOG_ERR,
+		 "No corresponding Audio PID to SID %d found in PAT.", s);
+      return RC_DVB_GET_PID_SID_NOT_IN_PAT;
+    }
 
   *apid = es_audio;
   *dpid = es_data;
@@ -620,16 +691,31 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
     return RC_NPE;
 
   if (ioctl (h->dvb_fedh, FE_SET_TONE, SEC_TONE_OFF) < 0)
-    return -1;
+    {
+      log_print (hlog, LOG_ERR,
+		 "FE_SET_TONE failed in diseqc_send_msg(), errno = %d (%s)",
+		 errno, g_strerror (errno));
+      return -1;		// FIXME
+    }
   if (ioctl (h->dvb_fedh, FE_SET_VOLTAGE, v) < 0)
-    return -1;
+    {
+      log_print (hlog, LOG_ERR,
+		 "FE_SET_VOLTAGE failed in diseqc_send_msg(), errno = %d (%s)",
+		 errno, g_strerror (errno));
+      return -1;		// FIXME
+    }
 
   g_usleep (15 * 1000);
 
   if (sat_no >= 1 && sat_no <= 4)	// 1.x compatible DiSEqC
     {
       if (ioctl (h->dvb_fedh, FE_DISEQC_SEND_MASTER_CMD, &cmd->cmd) < 0)
-	return -1;
+	{
+	  log_print (hlog, LOG_ERR,
+		     "FE_DISEQC_SEND_MASTER_CMD failed in diseqc_send_msg(), errno = %d (%s)",
+		     errno, g_strerror (errno));
+	  return -1;		// FIXME
+	}
       g_usleep (cmd->wait * 1000);
     }
   else				// A or B simple DiSEqC
@@ -637,15 +723,25 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
       log_print (hlog, LOG_INFO, "Setting simple %c burst", sat_no);
       if (ioctl (h->dvb_fedh, FE_DISEQC_SEND_BURST,
 		 (sat_no == 'B' ? SEC_MINI_B : SEC_MINI_A)) < 0)
-	return -1;
+	{
+	  log_print (hlog, LOG_ERR,
+		     "FE_DISEQC_SEND_BURST failed in diseqc_send_msg(), errno = %d (%s)",
+		     errno, g_strerror (errno));
+	  return -1;		// FIXME
+	}
     }
 
   g_usleep (15 * 1000);
 
   if (ioctl (h->dvb_fedh, FE_SET_TONE, t) < 0)
-    return -1;
+    {
+      log_print (hlog, LOG_ERR,
+		 "FE_SET_TONE failed in diseqc_send_msg(), errno = %d (%s)",
+		 errno, g_strerror (errno));
+      return -1;		// FIXME
+    }
 
-  return 0;
+  return 0;			// FIXME
 }
 
 
@@ -678,17 +774,27 @@ do_diseqc (gpointer hdvb, guchar sat_no, gint polv, gint hi_lo)
       if (ioctl
 	  (h->dvb_fedh, FE_SET_VOLTAGE,
 	   (polv ? SEC_VOLTAGE_13 : SEC_VOLTAGE_18)) < 0)
-	return -1;
+	{
+	  log_print (hlog, LOG_ERR,
+		     "FE_SET_VOLTAGE failed in do_diseqc(), errno = %d (%s)",
+		     errno, g_strerror (errno));
+	  return -1;		// FIXME
+	}
 
       if (ioctl
 	  (h->dvb_fedh, FE_SET_TONE,
 	   (hi_lo ? SEC_TONE_ON : SEC_TONE_OFF)) < 0)
-	return -1;
+	{
+	  log_print (hlog, LOG_ERR,
+		     "FE_SET_TONE failed in do_diseqc(), errno = %d (%s)",
+		     errno, g_strerror (errno));
+	  return -1;		// FIXME
+	}
 
       g_usleep (15 * 1000);
     }
 
-  return 0;
+  return 0;			// FIXME
 }
 
 
@@ -710,7 +816,7 @@ check_status (gpointer hdvb, gint type,
     {
       log_print (hlog, LOG_ERR, "FE_SET_FRONTEND failed in check_status(),"
 		 " errno = %d (%s)", errno, g_strerror (errno));
-      return -1;
+      return -1;		// FIXME
     }
 
   memset (&pfd, 0x00, sizeof (pfd));
@@ -739,67 +845,66 @@ check_status (gpointer hdvb, gint type,
 	ok = 1;
     }
 
-  if (festatus & FE_HAS_LOCK)
-    {
-      if (ioctl (h->dvb_fedh, FE_GET_FRONTEND, feparams) >= 0)
-	{
-	  switch (type)
-	    {
-	    case FE_OFDM:
-	      log_print (hlog, LOG_INFO, "Event:  Frequency: %d",
-			 feparams->frequency);
-	      break;
-	    case FE_QPSK:
-	      log_print (hlog, LOG_INFO, "Event:  Frequency: %d",
-			 (unsigned int) (feparams->frequency + base));
-	      log_print (hlog, LOG_INFO, "        SymbolRate: %d",
-			 feparams->u.qpsk.symbol_rate);
-	      log_print (hlog, LOG_INFO, "        FEC_inner:  %d",
-			 feparams->u.qpsk.fec_inner);
-	      break;
-	    case FE_QAM:
-	      log_print (hlog, LOG_INFO, "Event:  Frequency: %d",
-			 feparams->frequency);
-	      log_print (hlog, LOG_INFO, "        SymbolRate: %d",
-			 feparams->u.qpsk.symbol_rate);
-	      log_print (hlog, LOG_INFO, "        FEC_inner:  %d",
-			 feparams->u.qpsk.fec_inner);
-	      break;
-#ifdef DVB_ATSC
-	    case FE_ATSC:
-	      log_print (hlog, LOG_INFO, "Event:  Frequency: %d",
-			 feparams->frequency);
-	      log_print (hlog, LOG_INFO, "        Modulation: %d",
-			 feparams->u.vsb.modulation);
-	      break;
-#endif
-	    }
-	}
-
-      if (ioctl (h->dvb_fedh, FE_READ_BER, &strength) >= 0)
-	log_print (hlog, LOG_DEBUG, "Bit error rate: %d", strength);
-      if (ioctl (h->dvb_fedh, FE_READ_SIGNAL_STRENGTH, &strength) >= 0)
-	log_print (hlog, LOG_DEBUG, "Signal strength: %d", strength);
-      if (ioctl (h->dvb_fedh, FE_READ_SNR, &strength) >= 0)
-	log_print (hlog, LOG_DEBUG, "SNR: %d", strength);
-      if (ioctl (h->dvb_fedh, FE_READ_UNCORRECTED_BLOCKS, &strength) >= 0)
-	log_print (hlog, LOG_DEBUG, "UNC: %d", strength);
-
-      log_print (hlog, LOG_DEBUG, "FE_STATUS:%s%s%s%s%s%s",
-		 (festatus & FE_HAS_SIGNAL ? " FE_HAS_SIGNAL" : ""),
-		 (festatus & FE_TIMEDOUT ? " FE_TIMEDOUT" : ""),
-		 (festatus & FE_HAS_LOCK ? " FE_HAS_LOCK" : ""),
-		 (festatus & FE_HAS_CARRIER ? " FE_HAS_CARRIER" : ""),
-		 (festatus & FE_HAS_VITERBI ? " FE_HAS_VITERBI" : ""),
-		 (festatus & FE_HAS_SYNC ? " FE_HAS_SYNC" : ""));
-    }
-  else
+  if (festatus & FE_HAS_LOCK == 0)
     {
       log_print (hlog, LOG_ERR,
 		 "Not able to lock to the signal on the given frequency!");
-      return -1;
+      return -1;		// FIXME
     }
-  return 0;
+
+  if (ioctl (h->dvb_fedh, FE_GET_FRONTEND, feparams) >= 0)
+    {
+      switch (type)
+	{
+	case FE_OFDM:
+	  log_print (hlog, LOG_INFO, "Event:  Frequency: %d",
+		     feparams->frequency);
+	  break;
+	case FE_QPSK:
+	  log_print (hlog, LOG_INFO, "Event:  Frequency: %d",
+		     (unsigned int) (feparams->frequency + base));
+	  log_print (hlog, LOG_INFO, "        SymbolRate: %d",
+		     feparams->u.qpsk.symbol_rate);
+	  log_print (hlog, LOG_INFO, "        FEC_inner:  %d",
+		     feparams->u.qpsk.fec_inner);
+	  break;
+	case FE_QAM:
+	  log_print (hlog, LOG_INFO, "Event:  Frequency: %d",
+		     feparams->frequency);
+	  log_print (hlog, LOG_INFO, "        SymbolRate: %d",
+		     feparams->u.qpsk.symbol_rate);
+	  log_print (hlog, LOG_INFO, "        FEC_inner:  %d",
+		     feparams->u.qpsk.fec_inner);
+	  break;
+#ifdef DVB_ATSC
+	case FE_ATSC:
+	  log_print (hlog, LOG_INFO, "Event:  Frequency: %d",
+		     feparams->frequency);
+	  log_print (hlog, LOG_INFO, "        Modulation: %d",
+		     feparams->u.vsb.modulation);
+	  break;
+#endif
+	}
+    }
+
+  if (ioctl (h->dvb_fedh, FE_READ_BER, &strength) >= 0)
+    log_print (hlog, LOG_DEBUG, "Bit error rate: %d", strength);
+  if (ioctl (h->dvb_fedh, FE_READ_SIGNAL_STRENGTH, &strength) >= 0)
+    log_print (hlog, LOG_DEBUG, "Signal strength: %d", strength);
+  if (ioctl (h->dvb_fedh, FE_READ_SNR, &strength) >= 0)
+    log_print (hlog, LOG_DEBUG, "SNR: %d", strength);
+  if (ioctl (h->dvb_fedh, FE_READ_UNCORRECTED_BLOCKS, &strength) >= 0)
+    log_print (hlog, LOG_DEBUG, "UNC: %d", strength);
+
+  log_print (hlog, LOG_DEBUG, "FE_STATUS:%s%s%s%s%s%s",
+	     (festatus & FE_HAS_SIGNAL ? " FE_HAS_SIGNAL" : ""),
+	     (festatus & FE_TIMEDOUT ? " FE_TIMEDOUT" : ""),
+	     (festatus & FE_HAS_LOCK ? " FE_HAS_LOCK" : ""),
+	     (festatus & FE_HAS_CARRIER ? " FE_HAS_CARRIER" : ""),
+	     (festatus & FE_HAS_VITERBI ? " FE_HAS_VITERBI" : ""),
+	     (festatus & FE_HAS_SYNC ? " FE_HAS_SYNC" : ""));
+
+  return 0;			// FIXME
 }
 
 
@@ -810,17 +915,14 @@ dvb_get_status (gpointer hdvb, dvbstatstruct * st)
   dvbstatstruct _st;
 
   HDVB *h = (HDVB *) hdvb;
-  if (h == NULL)
-    return RC_NPE;
-
-  if (st == NULL)
+  if (h == NULL || st == NULL)
     return RC_NPE;
 
   if (ioctl (h->dvb_fedh, FE_READ_STATUS, &status) == -1)
     {
       log_print (hlog, LOG_WARNING,
 		 "FE_READ_STATUS failed in dvb_get_status().");
-      return -1;
+      return -1;		// FIXME
     }
 
   // Fill in values (if we can get them)
@@ -831,13 +933,13 @@ dvb_get_status (gpointer hdvb, dvbstatstruct * st)
   _st.sync = (status & FE_HAS_SYNC);
   _st.lock = (status & FE_HAS_LOCK);
   _st.timedout = (status & FE_TIMEDOUT);
-  if (ioctl (h->dvb_fedh, FE_READ_SIGNAL_STRENGTH, &_st.str) == -1)
+  if (ioctl (h->dvb_fedh, FE_READ_SIGNAL_STRENGTH, &_st.str) < 0)
     _st.str = -2;
-  if (ioctl (h->dvb_fedh, FE_READ_SNR, &_st.snr) == -1)
+  if (ioctl (h->dvb_fedh, FE_READ_SNR, &_st.snr) < 0)
     _st.snr = -2;
-  if (ioctl (h->dvb_fedh, FE_READ_BER, &_st.ber) == -1)
+  if (ioctl (h->dvb_fedh, FE_READ_BER, &_st.ber) < 0)
     _st.ber = -2;
-  if (ioctl (h->dvb_fedh, FE_READ_UNCORRECTED_BLOCKS, &_st.unc) == -1)
+  if (ioctl (h->dvb_fedh, FE_READ_UNCORRECTED_BLOCKS, &_st.unc) < 0)
     _st.unc = -2;
   _st.refresh = TRUE;
   memcpy (st, &_st, sizeof (dvbstatstruct));
@@ -846,7 +948,7 @@ dvb_get_status (gpointer hdvb, dvbstatstruct * st)
 	     "ber %08x | unc %08x | ", status, st->str, st->snr, st->ber,
 	     st->unc);
 
-  return 0;
+  return 0;			// FIXME
 }
 
 
@@ -870,7 +972,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
 	{
 	  log_print (hlog, LOG_ERR, "FE_GET_INFO failed in dvb_tune(),"
 		     " errno = %d (%s)", errno, g_strerror (errno));
-	  return -1;
+	  return -1;		// FIXME
 	}
       memcpy (&(h->dvb_fe_info), &fe_info, sizeof (struct dvb_frontend_info));
     }
@@ -930,13 +1032,13 @@ dvb_tune (gpointer hdvb, tunestruct * t)
       feparams.u.qpsk.symbol_rate = t->srate;
       feparams.u.qpsk.fec_inner = FEC_AUTO;
 
-      if (do_diseqc (hdvb, t->diseqc, (t->pol == 'V' ? 1 : 0), hi_lo) == 0)
-	log_print (hlog, LOG_INFO, "DiSEqC setting succeeded");
-      else
+      if (do_diseqc (hdvb, t->diseqc, (t->pol == 'V' ? 1 : 0), hi_lo) != 0)
 	{
 	  log_print (hlog, LOG_ERR, "DiSEqC setting failed");
-	  return -1;
+	  return -1;		// FIXME
 	}
+
+      log_print (hlog, LOG_INFO, "DiSEqC setting succeeded");
       break;
     case FE_QAM:
       log_print (hlog, LOG_INFO, "tuning DVB-C to %lu Hz, srate=%lu",
@@ -957,7 +1059,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
 #endif
     default:
       log_print (hlog, LOG_ERR, "Unknown FE type. Aborting");
-      return -1;
+      return -1;		// FIXME
     }
 
   return (check_status (hdvb, fe_info.type, &feparams, base));
