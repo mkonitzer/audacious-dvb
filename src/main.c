@@ -201,7 +201,6 @@ dvb_is_our_file (gchar * s)
     return 1;
 
   log_print (hlog, LOG_DEBUG, "dvb_parse_url() returned rc = %d", rc);
-
   return 0;
 }
 
@@ -496,7 +495,8 @@ dvb_get_time (InputPlayback * playback)
 static gpointer
 feed_thread (gpointer args)
 {
-  gint rc, ar, toctr = 0;
+  gint rc, ar;
+  guint toctr = 0;
   guchar pkt[3840];
   InputPlayback *playback;
 
@@ -524,15 +524,14 @@ feed_thread (gpointer args)
 	}
       else
 	{
-	  if (rc == RC_DVB_APKT_SELECT_TIMEOUT)
+	  if (rc == RC_DVB_TIMEOUT)
 	    {
-	      toctr++;
-	      log_print (hlog, LOG_DEBUG, "dvb_apkt() timeout", rc);
-	      if (toctr > 9)
+	      log_print (hlog, LOG_DEBUG, "dvb_apkt() timeout");
+	      if (++toctr > 9)
 		{
-		  playing = FALSE;
 		  log_print (hlog, LOG_DEBUG,
-			     "dvb_apkt() timed out too often, giving up", rc);
+			     "dvb_apkt() timed out too often, giving up");
+		  playing = FALSE;
 		}
 	    }
 	  else
@@ -1110,7 +1109,8 @@ get_name_thread (gpointer arg)
 static gpointer
 epg_thread (gpointer arg)
 {
-  gint sid, rc, len, sct;
+  gint sid, rc, len, sct = 0;
+  guint toctr = 0;
   guchar s[4096];
 
   log_print (hlog, LOG_INFO, "epg_thread() starting");
@@ -1129,16 +1129,22 @@ epg_thread (gpointer arg)
       return NULL;
     }
 
-  sct = 0;
-
   epg_read_data (epg, NULL, 0);
 
   while (playing)
     {
       if ((rc = dvb_section (hdvb, 0x0012, 0x4e, sid, sct, s, 1000)) != RC_OK)
 	{
-	  if (rc != RC_DVB_SECTION_SELECT_TIMEOUT)
+	  if (rc != RC_DVB_TIMEOUT)
 	    break;
+
+	  log_print (hlog, LOG_DEBUG, "epg_thread() timeout");
+	  if (++toctr > 9)
+	    {
+	      log_print (hlog, LOG_DEBUG,
+			 "epg_thread() timed out too often, giving up");
+	      break;
+	    }
 	}
       else
 	{
@@ -1169,7 +1175,8 @@ epg_thread (gpointer arg)
 static gpointer
 mmusic_thread (gpointer arg)
 {
-  gint rc, dr, slen, blen, off, fbf;
+  gint rc, dr, slen, blen, off = 0, fbf = 0;
+  guint toctr = 0;
   guchar sect[5120], rtxt[32768];
 
   log_print (hlog, LOG_INFO, "mmusic_thread() starting");
@@ -1185,22 +1192,22 @@ mmusic_thread (gpointer arg)
       return NULL;
     }
 
-  fbf = off = 0;
-
   while (playing)
     {
       memset (sect, 0xff, sizeof (sect));
       rc = dvb_dpkt (hdvb, sect, sizeof (sect), 1000, &dr);
       if (rc != RC_OK)
 	{
-	  if (rc != RC_DVB_DPKT_SELECT_TIMEOUT)
+	  if (rc != RC_DVB_TIMEOUT)
+	    break;
+
+	  log_print (hlog, LOG_DEBUG, "mmusic_thread() timeout");
+	  if (++toctr > 9)
 	    {
-	      log_print (hlog, LOG_ERR,
-			 "Error: data reception died, rc = %d!", rc);
+	      log_print (hlog, LOG_DEBUG,
+			 "mmusic_thread() timed out too often, giving up");
 	      break;
 	    }
-	  else
-	    log_print (hlog, LOG_INFO, "data reception stalling ...", rc);
 	}
       else
 	{
