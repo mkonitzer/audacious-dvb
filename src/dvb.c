@@ -45,6 +45,12 @@
 extern gpointer hlog;
 
 
+// DiSEqC sleep intervals (see Eutelsat reference)
+#define DISEQC_SHORT_WAIT       (15 * 1000)
+#define DISEQC_LONG_WAIT       (100 * 1000)
+#define DISEQC_POWER_OFF_WAIT (1000 * 1000)
+#define DISEQC_POWER_ON_WAIT   (500 * 1000)
+
 typedef struct _HDVB
 {
   gint dvb_num;
@@ -113,6 +119,7 @@ dvb_close (gpointer hdvb)
 	log_print (hlog, LOG_WARNING,
 		   "FE_SET_VOLTAGE failed in dvb_close(), errno = %d (%s)",
 		   errno, g_strerror (errno));
+      g_usleep (DISEQC_POWER_OFF_WAIT);
       close (h->dvb_fedh);
     }
   g_free (h);
@@ -706,6 +713,8 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
 		 errno, g_strerror (errno));
       return RC_DVB_ERROR;
     }
+  g_usleep (DISEQC_SHORT_WAIT);
+
   if (ioctl (h->dvb_fedh, FE_SET_VOLTAGE, v) < 0)
     {
       log_print (hlog, LOG_ERR,
@@ -713,8 +722,8 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
 		 errno, g_strerror (errno));
       return RC_DVB_ERROR;
     }
-
-  g_usleep (15 * 1000);
+  g_usleep (v ==
+	  SEC_VOLTAGE_OFF ? DISEQC_POWER_OFF_WAIT : DISEQC_POWER_ON_WAIT);
 
   if (sat_no >= 1 && sat_no <= 4)	// 1.x compatible DiSEqC
     {
@@ -725,7 +734,6 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
 		     errno, g_strerror (errno));
 	  return RC_DVB_ERROR;
 	}
-      g_usleep (cmd->wait * 1000);
     }
   else				// A or B simple DiSEqC
     {
@@ -739,8 +747,7 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
 	  return RC_DVB_ERROR;
 	}
     }
-
-  g_usleep (15 * 1000);
+  g_usleep (DISEQC_SHORT_WAIT);
 
   if (ioctl (h->dvb_fedh, FE_SET_TONE, t) < 0)
     {
@@ -749,6 +756,7 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
 		 errno, g_strerror (errno));
       return RC_DVB_ERROR;
     }
+  g_usleep (DISEQC_SHORT_WAIT);
 
   return RC_OK;
 }
@@ -789,6 +797,7 @@ do_diseqc (gpointer hdvb, guchar sat_no, gint polv, gint hi_lo)
 		     errno, g_strerror (errno));
 	  return RC_DVB_ERROR;
 	}
+      g_usleep (DISEQC_POWER_ON_WAIT);
 
       if (ioctl
 	  (h->dvb_fedh, FE_SET_TONE,
@@ -799,8 +808,7 @@ do_diseqc (gpointer hdvb, guchar sat_no, gint polv, gint hi_lo)
 		     errno, g_strerror (errno));
 	  return RC_DVB_ERROR;
 	}
-
-      g_usleep (15 * 1000);
+      g_usleep (DISEQC_SHORT_WAIT);
     }
 
   return RC_OK;
