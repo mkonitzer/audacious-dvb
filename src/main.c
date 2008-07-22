@@ -88,7 +88,6 @@ tunestruct *tune = NULL;
 dvbstatstruct *dvbstat = NULL;
 recstruct *record = NULL;
 
-static gint audio = 0;
 static gchar *title = NULL;
 
 // Threads
@@ -107,6 +106,7 @@ static struct mad_frame madframe;
 static struct mad_synth madsynth;
 static gint sap = 0;
 static gdouble sumarr[512];
+static gboolean audio_opened = FALSE;
 static gint brt[] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0,
@@ -468,7 +468,11 @@ dvb_stop (InputPlayback * playback)
       mad_stream_finish (&madstream);
 
       // Close output plugin
-      playback->output->close_audio ();
+      if (audio_opened)
+	{
+	  playback->output->close_audio ();
+	  audio_opened = FALSE;
+	}
     }
   log_print (hlog, LOG_INFO, "dvb_stop() finished.");
 }
@@ -545,8 +549,11 @@ feed_thread (gpointer args)
 
   log_print (hlog, LOG_DEBUG, "play-loop terminated");
 
-  playback->output->close_audio ();
-  audio = 0;
+  if (audio_opened)
+    {
+      playback->output->close_audio ();
+      audio_opened = FALSE;
+    }
 
   log_print (hlog, LOG_INFO, "feed_thread() stopping");
 
@@ -982,10 +989,15 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
   mad_synth_frame (&madsynth, &madframe);
 
   // open audio card (if not already done)
-  if (audio == 0)
-    audio =
-      playback->output->open_audio (FMT_FIXED32, madframe.header.samplerate,
-				    MAD_NCHANNELS (&madframe.header));
+  if (!audio_opened)
+    {
+      if (!playback->output->
+	  open_audio (FMT_FIXED32, madframe.header.samplerate,
+		      MAD_NCHANNELS (&madframe.header)))
+	playing = FALSE;
+      else
+	audio_opened = TRUE;
+    }
 
   // look if file title has changed
   gchar *newtitle;
