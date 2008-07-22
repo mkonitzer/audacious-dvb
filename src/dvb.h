@@ -72,58 +72,9 @@ typedef struct _dvbstatstruct
   gboolean refresh;
 } dvbstatstruct;
 
-#ifndef RC_OK
-#define RC_OK                           0
-#endif
+#define RC_DVB_ERROR                    2002
+#define RC_DVB_TIMEOUT                  2003
 
-#define RC_NPE				1
-
-#define RC_DVB_OPEN_MALLOC_FAILED       2010
-#define RC_DVB_OPEN_FRONTEND_FAILED     2011
-
-#define RC_DVB_TUNE_QPSK_TONE_RESET     2020
-#define RC_DVB_TUNE_QPSK_PWR_FAILED     2021
-#define RC_DVB_TUNE_QPSK_DISEQC_FAILED  2022
-#define RC_DVB_TUNE_QPSK_TONE_SET       2023
-#define RC_DVB_TUNE_QPSK_FE_SET_FAILED  2024
-#define RC_DVB_TUNE_QPSK_READ_STATUS    2025
-#define RC_DVB_TUNE_QPSK_LOCK_TIMEOUT   2026
-
-#define RC_DVB_FILTER_OPEN_DEMUX        2030
-#define RC_DVB_FILTER_SET_BUFFER_SIZE   2031
-#define RC_DVB_FILTER_SET_FAILED        2032
-
-#define RC_DVB_PACKET_SELECT_TIMEOUT    2040
-#define RC_DVB_PACKET_SELECT_FAILED     2041
-#define RC_DVB_PACKET_READ_FAILED       2042
-
-#define RC_DVB_SECTION_OPEN_DEMUX       2060
-#define RC_DVB_SECTION_DMX_SET_FILTER   2061
-#define RC_DVB_SECTION_READ_FAILED      2062
-#define RC_DVB_SECTION_SELECT_FAILED    2063
-#define RC_DVB_SECTION_SELECT_TIMEOUT   2064
-
-#define RC_DVB_APID_OPEN_DEMUX          2070
-#define RC_DVB_APID_SET_BUFFER_SIZE     2071
-#define RC_DVB_APID_SETFILTER_FAILED    2072
-
-#define RC_DVB_APKT_SELECT_FAILED       2080
-#define RC_DVB_APKT_SELECT_TIMEOUT      2081
-#define RC_DVB_APKT_READ_FAILED         2082
-
-#define RC_DVB_DPID_OPEN_DEMUX          2090
-#define RC_DVB_DPID_SET_BUFFER_SIZE     2091
-#define RC_DVB_DPID_SETFILTER_FAILED    2092
-
-#define RC_DVB_DPKT_SELECT_FAILED       2100
-#define RC_DVB_DPKT_SELECT_TIMEOUT      2101
-#define RC_DVB_DPKT_READ_FAILED         2102
-
-#define RC_DVB_VOLUME_INVALID_HANDLE    2110
-#define RC_DVB_VOLUME_OPEN_AUDIO        2111
-#define RC_DVB_VOLUME_SET_MIXER         2112
-
-#define RC_DVB_GET_PID_SID_NOT_IN_PAT   2120
 
 gpointer *dvb_open (gint);
 gint dvb_close (gpointer);

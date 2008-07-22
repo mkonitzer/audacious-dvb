@@ -27,6 +27,13 @@
 #include <glib.h>
 #include <gtk/gtk.h>
 
+#ifndef RC_OK
+#define RC_OK                   1000
+#endif // RC_OK
+#ifndef RC_NPE
+#define RC_NPE			1001
+#endif // RC_NPE
+
 typedef struct _statstruct
 {
   gchar *svc_name;
