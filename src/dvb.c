@@ -723,7 +723,7 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
       return RC_DVB_ERROR;
     }
   g_usleep (v ==
-	  SEC_VOLTAGE_OFF ? DISEQC_POWER_OFF_WAIT : DISEQC_POWER_ON_WAIT);
+	    SEC_VOLTAGE_OFF ? DISEQC_POWER_OFF_WAIT : DISEQC_POWER_ON_WAIT);
 
   if (sat_no >= 1 && sat_no <= 4)	// 1.x compatible DiSEqC
     {

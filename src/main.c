@@ -1001,9 +1001,9 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
   // open audio card (if not already done)
   if (!audio_opened)
     {
-      if (!playback->
-	  output->open_audio (FMT_FIXED32, madframe.header.samplerate,
-			      MAD_NCHANNELS (&madframe.header)))
+      if (!playback->output->
+	  open_audio (FMT_FIXED32, madframe.header.samplerate,
+		      MAD_NCHANNELS (&madframe.header)))
 	return FALSE;
 
       audio_opened = TRUE;
