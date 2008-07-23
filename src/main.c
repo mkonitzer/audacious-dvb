@@ -1002,7 +1002,11 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
       if (!playback->
 	  output->open_audio (FMT_FIXED32, madframe.header.samplerate,
 			      MAD_NCHANNELS (&madframe.header)))
-	return FALSE;
+	{
+	  log_print (hlog, LOG_WARNING,
+		     "open_audio() failed in dvb_mpeg_frame()");
+	  return FALSE;
+	}
 
       audio_opened = TRUE;
     }
@@ -1012,6 +1016,7 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
   newtitle = dvb_build_file_title ();
   if (title == NULL || (newtitle != NULL && strcmp (newtitle, title) != 0))
     {
+      // FIXME: replace dvb_ip by playback->...
       dvb_ip.set_info (aud_str_to_utf8 (newtitle), -1,
 		       madframe.header.bitrate, madframe.header.samplerate,
 		       MAD_NCHANNELS (&madframe.header));
