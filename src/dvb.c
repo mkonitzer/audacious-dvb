@@ -67,12 +67,6 @@ typedef struct _HDVB
 } HDVB;
 
 
-struct diseqc_cmd
-{
-  struct dvb_diseqc_master_cmd cmd;
-  guint wait;
-};
-
 static gint check_status (gpointer hdvb, gint type,
 			  struct dvb_frontend_parameters *feparams,
 			  guint base);
@@ -108,13 +102,19 @@ dvb_close (gpointer hdvb)
   if (h == NULL)
     return RC_NPE;
 
-
+  if (h->dvb_fedh > 0)
+    {
+      if (h->dvb_fe_info.type == FE_QPSK)
+	{
+	  ioctl (h->dvb_fedh, FE_SET_VOLTAGE, SEC_VOLTAGE_OFF);
+	  //g_usleep (DISEQC_POWER_OFF_WAIT);
+	}
+      close (h->dvb_fedh);
+    }
   if (h->dvb_admx > 0)
     close (h->dvb_admx);
   if (h->dvb_ddmx > 0)
     close (h->dvb_ddmx);
-  if (h->dvb_fedh > 0)
-    close (h->dvb_fedh);
   g_free (h);
 
   return RC_OK;
@@ -671,8 +671,9 @@ dvb_get_pid (gpointer hdvb, gint s, guint * apid, guint * dpid)
 
 
 static int
-diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
-		 fe_sec_tone_mode_t t, guchar sat_no)
+diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v,
+		 struct dvb_diseqc_master_cmd cmd, fe_sec_tone_mode_t t,
+		 guchar sat_no)
 {
   HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
@@ -699,7 +700,7 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
 
   if (sat_no >= 1 && sat_no <= 4)	// 1.x compatible DiSEqC
     {
-      if (ioctl (h->dvb_fedh, FE_DISEQC_SEND_MASTER_CMD, &cmd->cmd) < 0)
+      if (ioctl (h->dvb_fedh, FE_DISEQC_SEND_MASTER_CMD, &cmd) < 0)
 	{
 	  log_print (hlog, LOG_ERR,
 		     "FE_DISEQC_SEND_MASTER_CMD failed in diseqc_send_msg(), errno = %d (%s)",
@@ -741,19 +742,19 @@ do_diseqc (gpointer hdvb, guchar sat_no, gint polv, gint hi_lo)
   if (h == NULL)
     return RC_NPE;
 
-  struct diseqc_cmd cmd = { {{0xe0, 0x10, 0x38, 0xf0, 0x00, 0x00}, 4}, 0 };
+  struct dvb_diseqc_master_cmd cmd =
+    { {0xe0, 0x10, 0x38, 0xf0, 0x00, 0x00}, 4 };
 
   if (sat_no != 0)
     {
-      guchar d = sat_no;
-
       // param: high nibble: reset bits, low nibble: set bits,
       // bits are: option, position, polarizaion, band
-      cmd.cmd.msg[3] =
+      cmd.msg[3] =
 	0xf0 | (((sat_no * 4) & 0x0f) | (polv ? 0 : 2) | (hi_lo ? 1 : 0));
 
       return diseqc_send_msg (hdvb, polv ? SEC_VOLTAGE_13 : SEC_VOLTAGE_18,
-			      &cmd, hi_lo ? SEC_TONE_ON : SEC_TONE_OFF, d);
+			      cmd, hi_lo ? SEC_TONE_ON : SEC_TONE_OFF,
+			      sat_no);
     }
   else
     {
