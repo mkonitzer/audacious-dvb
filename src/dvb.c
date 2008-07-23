@@ -677,27 +677,6 @@ dvb_get_pid (gpointer hdvb, gint s, guint * apid, guint * dpid)
 }
 
 
-void
-dvb_tune_defaults (tunestruct * t)
-{
-  if (t == NULL)
-    return;
-
-  memset (t, 0x00, sizeof (tunestruct));
-  t->slof = (11700 * 1000UL);
-  t->lof1 = (9750 * 1000UL);
-  t->lof2 = (10600 * 1000UL);
-  t->mod = QAM_AUTO;
-  t->sinv = INVERSION_AUTO;
-  t->tmode = TRANSMISSION_MODE_AUTO;
-  t->bandw = BANDWIDTH_8_MHZ;	// intentionally set to 8 MHz (DVB-T)
-  t->gival = GUARD_INTERVAL_AUTO;
-  t->hpcr = FEC_AUTO;
-  t->lpcr = FEC_NONE;
-  t->hier = HIERARCHY_AUTO;
-}
-
-
 static int
 diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v, struct diseqc_cmd *cmd,
 		 fe_sec_tone_mode_t t, guchar sat_no)
@@ -1121,7 +1100,7 @@ dvb_tunestruct_to_text (gpointer hdvb, tunestruct * t)
 }
 
 gint
-dvb_parse_url (const gchar * url, tunestruct * tune)
+dvb_tune_parse_url (const gchar * url, tunestruct * tune)
 {
   gint i;
   tunestruct t;
@@ -1134,9 +1113,6 @@ dvb_parse_url (const gchar * url, tunestruct * tune)
   // Our URLs always have syntax "dvb://audio?..."
   if (!g_str_has_prefix (url, "dvb://audio?"))
     return RC_DVB_ERROR;
-
-  // Fill in frontend defaults
-  dvb_tune_defaults (&t);
 
   args = g_strsplit (&url[12], ":", 0);
 
@@ -1411,4 +1387,51 @@ dvb_parse_url (const gchar * url, tunestruct * tune)
     memcpy (tune, &t, sizeof (tunestruct));
 
   return RC_OK;
+}
+
+
+tunestruct *
+dvb_tune_init ()
+{
+  tunestruct * t;
+  t = g_malloc0 (sizeof (tunestruct));
+  if (t == NULL)
+    return NULL;
+
+  // Fill in default values
+  t->slof = (11700 * 1000UL);
+  t->lof1 = (9750 * 1000UL);
+  t->lof2 = (10600 * 1000UL);
+  t->mod = QAM_AUTO;
+  t->sinv = INVERSION_AUTO;
+  t->tmode = TRANSMISSION_MODE_AUTO;
+  t->bandw = BANDWIDTH_8_MHZ;	// intentionally set to 8 MHz (for DVB-T)
+  t->gival = GUARD_INTERVAL_AUTO;
+  t->hpcr = FEC_AUTO;
+  t->lpcr = FEC_NONE;
+  t->hier = HIERARCHY_AUTO;
+  return t;
+}
+
+
+void
+dvb_tune_exit (tunestruct * tune)
+{
+  if (tune != NULL)
+    g_free (tune);
+}
+
+
+dvbstatstruct *
+dvb_status_init ()
+{
+  return g_malloc0 (sizeof (dvbstatstruct));
+}
+
+
+void
+dvb_status_exit (dvbstatstruct * dvbstat)
+{
+  if (dvbstat != NULL)
+    g_free (dvbstat);
 }
