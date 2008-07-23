@@ -89,13 +89,13 @@ gint dvb_dpkt (gpointer, guchar *, gint, gint, gint *);
 gint dvb_volume (gpointer, gint);
 gint dvb_get_pid (gpointer, gint, guint *, guint *);
 
-tunestruct *dvb_tune_init ();
+tunestruct *dvb_tune_init (void);
 gint dvb_tune (gpointer, tunestruct *);
 gint dvb_tune_parse_url (const gchar *, tunestruct *);
 gchar *dvb_tune_to_text (gpointer, tunestruct *);
 void dvb_tune_exit (tunestruct *);
 
-dvbstatstruct *dvb_status_init ();
+dvbstatstruct *dvb_status_init (void);
 gint dvb_get_status (gpointer, dvbstatstruct *);
 void dvb_status_exit (dvbstatstruct *);
 

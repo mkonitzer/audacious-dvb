@@ -1392,7 +1392,7 @@ dvb_tune_parse_url (const gchar * url, tunestruct * tune)
 
 
 tunestruct *
-dvb_tune_init ()
+dvb_tune_init (void)
 {
   tunestruct *t;
   t = g_malloc0 (sizeof (tunestruct));
@@ -1424,7 +1424,7 @@ dvb_tune_exit (tunestruct * tune)
 
 
 dvbstatstruct *
-dvb_status_init ()
+dvb_status_init (void)
 {
   return g_malloc0 (sizeof (dvbstatstruct));
 }

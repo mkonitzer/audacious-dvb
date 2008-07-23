@@ -395,7 +395,7 @@ infobox_show (statstruct * station, rtstruct * rt, epgstruct * epg,
 
 
 void
-infobox_hide ()
+infobox_hide (void)
 {
   if (widgets.infoBox == NULL)
     return;
@@ -407,7 +407,7 @@ infobox_hide ()
 
 
 void
-infobox_redraw ()
+infobox_redraw (void)
 {
   if (widgets.infoBox == NULL)
     return;
@@ -417,7 +417,7 @@ infobox_redraw ()
 
 
 inline gboolean
-infobox_is_visible ()
+infobox_is_visible (void)
 {
   return (widgets.infoBox != NULL);
 }
