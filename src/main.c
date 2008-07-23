@@ -534,11 +534,8 @@ feed_thread (gpointer args)
       if (rc == RC_OK)
 	{
 	  toctr = 0;
-	  if (!paused)
-	    {
-	      if (!dvb_pes_pkt (playback, pkt, ar, 0))
-		break;
-	    }
+	  if (!paused && !dvb_pes_pkt (playback, pkt, ar, 0))
+	    break;
 	}
       else
 	{
@@ -578,7 +575,6 @@ feed_thread (gpointer args)
 static gboolean
 dvb_status_timer (gpointer args)
 {
-  log_print (hlog, LOG_DEBUG, "dvb_status_timer() starting");
   if (!playing || hdvb == NULL || dvbstat == NULL)
     {
       log_print (hlog, LOG_DEBUG, "removing dvb_status_timer()");
@@ -588,7 +584,6 @@ dvb_status_timer (gpointer args)
 
   dvb_get_status (hdvb, dvbstat);
 
-  log_print (hlog, LOG_DEBUG, "dvb_status_timer() stopping");
   return TRUE;
 }
 
@@ -1156,31 +1151,37 @@ epg_thread (gpointer arg)
 
   while (playing)
     {
-      if ((rc = dvb_section (hdvb, 0x0012, 0x4e, sid, sct, s, 1000)) != RC_OK)
+      rc = dvb_section (hdvb, 0x0012, 0x4e, sid, sct, s, 1000);
+      if (rc == RC_OK)
 	{
-	  if (rc != RC_DVB_TIMEOUT)
-	    break;
-
-	  log_print (hlog, LOG_DEBUG, "dvb_section() timeout");
-	  if (++toctr > 9)
-	    {
-	      log_print (hlog, LOG_DEBUG,
-			 "dvb_section() timed out too often, giving up");
-	      break;
-	    }
-	}
-      else
-	{
+	  toctr = 0;
 	  len = 3 + (((s[1] << 8) | s[2]) & 0xfff);
-
 	  log_print (hlog, LOG_DEBUG, "EPG section lenght = %d", len);
 
-	  rc = epg_read_data (epg, s, len);
-
+	  epg_read_data (epg, s, len);
 	  if (s[6] != s[7])
 	    sct++;
 	  else
 	    sct = 0;
+	}
+      else
+	{
+	  if (rc == RC_DVB_TIMEOUT)
+	    {
+	      log_print (hlog, LOG_DEBUG, "dvb_section() timeout");
+	      if (++toctr > 9)
+		{
+		  log_print (hlog, LOG_DEBUG,
+			     "dvb_section() timed out too often, giving up");
+		  break;
+		}
+	    }
+	  else
+	    {
+	      log_print (hlog, LOG_ERR,
+			 "dvb_section() returned rc = %d, giving up", rc);
+	      break;
+	    }
 	}
     }
 
@@ -1219,21 +1220,9 @@ mmusic_thread (gpointer arg)
     {
       memset (sect, 0xff, sizeof (sect));
       rc = dvb_dpkt (hdvb, sect, sizeof (sect), 1000, &dr);
-      if (rc != RC_OK)
+      if (rc == RC_OK)
 	{
-	  if (rc != RC_DVB_TIMEOUT)
-	    break;
-
-	  log_print (hlog, LOG_DEBUG, "dvb_dpkt() timeout");
-	  if (++toctr > 9)
-	    {
-	      log_print (hlog, LOG_DEBUG,
-			 "dvb_dpkt() timed out too often, giving up");
-	      break;
-	    }
-	}
-      else
-	{
+	  toctr = 0;
 	  slen = ((sect[1] << 8) | sect[2]) & 0xfff;
 	  blen = ((sect[22] << 8) | sect[23]) & 0xfff;
 	  if (blen <= (slen - 21))
@@ -1264,6 +1253,25 @@ mmusic_thread (gpointer arg)
 		}
 	    }
 	}
+      else
+	{
+	  if (rc == RC_DVB_TIMEOUT)
+	    {
+	      log_print (hlog, LOG_DEBUG, "dvb_dpkt() timeout");
+	      if (++toctr > 9)
+		{
+		  log_print (hlog, LOG_DEBUG,
+			     "dvb_dpkt() timed out too often, giving up");
+		  break;
+		}
+	    }
+	  else
+	    {
+	      log_print (hlog, LOG_ERR,
+			 "dvb_dpkt() returned rc = %d, giving up", rc);
+	      break;
+	    }
+	}
     }
 
   madmusic_exit (mmusic);
@@ -1280,8 +1288,6 @@ mmusic_thread (gpointer arg)
 static gboolean
 infobox_timer (gpointer data)
 {
-  log_print (hlog, LOG_DEBUG, "infobox_timer() starting");
-
   if (!infobox_is_visible ())
     {
       log_print (hlog, LOG_DEBUG, "removing infobox_timer()");
@@ -1329,6 +1335,5 @@ infobox_timer (gpointer data)
   if (refreshed)
     infobox_redraw ();
 
-  log_print (hlog, LOG_DEBUG, "infobox_timer() stopping");
   return TRUE;
 }
