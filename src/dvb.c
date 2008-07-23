@@ -114,14 +114,7 @@ dvb_close (gpointer hdvb)
   if (h->dvb_ddmx > 0)
     close (h->dvb_ddmx);
   if (h->dvb_fedh > 0)
-    {
-      if (ioctl (h->dvb_fedh, FE_SET_VOLTAGE, SEC_VOLTAGE_OFF) < 0)
-	log_print (hlog, LOG_WARNING,
-		   "FE_SET_VOLTAGE failed in dvb_close(), errno = %d (%s)",
-		   errno, g_strerror (errno));
-      g_usleep (DISEQC_POWER_OFF_WAIT);
-      close (h->dvb_fedh);
-    }
+    close (h->dvb_fedh);
   g_free (h);
 
   return RC_OK;
