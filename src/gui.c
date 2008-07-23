@@ -583,7 +583,7 @@ infobox_update_dvb (gpointer hdvb, dvbstatstruct * dvb, tunestruct * tune)
   if (hdvb != NULL && tune != NULL)
     {
       gchar *text;
-      text = dvb_tunestruct_to_text (hdvb, tune);
+      text = dvb_tune_to_text (hdvb, tune);
       gtk_entry_set_text_safe (GTK_ENTRY (dvbtuneEntry), text);
       if (text)
 	g_free (text);
