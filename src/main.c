@@ -54,7 +54,7 @@ static void dvb_play (InputPlayback *);
 static void dvb_stop (InputPlayback *);
 static void dvb_pause (InputPlayback *, gshort);
 static gint dvb_get_time (InputPlayback *);
-static void dvb_file_info_box (gchar * s);
+static void dvb_file_info_box (gchar *);
 static void dvb_exit (void);
 
 static gboolean dvb_pes_pkt (InputPlayback *, guchar *, gint, gint);
@@ -67,10 +67,10 @@ static gpointer feed_thread (gpointer);
 static gpointer get_name_thread (gpointer);
 static gpointer epg_thread (gpointer);
 static gpointer mmusic_thread (gpointer);
-static gpointer dvb_status_thread (gpointer);
 
 // Timer functions
-static gboolean infobox_timer (gpointer data);
+static gboolean infobox_timer (gpointer);
+static gboolean dvb_status_timer (gpointer);
 
 
 // Miscellaneous globals
@@ -95,10 +95,10 @@ static GThread *gt_feed = NULL;
 static GThread *gt_get_name = NULL;
 static GThread *gt_epg = NULL;
 static GThread *gt_mmusic = NULL;
-static GThread *gt_dvbstat = NULL;
 
 // Timers
 static guint infobox_timer_id = 0;
+static guint dvb_status_timer_id = 0;
 
 // Audio stuff
 static struct mad_stream madstream;
@@ -197,7 +197,7 @@ dvb_is_our_file (gchar * s)
 {
   gint rc;
 
-  if ((rc = dvb_parse_url (s, NULL)) == RC_OK)
+  if ((rc = dvb_tune_parse_url (s, NULL)) == RC_OK)
     return 1;
 
   log_print (hlog, LOG_DEBUG, "dvb_parse_url() returned rc = %d", rc);
@@ -243,12 +243,13 @@ dvb_play (InputPlayback * playback)
     }
 
   // Initialize tuning information
-  tune = g_malloc0 (sizeof (tunestruct));
-  if ((rc = dvb_parse_url (playback->filename, tune)) != RC_OK)
+  tune = dvb_tune_init ();
+  if ((rc = dvb_tune_parse_url (playback->filename, tune)) != RC_OK)
     {
       log_print (hlog, LOG_ERR, "dvb_parse_url() returned %d.", rc);
       playing = FALSE;
-      g_free (tune);
+      dvb_tune_exit (tune);
+      tune = NULL;
       dvb_close (hdvb);
       hdvb = NULL;
       return;
@@ -259,7 +260,8 @@ dvb_play (InputPlayback * playback)
     {
       log_print (hlog, LOG_ERR, "dvb_tune() returned %d.", rc);
       playing = FALSE;
-      g_free (tune);
+      dvb_tune_exit (tune);
+      tune = NULL;
       dvb_close (hdvb);
       hdvb = NULL;
       return;
@@ -275,7 +277,8 @@ dvb_play (InputPlayback * playback)
     {
       log_print (hlog, LOG_ERR, "dvb_get_pid() returned %d.", rc);
       playing = FALSE;
-      g_free (tune);
+      dvb_tune_exit (tune);
+      tune = NULL;
       dvb_close (hdvb);
       hdvb = NULL;
       return;
@@ -292,7 +295,8 @@ dvb_play (InputPlayback * playback)
     {
       log_print (hlog, LOG_ERR, "dvb_apid() returned %d.", rc);
       playing = FALSE;
-      g_free (tune);
+      dvb_tune_exit (tune);
+      tune = NULL;
       dvb_close (hdvb);
       hdvb = NULL;
       return;
@@ -363,10 +367,9 @@ dvb_play (InputPlayback * playback)
   // Initialize DVB status info retrieval (signal strength, ...)
   if (config->info_dvbstat)
     {
-      if ((gt_dvbstat = g_thread_create (dvb_status_thread, NULL, TRUE,
-					 NULL)) == NULL)
-	log_print (hlog, LOG_WARNING,
-		   "g_thread_create() failed for dvb_status_thread().");
+      dvbstat = dvb_status_init ();
+      if (dvb_status_timer_id == 0)
+	dvb_status_timer_id = g_timeout_add (750, dvb_status_timer, NULL);
     }
 
   // Initialize MPEG decoder
@@ -401,12 +404,11 @@ dvb_stop (InputPlayback * playback)
 	  g_thread_join (gt_feed);
 	  gt_feed = NULL;
 	}
-      if (gt_dvbstat != NULL)
+      if (dvb_status_timer_id != 0)
 	{
-	  log_print (hlog, LOG_INFO,
-		     "Waiting for dvb_status_thread() to die...");
-	  g_thread_join (gt_dvbstat);
-	  gt_dvbstat = NULL;
+	  log_print (hlog, LOG_INFO, "Removing dvb_status_timer()...");
+	  g_source_remove (dvb_status_timer_id);
+	  dvb_status_timer_id = 0;
 	}
       if (gt_get_name != NULL)
 	{
@@ -428,6 +430,12 @@ dvb_stop (InputPlayback * playback)
 	  g_thread_join (gt_epg);
 	  gt_epg = NULL;
 	}
+      if (infobox_timer_id != 0)
+	{
+	  log_print (hlog, LOG_DEBUG, "Removing infobox_timer()...");
+	  g_source_remove (infobox_timer_id);
+	  infobox_timer_id = 0;
+	}
 
       // Free Radiotext structures
       if (rt != NULL)
@@ -447,14 +455,17 @@ dvb_stop (InputPlayback * playback)
       g_free (station);
       station = NULL;
 
-      // Remove info box timer
-      if (infobox_timer_id != 0)
-	{
-	  g_source_remove (infobox_timer_id);
-	  infobox_timer_id = 0;
-	}
-
       // Free DVB stuff
+      if (dvbstat != NULL)
+	{
+	  dvb_status_exit (dvbstat);
+	  dvbstat = NULL;
+	}
+      if (tune != NULL)
+	{
+	  dvb_tune_exit (tune);
+	  tune = NULL;
+	}
       if (hdvb != NULL)
 	{
 	  dvb_unfilter (hdvb);
@@ -564,34 +575,21 @@ feed_thread (gpointer args)
   return NULL;
 }
 
-
-static gpointer
-dvb_status_thread (gpointer args)
+static gboolean
+dvb_status_timer (gpointer args)
 {
-  log_print (hlog, LOG_INFO, "dvb_status_thread() starting");
-
-  static GStaticMutex gmt_dvbstat = G_STATIC_MUTEX_INIT;
-  g_static_mutex_lock (&gmt_dvbstat);
-
-  dvbstat = g_malloc0 (sizeof (dvbstatstruct));
-
-  while (playing)
+  log_print (hlog, LOG_DEBUG, "dvb_status_timer() starting");
+  if (!playing || hdvb == NULL || dvbstat == NULL)
     {
-      dvb_get_status (hdvb, dvbstat);
-      g_usleep (750000);
+      log_print (hlog, LOG_DEBUG, "removing dvb_status_timer()");
+      dvb_status_timer_id = 0;
+      return FALSE;
     }
 
-  if (dvbstat != NULL)
-    {
-      g_free (dvbstat);
-      dvbstat = NULL;
-    }
+  dvb_get_status (hdvb, dvbstat);
 
-  log_print (hlog, LOG_INFO, "dvb_status_thread() stopping");
-
-  g_static_mutex_unlock (&gmt_dvbstat);
-  g_thread_exit (0);
-  return NULL;
+  log_print (hlog, LOG_DEBUG, "dvb_status_timer() stopping");
+  return TRUE;
 }
 
 
@@ -1001,9 +999,9 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
   // open audio card (if not already done)
   if (!audio_opened)
     {
-      if (!playback->output->
-	  open_audio (FMT_FIXED32, madframe.header.samplerate,
-		      MAD_NCHANNELS (&madframe.header)))
+      if (!playback->
+	  output->open_audio (FMT_FIXED32, madframe.header.samplerate,
+			      MAD_NCHANNELS (&madframe.header)))
 	return FALSE;
 
       audio_opened = TRUE;
@@ -1281,6 +1279,7 @@ infobox_timer (gpointer data)
 
   if (!infobox_is_visible ())
     {
+      log_print (hlog, LOG_DEBUG, "removing infobox_timer()");
       infobox_timer_id = 0;
       return FALSE;
     }
