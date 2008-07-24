@@ -157,17 +157,22 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	    {			// text_char
 	      gchar *tmp = exttext;
 	      newtext = g_strndup ((gchar *) q, j);
-
-	      exttext =
-		g_strconcat ((exttext != NULL ? exttext : ""), newtext, NULL);
+	      if (exttext == NULL)
+		exttext = g_strconcat ("", newtext, NULL);
+	      else
+		// we may assume, that all events have the same encoding
+		exttext = g_strconcat (exttext, &newtext[1], NULL);
 	      g_free (tmp);
 	    }
 
 	  log_print (hlog, LOG_INFO, "EIT[extended_event_descriptor]: "
 		     "%d/%d,%s,\"%s\"", cdn, ldn, lang, newtext);
 
-	  g_free (newtext);
-	  newtext = NULL;
+	  if (newtext != NULL)
+	    {
+	      g_free (newtext);
+	      newtext = NULL;
+	    }
 
 	  // Free exttext if we just processed the last ext. packet
 	  if (cdn == ldn)
