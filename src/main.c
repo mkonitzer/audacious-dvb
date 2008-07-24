@@ -1023,10 +1023,10 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
   if (playback->title == NULL
       || (newtitle != NULL && strcmp (newtitle, playback->title) != 0))
     {
-      // FIXME: replace dvb_ip by playback->...
-      dvb_ip.set_info (aud_str_to_utf8 (newtitle), -1,
-		       madframe.header.bitrate, madframe.header.samplerate,
-		       MAD_NCHANNELS (&madframe.header));
+      playback->set_params (playback, newtitle, -1,
+			    madframe.header.bitrate,
+			    madframe.header.samplerate,
+			    MAD_NCHANNELS (&madframe.header));
       g_free (playback->title);
       playback->title = newtitle;
     }
