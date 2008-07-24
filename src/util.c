@@ -58,10 +58,10 @@ str_remove_dvbsi_control_codes (gchar * s)
 	{
 	  // Remove one-/two-byte control-codes
 	  // (see ETSI EN 300 468, Annex A.2)
-	  guchar ch1, ch2, ch3;
-	  ch1 = s[i];
-	  ch2 = (i + 1 < len ? s[i + 1] : 0x00);
-	  ch3 = (i + 2 < len ? s[i + 2] : 0x00);
+	  gint ch1, ch2, ch3;
+	  ch1 = s[i] & 0xff;
+	  ch2 = (i + 1 < len ? s[i + 1] & 0xff : 0x00);
+	  ch3 = (i + 2 < len ? s[i + 2] & 0xff : 0x00);
 	  if (ch1 >= 0x80 && ch1 <= 0x85)	// reserved
 	    ;
 	  else if (ch1 == 0x86)	// emphasis on
@@ -71,7 +71,7 @@ str_remove_dvbsi_control_codes (gchar * s)
 	  else if (ch1 >= 0x88 && ch1 <= 0x89)	// reserved
 	    ;
 	  else if (ch1 == 0x8a)	// CR/LF
-	    ws[l++] = '\n';
+	    ws[l++] = ' ';
 	  else if (ch1 >= 0x8b && ch1 <= 0x9f)	// user defined
 	    ;
 	  else if (ch1 == 0xe0 && ch2 >= 0x80 && ch2 <= 0x9f)	// private use area of ISO/IEC 10646-1
@@ -85,7 +85,7 @@ str_remove_dvbsi_control_codes (gchar * s)
 	      else if (ch3 >= 0x88 && ch3 <= 0x89)	// reserved
 		;
 	      else if (ch3 == 0x8a)	// CR/LF
-		ws[l++] = '\n';
+		ws[l++] = ' ';
 	      else if (ch3 >= 0x8b && ch3 <= 0x9f)	// reserved
 		;
 	      ++i;
@@ -112,8 +112,7 @@ str_replace_non_printable (gchar * s)
   for (i = 1; i < g_utf8_strlen (s, -1); i++)
     {
       chplus1 = g_utf8_offset_to_pointer (s, i);
-      if (!g_unichar_isprint (g_utf8_get_char (ch)) &&
-	  !g_unichar_isspace (g_utf8_get_char (ch)))
+      if (!g_unichar_isprint (g_utf8_get_char (ch)))
 	memset (ch, ' ', chplus1 - ch);
       ch = chplus1;
     }
@@ -240,7 +239,7 @@ str_beautify (const gchar * s, gint len, enum dvb_strtype type)
       // Remove leading and trailing spaces
       tmp = g_strstrip (newstr);
       // Replace multiple whitespaces by single space
-      mwsp = g_regex_new ("[ \\t]+", 0, 0, NULL);
+      mwsp = g_regex_new ("\\s+", 0, 0, NULL);
       newstr = g_regex_replace_literal (mwsp, tmp, -1, 0, " ", 0, NULL);
       g_regex_unref (mwsp);
       g_free (tmp);
