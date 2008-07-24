@@ -88,8 +88,6 @@ tunestruct *tune = NULL;
 dvbstatstruct *dvbstat = NULL;
 recstruct *record = NULL;
 
-static gchar *title = NULL;
-
 // Threads
 static GThread *gt_feed = NULL;
 static GThread *gt_get_name = NULL;
@@ -939,6 +937,19 @@ write_output (InputPlayback * playback, struct mad_pcm * pcm,
 static gboolean
 dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
 {
+  if (playback == NULL)
+    {
+      log_print (hlog, LOG_ERR,
+		 "dvb_mpeg_frame() called with (playback == NULL)");
+      return FALSE;
+    }
+  if (frame == NULL)
+    {
+      log_print (hlog, LOG_ERR,
+		 "dvb_mpeg_frame() called with (frame == NULL)");
+      return FALSE;
+    }
+
   // Only if we're recording to file
   if (record != NULL)
     {
@@ -1009,15 +1020,15 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
   // look if file title has changed
   gchar *newtitle;
   newtitle = dvb_build_file_title ();
-  if (title == NULL || (newtitle != NULL && strcmp (newtitle, title) != 0))
+  if (playback->title == NULL
+      || (newtitle != NULL && strcmp (newtitle, playback->title) != 0))
     {
       // FIXME: replace dvb_ip by playback->...
       dvb_ip.set_info (aud_str_to_utf8 (newtitle), -1,
 		       madframe.header.bitrate, madframe.header.samplerate,
 		       MAD_NCHANNELS (&madframe.header));
-      if (title)
-	g_free (title);
-      title = newtitle;
+      g_free (playback->title);
+      playback->title = newtitle;
     }
 
   return write_output (playback, &madsynth.pcm, &madframe.header);
