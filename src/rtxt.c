@@ -159,8 +159,10 @@ radiotext_decode (rtstruct * rt)
 	   */
 	  if (mtext[8] == 0 || mtext[8] > RT_MEL || mtext[8] > leninfo - 4)
 	    {
-	      log_print (hlog, LOG_DEBUG,
-			 "RT-Error: Length = 0 or not correct !");
+	      log_print
+		(hlog, LOG_DEBUG,
+		 "RT-Error: Length = 0 or not correct (MFL= %d, MEL= %d)",
+		 mtext[4], mtext[8]);
 	      return;
 	    }
 
@@ -179,23 +181,22 @@ radiotext_decode (rtstruct * rt)
 	    g_free (rt->plustext);
 	  rt->plustext = g_strndup (temptext, RT_MEL - 1);
 	  log_print (hlog, LOG_INFO, "Radiotext: %s", rt->plustext);
-	  if (temptext)
-	    g_free (temptext);
+	  g_free (temptext);
 
 	  // Update event list if we have a new Radiotext event
 	  temptext = str_beautify (rt->plustext, 0, DVB_STRING_RADIOTEXT);
-	  if (rt->event[0] == NULL || (strcmp (temptext, rt->event[0]) != 0))
+	  if (rt->event[0] == NULL || strcmp (temptext, rt->event[0]) != 0)
 	    {
 	      // Beautify radiotext string and add it to event list
 	      radiotext_events_insert (rt, temptext);
 	      rt->refresh = TRUE;
 	    }
-	  if (temptext)
-	    g_free (temptext);
+	  g_free (temptext);
+	  temptext = NULL;
 	}
       else if (mtext[5] == 0x46)
 	{
-	  /* RTplus tags V2.0 (only if RT)
+	  /* RTplus tags V2.1 (only if RT)
 	   * byte 6   = MEL, only 8 byte for 2 tags
 	   * byte 7+8 = ApplicationID, always 0x4bd7
 	   * byte 9   = Applicationgroup Typecode / PTY ?
@@ -213,7 +214,8 @@ radiotext_decode (rtstruct * rt)
 
 	  if (mtext[6] > leninfo - 2 || mtext[6] != 8)
 	    {
-	      log_print (hlog, LOG_DEBUG, "RTp-Error: Length not correct !");
+	      log_print (hlog, LOG_DEBUG,
+			 "RTp-Error: Length not correct (MEL= %d)", mtext[6]);
 	      return;
 	    }
 
@@ -257,15 +259,42 @@ radiotext_decode (rtstruct * rt)
 				   rtp_len[i] + 1);
 		      switch (rtp_typ[i])
 			{
-			case 1:	// title
+			case 1:	// Item_Title
 			  if (is_updated
 			      (temptext, &rt->title, DVB_STRING_RADIOTEXT))
 			    rt->refresh = TRUE;
 			  break;
-			case 4:	// artist
+			case 4:	// Item_Artist
 			  if (is_updated
 			      (temptext, &rt->artist, DVB_STRING_RADIOTEXT))
 			    rt->refresh = TRUE;
+			  break;
+			case 12:	// Info_News
+			case 13:	// Info_NewsLocal
+			case 14:	// Info_Stockmarket
+			case 15:	// Info_Sport
+			case 16:	// Info_Lottery
+			case 24:	// Info_DateTime
+			case 25:	// Info_Weather
+			case 26:	// Info_Traffic
+			case 27:	// Info_Alarm
+			case 28:	// Info_Advert
+			case 29:	// Info_Url
+			case 30:	// Info_Other
+			case 31:	// Programme_Stationname_Short
+			case 32:	// Programme_Stationname_Long
+			case 33:	// Programme_Now
+			case 34:	// Programme_Next
+			case 35:	// Programme_Part
+			case 36:	// Programme_Host
+			case 37:	// Programme_EditorialStaff
+			case 39:	// Programme_Homepage
+			case 41:	// Phone_Hotline
+			case 42:	// Phone_Studio
+			case 44:	// SMS_Studio
+			case 46:	// Email_Hotline
+			case 47:	// Email_Studio
+			  // TODO: implement me!
 			  break;
 			}
 		      log_print (hlog, LOG_INFO, "RTplus[%d]: %s (type %d)",
@@ -278,7 +307,9 @@ radiotext_decode (rtstruct * rt)
 	}
     }
   else
-    log_print (hlog, LOG_DEBUG, "RDS-Error: [RTDecode] Length not correct !");
+    log_print (hlog, LOG_DEBUG,
+	       "RDS-Error: [RTDecode] Length not correct (MFL= %d, len= %d)",
+	       mtext[4], rt->index);
 }
 
 
