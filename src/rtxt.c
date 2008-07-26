@@ -74,17 +74,66 @@ guchar rds_addchar[128] = {
 };
 
 const gchar *rtp_typename[] = {
-  NULL, "Item_Title", NULL, NULL, "Item_Artist", NULL, NULL,	/* 00 .. 06 */
-  NULL, NULL, NULL, NULL, NULL, "Info_News", "Info_NewsLocal",	/* 07 .. 13 */
-  "Info_Stockmarket", "Info_Sport", "Info_Lottery", NULL,	/* 14 .. 17 */
-  NULL, NULL, NULL, NULL, NULL, NULL, "Info_DateTime",	/* 18 .. 24 */
-  "Info_Weather", "Info_Traffic", "Info_Alarm", "Info_Advert",	/* 25 .. 28 */
-  "Info_Url", "Info_Other", "Programme_Stationname_Short",	/* 29 .. 31 */
-  "Programme_Stationname_Long", "Programme_Now",	/* 32 .. 33 */
-  "Programme_Next", "Programme_Part", "Programme_Host",	/* 34 .. 36 */
-  "Programme_EditorialStaff", NULL, "Programme_Homepage",	/* 37 .. 39 */
-  NULL, "Phone_Hotline", "Phone_Studio", NULL, "SMS_Studio",	/* 40 .. 44 */
-  NULL, "Email_Hotline", "Email_Studio"	/* 45 .. 47 */
+  NULL,				/* 0: Class if the RadioText contains no RT+ information */
+  "ITEM.TITLE",			/* 1: Title of item; e.g. track title of an album */
+  "ITEM.ALBUM",			/* 2: The collection name to which this track belongs */
+  "ITEM.TRACKNUMBER",		/* 3: The track number of the item on the album */
+  "ITEM.ARTIST",		/* 4: A person or band/collective responsible for the work */
+  "ITEM.COMPOSITION",		/* 5: A complete composition */
+  "ITEM.MOVEMENT",		/* 6: A movement is a large division of a composition */
+  "ITEM.CONDUCTOR",		/* 7: The artist(s) who performed the work. */
+  "ITEM.COMPOSER",		/* 8: Name of the original composer/author */
+  "ITEM.BAND",			/* 9: Band/orchestra/accompaniment/musician */
+  "ITEM.COMMENT",		/* 10: Any comment related to the content */
+  "ITEM.GENRE",			/* 11: The main genre of the audio */
+  "INFO.NEWS",			/* 12: Message / headline */
+  "INFO.NEWS.LOCAL",		/* 13: Local news */
+  "INFO.STOCKMARKET",		/* 14: Quote information */
+  "INFO.SPORT",			/* 15: Result of a game */
+  "INFO.LOTTERY",		/* 16: Raffle / lottery */
+  "INFO.HOROSCOPE",		/* 17: Horoscope */
+  "INFO.DAILY_DIVERSION",	/* 18: Daily tipp / diversion / joke ... */
+  "INFO.HEALTH",		/* 19: Information about health */
+  "INFO.EVENT",			/* 20: Info about an event */
+  "INFO.SZENE",			/* 21: Information about szene */
+  "INFO.CINEMA",		/* 22: Information about movies in cinema */
+  "INFO.TV",			/* 23: Information about TV-movies */
+  "INFO.DATE_TIME",		/* 24: Information about date and time */
+  "INFO.WEATHER",		/* 25: Information about weather */
+  "INFO.TRAFFIC",		/* 26: Information about traffic */
+  "INFO.ALARM",			/* 27: Alarm information */
+  "INFO.ADVERTISEMENT",		/* 28: Info about an advertisement */
+  "INFO.URL",			/* 29: Link to url */
+  "INFO.OTHER",			/* 30: Other information, not especially specified */
+  "STATIONNAME.SHORT",		/* 31: Name describing the radio station (call letters) */
+  "STATIONNAME.LONG",		/* 32: Name describing the radio station */
+  "PROGRAMME.NOW",		/* 33: EPG info programme now */
+  "PROGRAMME.NEXT",		/* 34: EPG info programme next */
+  "PROGRAMME.PART",		/* 35: Part of the current radio show */
+  "PROGRAMME.HOST",		/* 36: Name of the host of the radio show */
+  "PROGRAMME.EDITORIAL_STAFF",	/* 37: Name of the editorial staff */
+  "PROGRAMME.FREQUENCY",	/* 38: Information about radio shows */
+  "PROGRAMME.HOMEPAGE",		/* 39: Link to radio station homepage */
+  "PROGRAMME.SUBCHANNEL",	/* 40: For so-called multicasting applications */
+  "PHONE.HOTLINE",		/* 41: The telephone number of the radio station's hotline */
+  "PHONE.STUDIO",		/* 42: The telephone number of the radio station's studio */
+  "PHONE.OTHER",		/* 43: Name and telephone number */
+  "SMS.STUDIO",			/* 44: The sms number of the radio stations studio */
+  "SMS.OTHER",			/* 45: Name and sms number */
+  "EMAIL.HOTLINE",		/* 46: The email adress of the radio stations hotline */
+  "EMAIL.STUDIO",		/* 47: The email adress of the radio stations studio */
+  "EMAIL.OTHER",		/* 48: Name and email adress */
+  "MMS.OTHER",			/* 49: Name and mms number */
+  "CHAT",			/* 50: chat content */
+  "CHAT.CENTER",		/* 51: Address, where replies to the chat shall be sent */
+  "VOTE.QUESTION",		/* 52: A question (typically binary) */
+  "VOTE.CENTER",		/* 53: url or sms number to send the answer to */
+  NULL, NULL, NULL, NULL, NULL,	/* 54 .. 58: are reserved for future usage */
+  "PLACE",			/* 59: Adds info about a location */
+  "APPOINTMENT",		/* 60: Adds info about date and time */
+  "IDENTIFIER",			/* 61: For music it is the Int. Standard Recording Code */
+  "PURCHASE",			/* 62: Address where item can be purchased */
+  "GET_DATA"			/* 63: Retrieves more data about other RT+ information element */
 };
 
 
@@ -277,13 +326,13 @@ radiotext_decode (rtstruct * rt)
 			  rtp_typename[rtp_type[i]] != NULL)
 			{
 			  log_print (hlog, LOG_INFO,
-				     "RTplus[%d]: %s (%s)", i,
+				     "RTplus[%d]: %s (type %s)", i,
 				     temptext, rtp_typename[rtp_type[i]]);
 			}
 		      else
 			{
 			  log_print (hlog, LOG_INFO,
-				     "RTplus[%d]: %s (unknown type %d)", i,
+				     "RTplus[%d]: %s (unknown type %u)", i,
 				     temptext, rtp_type[i]);
 			}
 
