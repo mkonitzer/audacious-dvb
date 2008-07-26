@@ -73,6 +73,19 @@ guchar rds_addchar[128] = {
   0xfe, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff
 };
 
+const gchar *rtp_typename[] = {
+  NULL, "Item_Title", NULL, NULL, "Item_Artist", NULL, NULL,	/* 00 .. 06 */
+  NULL, NULL, NULL, NULL, NULL, "Info_News", "Info_NewsLocal",	/* 07 .. 13 */
+  "Info_Stockmarket", "Info_Sport", "Info_Lottery", NULL,	/* 14 .. 17 */
+  NULL, NULL, NULL, NULL, NULL, NULL, "Info_DateTime",	/* 18 .. 24 */
+  "Info_Weather", "Info_Traffic", "Info_Alarm", "Info_Advert",	/* 25 .. 28 */
+  "Info_Url", "Info_Other", "Programme_Stationname_Short",	/* 29 .. 31 */
+  "Programme_Stationname_Long", "Programme_Now",	/* 32 .. 33 */
+  "Programme_Next", "Programme_Part", "Programme_Host",	/* 34 .. 36 */
+  "Programme_EditorialStaff", NULL, "Programme_Homepage",	/* 37 .. 39 */
+  NULL, "Phone_Hotline", "Phone_Studio", NULL, "SMS_Studio",	/* 40 .. 44 */
+  NULL, "Email_Hotline", "Email_Studio"	/* 45 .. 47 */
+};
 
 
 gushort
@@ -219,12 +232,12 @@ radiotext_decode (rtstruct * rt)
 	      return;
 	    }
 
-	  guint rtp_typ[2], rtp_start[2], rtp_len[2];
-	  rtp_typ[0] = (0x38 & mtext[10] << 3) | mtext[11] >> 5;
+	  guint rtp_type[2], rtp_start[2], rtp_len[2];
+	  rtp_type[0] = (0x38 & mtext[10] << 3) | mtext[11] >> 5;
 	  rtp_start[0] = (0x3e & mtext[11] << 1) | mtext[12] >> 7;
 	  rtp_len[0] = 0x3f & mtext[12] >> 1;
 
-	  rtp_typ[1] = (0x20 & mtext[12] << 5) | mtext[13] >> 3;
+	  rtp_type[1] = (0x20 & mtext[12] << 5) | mtext[13] >> 3;
 	  rtp_start[1] = (0x38 & mtext[13] << 3) | mtext[14] >> 5;
 	  rtp_len[1] = 0x1f & mtext[14];
 	  log_print (hlog, LOG_INFO,
@@ -232,7 +245,7 @@ radiotext_decode (rtstruct * rt)
 		     "tag#1 = %d/%d/%d, tag#2 = %d/%d/%d",
 		     (mtext[10] & 0x10) > 0, (mtext[10] & 0x08) > 0,
 		     (rt->runtoggle & 0x10) > 0, (rt->runtoggle & 0x08) > 0,
-		     rtp_typ[0], rtp_start[0], rtp_len[0], rtp_typ[1],
+		     rtp_type[0], rtp_start[0], rtp_len[0], rtp_type[1],
 		     rtp_start[1], rtp_len[1]);
 	  // Only update when toggle-/running-bits swap
 	  if ((mtext[10] & 0x18) != rt->runtoggle)
@@ -257,7 +270,25 @@ radiotext_decode (rtstruct * rt)
 		      temptext =
 			g_strndup (rt->plustext + rtp_start[i],
 				   rtp_len[i] + 1);
-		      switch (rtp_typ[i])
+
+		      // Print RTplus info
+		      if (rtp_type[i] >= 0 &&
+			  rtp_type[i] < sizeof (rtp_typename) &&
+			  rtp_typename[rtp_type[i]] != NULL)
+			{
+			  log_print (hlog, LOG_INFO,
+				     "RTplus[%d]: %s (%s)", i,
+				     temptext, rtp_typename[rtp_type[i]]);
+			}
+		      else
+			{
+			  log_print (hlog, LOG_INFO,
+				     "RTplus[%d]: %s (unknown type %d)", i,
+				     temptext, rtp_type[i]);
+			}
+
+		      // Set title or artist if given
+		      switch (rtp_type[i])
 			{
 			case 1:	// Item_Title
 			  if (is_updated
@@ -269,36 +300,7 @@ radiotext_decode (rtstruct * rt)
 			      (temptext, &rt->artist, DVB_STRING_RADIOTEXT))
 			    rt->refresh = TRUE;
 			  break;
-			case 12:	// Info_News
-			case 13:	// Info_NewsLocal
-			case 14:	// Info_Stockmarket
-			case 15:	// Info_Sport
-			case 16:	// Info_Lottery
-			case 24:	// Info_DateTime
-			case 25:	// Info_Weather
-			case 26:	// Info_Traffic
-			case 27:	// Info_Alarm
-			case 28:	// Info_Advert
-			case 29:	// Info_Url
-			case 30:	// Info_Other
-			case 31:	// Programme_Stationname_Short
-			case 32:	// Programme_Stationname_Long
-			case 33:	// Programme_Now
-			case 34:	// Programme_Next
-			case 35:	// Programme_Part
-			case 36:	// Programme_Host
-			case 37:	// Programme_EditorialStaff
-			case 39:	// Programme_Homepage
-			case 41:	// Phone_Hotline
-			case 42:	// Phone_Studio
-			case 44:	// SMS_Studio
-			case 46:	// Email_Hotline
-			case 47:	// Email_Studio
-			  // TODO: implement me!
-			  break;
 			}
-		      log_print (hlog, LOG_INFO, "RTplus[%d]: %s (type %d)",
-				 i, temptext, rtp_typ[i]);
 		      g_free (temptext);
 		      temptext = NULL;
 		    }
