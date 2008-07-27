@@ -128,9 +128,16 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	    log_print (hlog, LOG_INFO, "EIT[short_event_descriptor]: "
 		       "%s,\"%s\",\"%s\"", lang, name, text);
 
-	  g_free (name);
-	  g_free (text);
-	  name = text = NULL;
+	  if (name != NULL)
+	    {
+	      g_free (name);
+	      name = NULL;
+	    }
+	  if (text != NULL)
+	    {
+	      g_free (text);
+	      text = NULL;
+	    }
 	  break;
 
 	case 0x4e:		// extended_event_descriptor
@@ -158,11 +165,15 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	      gchar *tmp = exttext;
 	      newtext = g_strndup ((gchar *) q, j);
 	      if (exttext == NULL)
-		exttext = g_strconcat ("", newtext, NULL);
+		exttext = g_strdup (newtext);
 	      else
 		// we may assume, that all events have the same encoding
 		exttext = g_strconcat (exttext, &newtext[1], NULL);
-	      g_free (tmp);
+	      if (tmp != NULL)
+		{
+		  g_free (tmp);
+		  tmp = NULL;
+		}
 	    }
 
 	  log_print (hlog, LOG_INFO, "EIT[extended_event_descriptor]: "
@@ -180,8 +191,11 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	      if (is_updated (exttext, &epg->ext_ev_text, DVB_STRING_DVBSI))
 		epg->refresh = TRUE;
 
-	      g_free (exttext);
-	      exttext = NULL;
+	      if (exttext != NULL)
+		{
+		  g_free (exttext);
+		  exttext = NULL;
+		}
 	    }
 	  break;
 
@@ -205,14 +219,15 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	    epg->refresh = TRUE;
 	  if (is_updated (lang, &epg->lang, DVB_STRING_DVBSI))
 	    epg->refresh = TRUE;
-
 	  if (epg->refresh)
 	    log_print (hlog, LOG_INFO, "EIT[component_descriptor]: "
 		       "%s, %s (%lu,%lu)", lang, stype, cnt, cty);
 
-	  g_free (stype);
-	  stype = NULL;
-
+	  if (stype != NULL)
+	    {
+	      g_free (stype);
+	      stype = NULL;
+	    }
 	  break;
 
 	case 0x69:		// PDC_descriptor
@@ -261,8 +276,11 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
       p += dl;
     }
 
-  g_free (exttext);
-  exttext = NULL;
+  if (exttext != NULL)
+    {
+      g_free (exttext);
+      exttext = NULL;
+    }
 
   return RC_OK;
 }

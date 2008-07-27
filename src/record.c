@@ -65,7 +65,7 @@ record_open (recstruct * rec, const gchar * filename, gboolean append,
 	  gchar *tmp = NULL;
 	  do
 	    {
-	      if (tmp)
+	      if (tmp != NULL)
 		g_free (tmp);
 	      tmp =
 		g_strdup_printf ("%s-%u%s", rec->fn_prefix, ++rec->fn_idx,

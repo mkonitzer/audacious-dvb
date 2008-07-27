@@ -153,7 +153,8 @@ str_beautify (const gchar * s, gint len, enum dvb_strtype type)
        * stations don't give a fuck and send ISO_8859-15 anyway. :-(
        */
       tmp = g_convert (newstr, -1, "UTF-8", "ISO_8859-15", NULL, NULL, NULL);
-      g_free (newstr);
+      if (newstr != NULL)
+	g_free (newstr);
       newstr = tmp;
       tmp = NULL;
       break;
@@ -223,8 +224,11 @@ str_beautify (const gchar * s, gint len, enum dvb_strtype type)
 		     from_enc);
 	  newstr = g_convert (tmp, -1, "UTF-8", from_enc, NULL, NULL, NULL);
 	}
-      g_free (tmp);
-      tmp = NULL;
+      if (tmp != NULL)
+	{
+	  g_free (tmp);
+	  tmp = NULL;
+	}
       break;
 
     default:
@@ -233,10 +237,11 @@ str_beautify (const gchar * s, gint len, enum dvb_strtype type)
     }
 
   // Is string a valid UTF-8 string?
-  if (newstr == NULL || !g_utf8_validate (newstr, -1, NULL))
+  if (newstr == NULL)
+    return NULL;
+  if (!g_utf8_validate (newstr, -1, NULL))
     {
-      if (newstr)
-	g_free (newstr);
+      g_free (newstr);
       return NULL;
     }
 
@@ -247,8 +252,10 @@ str_beautify (const gchar * s, gint len, enum dvb_strtype type)
   // Replace multiple whitespaces by single space
   mwsp = g_regex_new ("[ \\t]+", 0, 0, NULL);
   newstr = g_regex_replace_literal (mwsp, tmp, -1, 0, " ", 0, NULL);
-  g_regex_unref (mwsp);
-  g_free (tmp);
+  if (mwsp != NULL)
+    g_regex_unref (mwsp);
+  if (tmp != NULL)
+    g_free (tmp);
 
   if (newstr != NULL && strcmp (newstr, "") == 0)
     {

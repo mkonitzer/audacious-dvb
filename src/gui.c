@@ -172,9 +172,9 @@ isplitClicked (GtkWidget * w, gpointer user_data)
 {
   gboolean b;
   if ((b =
-      gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				    (glade_xml_get_widget
-				     (widgets.configXml, "isplitCheck")))))
+       gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				     (glade_xml_get_widget
+				      (widgets.configXml, "isplitCheck")))))
     {
       // Volume and interval splitting are mutually exclusive
       gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
@@ -192,9 +192,9 @@ vsplitClicked (GtkWidget * w, gpointer user_data)
 {
   gboolean b;
   if ((b =
-      gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				    (glade_xml_get_widget
-				     (widgets.configXml, "vsplitCheck")))))
+       gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				     (glade_xml_get_widget
+				      (widgets.configXml, "vsplitCheck")))))
     {
       // Volume and interval splitting are mutually exclusive
       gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
@@ -479,8 +479,13 @@ infobox_update_radiotext (rtstruct * rt)
       gtk_entry_set_text_safe (GTK_ENTRY (rtpartistEntry), rt->artist);
       gtk_entry_set_text_safe (GTK_ENTRY (rtpptyEntry), rt->pty);
       events = radiotext_events_to_text (rt);
-      gtk_text_buffer_set_text (rtevTextBuffer, events, -1);
-      g_free (events);
+      if (events != NULL)
+	{
+	  gtk_text_buffer_set_text (rtevTextBuffer, events, -1);
+	  g_free (events);
+	}
+      else
+	gtk_text_buffer_set_text (rtevTextBuffer, "", -1);
     }
   else
     {

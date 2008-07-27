@@ -450,8 +450,11 @@ dvb_stop (InputPlayback * playback)
 	}
 
       // Free station info
-      g_free (station);
-      station = NULL;
+      if (station != NULL)
+	{
+	  g_free (station);
+	  station = NULL;
+	}
 
       // Free DVB stuff
       if (dvbstat != NULL)
@@ -1027,8 +1030,11 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
 			    madframe.header.bitrate,
 			    madframe.header.samplerate,
 			    MAD_NCHANNELS (&madframe.header));
-      g_free (playback->title);
-      playback->title = newtitle;
+      if (playback->title != NULL)
+	{
+	  g_free (playback->title);
+	  playback->title = newtitle;
+	}
     }
 
   return write_output (playback, &madsynth.pcm, &madframe.header);
