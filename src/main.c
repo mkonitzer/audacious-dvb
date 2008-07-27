@@ -305,7 +305,7 @@ dvb_play (InputPlayback * playback)
   if ((gt_get_name =
        g_thread_create (get_name_thread, (gpointer) & tune->sid, TRUE,
 			NULL)) == NULL)
-    log_print (hlog, LOG_WARNING, "Failed to start dvb_get_name() thread.");
+    log_print (hlog, LOG_WARN, "Failed to start dvb_get_name() thread.");
 
   // Set audio PES-filter
   if ((rc = dvb_apid (hdvb, tune->apid)) != RC_OK)
@@ -329,7 +329,7 @@ dvb_play (InputPlayback * playback)
 	      (record, config->rec_fname, config->rec_append,
 	       config->rec_overwrite) != TRUE)
 	    {
-	      log_print (hlog, LOG_WARNING, "record_open(%s, %d) failed.",
+	      log_print (hlog, LOG_WARN, "record_open(%s, %d) failed.",
 			 config->rec_fname, config->rec_append);
 	      record_exit (record);
 	      record = NULL;
@@ -342,7 +342,7 @@ dvb_play (InputPlayback * playback)
 	    time (&vsplit_last);
 	}
       else
-	log_print (hlog, LOG_WARNING, "record_init() failed.");
+	log_print (hlog, LOG_WARN, "record_init() failed.");
     }
 
   // Initialize Radiotext retrieval
@@ -350,7 +350,7 @@ dvb_play (InputPlayback * playback)
     {
       rt = radiotext_init ();
       if (rt == NULL)
-	log_print (hlog, LOG_WARNING, "radiotext_init() failed.");
+	log_print (hlog, LOG_WARN, "radiotext_init() failed.");
     }
 
 
@@ -365,11 +365,11 @@ dvb_play (InputPlayback * playback)
 	{
 	  if ((gt_mmusic =
 	       g_thread_create (mmusic_thread, 0, TRUE, NULL)) == NULL)
-	    log_print (hlog, LOG_WARNING,
+	    log_print (hlog, LOG_WARN,
 		       "g_thread_create() failed for mmusic_thread().");
 	}
       else
-	log_print (hlog, LOG_WARNING, "dvb_dpid() returned %d.", rc);
+	log_print (hlog, LOG_WARN, "dvb_dpid() returned %d.", rc);
     }
 
   // Initialize EPG info retrieval
@@ -377,7 +377,7 @@ dvb_play (InputPlayback * playback)
     {
       if ((gt_epg = g_thread_create (epg_thread, (gpointer) & tune->sid, TRUE,
 				     NULL)) == NULL)
-	log_print (hlog, LOG_WARNING,
+	log_print (hlog, LOG_WARN,
 		   "g_thread_create() failed for epg_thread().");
     }
 
@@ -998,13 +998,13 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
     {
       if (!MAD_RECOVERABLE (madstream.error))
 	{
-	  log_print (hlog, LOG_WARNING,
+	  log_print (hlog, LOG_WARN,
 		     "unrecovered error decoding header: %s",
 		     mad_stream_errorstr (&madstream));
 	  return FALSE;
 	}
 
-      log_print (hlog, LOG_WARNING, "recovered error decoding header: %s",
+      log_print (hlog, LOG_WARN, "recovered error decoding header: %s",
 		 mad_stream_errorstr (&madstream));
     }
 
@@ -1013,13 +1013,13 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
     {
       if (!MAD_RECOVERABLE (madstream.error))
 	{
-	  log_print (hlog, LOG_WARNING,
+	  log_print (hlog, LOG_WARN,
 		     "unrecovered error decoding frame %d: %s",
 		     mad_stream_errorstr (&madstream));
 	  return FALSE;
 	}
 
-      log_print (hlog, LOG_WARNING, "recovered error decoding frame %d: %s",
+      log_print (hlog, LOG_WARN, "recovered error decoding frame %d: %s",
 		 mad_stream_errorstr (&madstream));
     }
   mad_synth_frame (&madsynth, &madframe);
@@ -1031,7 +1031,7 @@ dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
 	  output->open_audio (FMT_FIXED32, madframe.header.samplerate,
 			      MAD_NCHANNELS (&madframe.header)))
 	{
-	  log_print (hlog, LOG_WARNING,
+	  log_print (hlog, LOG_WARN,
 		     "open_audio() failed in dvb_mpeg_frame()");
 	  return FALSE;
 	}
@@ -1282,7 +1282,7 @@ mmusic_thread (gpointer arg)
 		}
 	      else
 		{
-		  log_print (hlog, LOG_WARNING,
+		  log_print (hlog, LOG_WARN,
 			     "Warning! Offset out of whack, is %d, should be %d!",
 			     off, fbf);
 		  fbf = 0;

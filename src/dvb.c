@@ -197,7 +197,7 @@ dvb_packet (gpointer hdvb, guchar * pkt, gint t)
 
   if (sel < 0)
     {
-      log_print (hlog, LOG_WARNING,
+      log_print (hlog, LOG_WARN,
 		 "select() failed in dvb_packet(), errno = %d (%s)",
 		 errno, g_strerror (errno));
       return RC_DVB_ERROR;
@@ -211,7 +211,7 @@ dvb_packet (gpointer hdvb, guchar * pkt, gint t)
 
   if ((r = read (h->dvb_dmxdh, pkt, 184)) <= 0)
     {
-      log_print (hlog, LOG_WARNING,
+      log_print (hlog, LOG_WARN,
 		 "read() failed in dvb_packet(), errno = %d (%s)",
 		 errno, g_strerror (errno));
       return RC_DVB_ERROR;
@@ -376,7 +376,7 @@ dvb_apid (gpointer hdvb, guint pid)
 
   if ((rc = ioctl (h->dvb_admx, DMX_SET_BUFFER_SIZE, 256 * 1024)) < 0)
     {
-      log_print (hlog, LOG_WARNING,
+      log_print (hlog, LOG_WARN,
 		 "DMX_SET_BUFFER_SIZE failed in dvb_apid(), errno = %d (%s)",
 		 errno, g_strerror (errno));
       close (h->dvb_admx);
@@ -393,7 +393,7 @@ dvb_apid (gpointer hdvb, guint pid)
 
   if ((rc = ioctl (h->dvb_admx, DMX_SET_PES_FILTER, &fp)) < 0)
     {
-      log_print (hlog, LOG_WARNING,
+      log_print (hlog, LOG_WARN,
 		 "DMX_SET_PES_FILTER failed in dvb_apid(), errno = %d (%s)",
 		 errno, g_strerror (errno));
       close (h->dvb_admx);
@@ -481,7 +481,7 @@ dvb_dpid (gpointer hdvb, guint pid)
 
   if (ioctl (h->dvb_ddmx, DMX_SET_BUFFER_SIZE, 131072) < 0)
     {
-      log_print (hlog, LOG_WARNING,
+      log_print (hlog, LOG_WARN,
 		 "DMX_SET_BUFFER_SIZE failed in dvb_dpid(), errno = %d (%s)",
 		 errno, g_strerror (errno));
       close (h->dvb_ddmx);
@@ -498,7 +498,7 @@ dvb_dpid (gpointer hdvb, guint pid)
 
   if (ioctl (h->dvb_ddmx, DMX_SET_PES_FILTER, &pfp) < 0)
     {
-      log_print (hlog, LOG_WARNING,
+      log_print (hlog, LOG_WARN,
 		 "DMX_SET_PES_FILTER failed in dvb_dpid(), errno = %d (%s)",
 		 errno, g_strerror (errno));
       close (h->dvb_ddmx);
@@ -519,7 +519,7 @@ dvb_dpid (gpointer hdvb, guint pid)
 
   if (ioctl (h->dvb_ddmx, DMX_SET_FILTER, &fp) < 0)
     {
-      log_print (hlog, LOG_WARNING,
+      log_print (hlog, LOG_WARN,
 		 "DMX_SET_FILTER failed in dvb_dpid(), errno = %d (%s)",
 		 errno, g_strerror (errno));
       close (h->dvb_ddmx);
@@ -910,7 +910,7 @@ dvb_get_status (gpointer hdvb, dvbstatstruct * st)
 
   if (ioctl (h->dvb_fedh, FE_READ_STATUS, &status) == -1)
     {
-      log_print (hlog, LOG_WARNING,
+      log_print (hlog, LOG_WARN,
 		 "FE_READ_STATUS failed in dvb_get_status().");
       return RC_DVB_ERROR;
     }
