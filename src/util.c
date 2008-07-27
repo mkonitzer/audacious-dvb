@@ -233,20 +233,28 @@ str_beautify (const gchar * s, gint len, enum dvb_strtype type)
     }
 
   // Is string a valid UTF-8 string?
-  if (g_utf8_validate (newstr, -1, NULL))
+  if (newstr == NULL || !g_utf8_validate (newstr, -1, NULL))
     {
-      // Remove non-printable characters
-      str_replace_non_printable (newstr);
-      // Remove leading and trailing spaces
-      tmp = g_strstrip (newstr);
-      // Replace multiple whitespaces by single space
-      mwsp = g_regex_new ("[ \\t]+", 0, 0, NULL);
-      newstr = g_regex_replace_literal (mwsp, tmp, -1, 0, " ", 0, NULL);
-      g_regex_unref (mwsp);
-      g_free (tmp);
+      if (newstr)
+	g_free (newstr);
+      return NULL;
     }
-  else
-    strcpy (newstr, "");
+
+  // Remove non-printable characters
+  str_replace_non_printable (newstr);
+  // Remove leading and trailing spaces
+  tmp = g_strstrip (newstr);
+  // Replace multiple whitespaces by single space
+  mwsp = g_regex_new ("[ \\t]+", 0, 0, NULL);
+  newstr = g_regex_replace_literal (mwsp, tmp, -1, 0, " ", 0, NULL);
+  g_regex_unref (mwsp);
+  g_free (tmp);
+
+  if (newstr != NULL && strcmp (newstr, "") == 0)
+    {
+      g_free (newstr);
+      return NULL;
+    }
 
   return newstr;
 }
