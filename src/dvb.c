@@ -947,6 +947,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
 {
   gint res, hi_lo = 0;
   guint base = 0;
+  gchar *tunetext = NULL;
   struct dvb_frontend_parameters feparams;
   struct dvb_frontend_info fe_info;
 
@@ -968,6 +969,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
     }
 
   log_print (hlog, LOG_INFO, "Using DVB card '%s'", fe_info.name);
+  tunetext = dvb_tune_to_text (hdvb, t);
 
   if (t->freq < 1000000)
     t->freq *= 1000UL;
@@ -985,9 +987,8 @@ dvb_tune (gpointer hdvb, tunestruct * t)
       feparams.u.ofdm.transmission_mode = t->tmode;
       feparams.u.ofdm.guard_interval = t->gival;
       feparams.u.ofdm.hierarchy_information = t->hier;
-      log_print (hlog, LOG_INFO, "tuning DVB-T to %lu Hz, Bandwidth: %d",
-		 t->freq, t->bandw == BANDWIDTH_8_MHZ ? 8 :
-		 (t->bandw == BANDWIDTH_7_MHZ ? 7 : 6));
+      log_print (hlog, LOG_INFO, "tuning DVB-T to %s", tunetext);
+      g_free (tunetext);
       break;
     case FE_QPSK:
       if (t->freq > 2200000)
@@ -1012,12 +1013,8 @@ dvb_tune (gpointer hdvb, tunestruct * t)
 	  base = 0;
 	}
 
-      log_print (hlog, LOG_INFO,
-		 "tuning DVB-S to %lu kHz, Pol:%c Srate=%lu, 22kHz tone=%s, "
-		 "LNB: %d, SLOF: %lu, LOF1: %lu, LOF2: %lu",
-		 feparams.frequency, t->pol, t->srate,
-		 hi_lo == 1 ? "ON" : "OFF", t->diseqc, t->slof / 1000UL,
-		 t->lof1 / 1000UL, t->lof2 / 1000UL);
+      log_print (hlog, LOG_INFO, "tuning DVB-S to %s", tunetext);
+      g_free (tunetext);
       feparams.inversion = t->sinv;
       feparams.u.qpsk.symbol_rate = t->srate;
       feparams.u.qpsk.fec_inner = FEC_AUTO;
@@ -1032,8 +1029,8 @@ dvb_tune (gpointer hdvb, tunestruct * t)
       log_print (hlog, LOG_INFO, "DiSEqC setting succeeded");
       break;
     case FE_QAM:
-      log_print (hlog, LOG_INFO, "tuning DVB-C to %lu Hz, srate=%lu",
-		 t->freq, t->srate);
+      log_print (hlog, LOG_INFO, "tuning DVB-C to %s", tunetext);
+      g_free (tunetext);
       feparams.frequency = t->freq;
       feparams.inversion = INVERSION_OFF;
       feparams.u.qam.symbol_rate = t->srate;
@@ -1042,8 +1039,8 @@ dvb_tune (gpointer hdvb, tunestruct * t)
       break;
 #ifdef DVB_ATSC
     case FE_ATSC:
-      log_print (hlog, LOG_INFO, "tuning ATSC to %lu Hz, modulation=%d",
-		 t->freq, t->mod);
+      log_print (hlog, LOG_INFO, "tuning ATSC to %s", tunetext);
+      g_free (tunetext);
       feparams.frequency = t->freq;
       feparams.u.vsb.modulation = t->mod;
       break;
@@ -1068,12 +1065,12 @@ dvb_tune_to_text (gpointer hdvb, tunestruct * t)
   switch (h->dvb_fe_info.type)
     {
     case FE_OFDM:
-      text = g_strdup_printf ("%lu Hz, Bandwidth: %d",
+      text = g_strdup_printf ("%lu Hz, Bandwidth: %d, Modulation: %d",
 			      t->freq, t->bandw == BANDWIDTH_8_MHZ ? 8 :
-			      (t->bandw == BANDWIDTH_7_MHZ ? 7 : 6));
+			      (t->bandw == BANDWIDTH_7_MHZ ? 7 : 6), t->mod);
       break;
     case FE_QPSK:
-      text = g_strdup_printf ("%lu kHz, Pol:%c Srate=%lu, 22kHz tone=%s, "
+      text = g_strdup_printf ("%lu kHz, Pol: %c, Srate: %lu, 22kHz Tone: %s, "
 			      "LNB: %d, SLOF: %lu, LOF1: %lu, LOF2: %lu",
 			      t->freq, t->pol, t->srate,
 			      (t->freq >= t->slof) ? "ON" : "OFF", t->diseqc,
@@ -1081,11 +1078,13 @@ dvb_tune_to_text (gpointer hdvb, tunestruct * t)
 			      t->lof2 / 1000UL);
       break;
     case FE_QAM:
-      text = g_strdup_printf ("%lu Hz, srate=%lu", t->freq, t->srate);
+      text =
+	g_strdup_printf ("%lu Hz, Srate: %lu, Modulation: %d", t->freq,
+			 t->srate, t->mod);
       break;
 #ifdef DVB_ATSC
     case FE_ATSC:
-      text = g_strdup_printf ("%lu Hz, modulation=%d", t->freq, t->mod);
+      text = g_strdup_printf ("%lu Hz, Modulation: %d", t->freq, t->mod);
       break;
 #endif
     }

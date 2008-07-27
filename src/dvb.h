@@ -72,8 +72,8 @@ typedef struct _dvbstatstruct
   gboolean refresh;
 } dvbstatstruct;
 
-#define RC_DVB_ERROR                    2002
-#define RC_DVB_TIMEOUT                  2003
+#define RC_DVB_ERROR                    2001
+#define RC_DVB_TIMEOUT                  2002
 
 
 gpointer *dvb_open (gint);
