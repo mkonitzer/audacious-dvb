@@ -243,9 +243,9 @@ radiotext_decode (rtstruct * rt)
 	    g_free (rt->plustext);
 	  rt->plustext = g_strndup (temptext, RT_MEL - 1);
 	  log_print (hlog, LOG_INFO, "Radiotext: %s", rt->plustext);
-	  g_free (temptext);
 
 	  // Update event list if we have a new Radiotext event
+	  g_free (temptext);
 	  temptext = str_beautify (rt->plustext, 0, DVB_STRING_RADIOTEXT);
 	  if (rt->event[0] == NULL || strcmp (temptext, rt->event[0]) != 0)
 	    {
@@ -281,14 +281,15 @@ radiotext_decode (rtstruct * rt)
 	      return;
 	    }
 
+	  // Extract RTplus info
 	  guint rtp_type[2], rtp_start[2], rtp_len[2];
 	  rtp_type[0] = (0x38 & mtext[10] << 3) | mtext[11] >> 5;
 	  rtp_start[0] = (0x3e & mtext[11] << 1) | mtext[12] >> 7;
 	  rtp_len[0] = 0x3f & mtext[12] >> 1;
-
 	  rtp_type[1] = (0x20 & mtext[12] << 5) | mtext[13] >> 3;
 	  rtp_start[1] = (0x38 & mtext[13] << 3) | mtext[14] >> 5;
 	  rtp_len[1] = 0x1f & mtext[14];
+
 	  log_print (hlog, LOG_INFO,
 		     "RTplus (tag=Typ/Start/Len):  Toggle/Run = %d/%d (was %d/%d),"
 		     "tag#1 = %d/%d/%d, tag#2 = %d/%d/%d",
@@ -296,6 +297,7 @@ radiotext_decode (rtstruct * rt)
 		     (rt->runtoggle & 0x10) > 0, (rt->runtoggle & 0x08) > 0,
 		     rtp_type[0], rtp_start[0], rtp_len[0], rtp_type[1],
 		     rtp_start[1], rtp_len[1]);
+
 	  // Only update when toggle-/running-bits swap
 	  if ((mtext[10] & 0x18) != rt->runtoggle)
 	    {
@@ -308,6 +310,7 @@ radiotext_decode (rtstruct * rt)
 	      rt->refresh = TRUE;
 	    }
 
+	  // Refresh and display RTplus info
 	  for (i = 0; i < 2; i++)
 	    {
 	      if (rt->plustext != NULL &&
@@ -464,10 +467,10 @@ radiotext_read_data (rtstruct * rt, const guchar * data, gint len)
 		  if (crc16 !=
 		      (rt->mtext[rt->index - 2] << 8) + rt->mtext[rt->index -
 								  1])
-		    printf
-		      ("RDS-Error: CRC # calc = %04x <--> transmit = %02x%02x",
-		       crc16, rt->mtext[rt->index - 2],
-		       rt->mtext[rt->index - 1]);
+		    log_print (hlog, LOG_INFO,
+			       "RDS-Error: CRC # calc = %04x <--> transmit = %02x%02x",
+			       crc16, rt->mtext[rt->index - 2],
+			       rt->mtext[rt->index - 1]);
 		  else
 		    {
 		      switch (rt->mec)
@@ -502,6 +505,10 @@ radiotext_read_data (rtstruct * rt, const guchar * data, gint len)
 					 rt->mec);
 			      radiotext_decode (rt);
 			    }
+			  break;
+			default:
+			  log_print (hlog, LOG_DEBUG,
+				     "mec %d: unknown, ignored", rt->mec);
 			  break;
 			}
 		    }
