@@ -1,3 +1,15 @@
+2008-07-28  Marius Konitzer  <m.konitzer@gmx.de>
+
+	Released 0.8.0.
+
+	* Using libmad instead of liblame
+	* Handle Radiotext encoding and newlines properly
+	* Fixed record file splitting regression
+	* Partial RTplus 2.1 support
+	* Exclusively using Glade for GUI (infobox, preferences)
+	* Log messages can be written to file (instead of stdout)
+	* Numerous small bug-fixes
+
 2008-07-10  Marius Konitzer  <m.konitzer@gmx.de>
 
 	Released 0.7.0.
