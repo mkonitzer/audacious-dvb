@@ -174,7 +174,7 @@ radiotext_events_insert (rtstruct * rt, gchar * newtext)
 {
   // Shift Radiotext events
   int i;
-  if (rt->event[RT_EVNTS - 1])
+  if (rt->event[RT_EVNTS - 1] != NULL)
     g_free (rt->event[RT_EVNTS - 1]);
   for (i = RT_EVNTS - 1; i > 0; --i)
     rt->event[i] = rt->event[i - 1];
@@ -223,7 +223,7 @@ radiotext_decode (rtstruct * rt)
 	    {
 	      log_print
 		(hlog, LOG_DEBUG,
-		 "RT-Error: Length = 0 or not correct (MFL= %d, MEL= %d)",
+		 "RT error: Length not correct (MFL= %d, MEL= %d)",
 		 mtext[4], mtext[8]);
 	      return;
 	    }
@@ -239,7 +239,7 @@ radiotext_decode (rtstruct * rt)
 		  (mtext[9 + i] >=
 		   0x80) ? rds_addchar[mtext[9 + i] - 0x80] : mtext[9 + i];
 	    }
-	  if (rt->plustext)
+	  if (rt->plustext != NULL)
 	    g_free (rt->plustext);
 	  rt->plustext = g_strndup (temptext, RT_MEL - 1);
 	  log_print (hlog, LOG_INFO, "Radiotext: %s", rt->plustext);
@@ -253,8 +253,11 @@ radiotext_decode (rtstruct * rt)
 	      radiotext_events_insert (rt, temptext);
 	      rt->refresh = TRUE;
 	    }
-	  g_free (temptext);
-	  temptext = NULL;
+	  if (temptext != NULL)
+	    {
+	      g_free (temptext);
+	      temptext = NULL;
+	    }
 	}
       else if (mtext[5] == 0x46)	// RTplus
 	{
@@ -277,7 +280,8 @@ radiotext_decode (rtstruct * rt)
 	  if (mtext[6] > leninfo - 2 || mtext[6] != 8)
 	    {
 	      log_print (hlog, LOG_DEBUG,
-			 "RTp-Error: Length not correct (MEL= %d)", mtext[6]);
+			 "RTplus error: Length not correct (MEL= %d, len= %d)",
+			 mtext[6], leninfo);
 	      return;
 	    }
 
@@ -289,10 +293,9 @@ radiotext_decode (rtstruct * rt)
 	  rtp_type[1] = (0x20 & mtext[12] << 5) | mtext[13] >> 3;
 	  rtp_start[1] = (0x38 & mtext[13] << 3) | mtext[14] >> 5;
 	  rtp_len[1] = 0x1f & mtext[14];
-
 	  log_print (hlog, LOG_INFO,
-		     "RTplus (tag=Typ/Start/Len):  Toggle/Run = %d/%d (was %d/%d),"
-		     "tag#1 = %d/%d/%d, tag#2 = %d/%d/%d",
+		     "RTplus: Toggle/Run = %d/%d (was %d/%d), "
+		     "tag#1 = %d/%d/%d, tag#2 = %d/%d/%d (type/start/length)",
 		     (mtext[10] & 0x10) > 0, (mtext[10] & 0x08) > 0,
 		     (rt->runtoggle & 0x10) > 0, (rt->runtoggle & 0x08) > 0,
 		     rtp_type[0], rtp_start[0], rtp_len[0], rtp_type[1],
@@ -303,10 +306,16 @@ radiotext_decode (rtstruct * rt)
 	    {
 	      rt->runtoggle = (mtext[10] & 0x18);
 	      // Reset title/artist fields
-	      g_free (rt->title);
-	      g_free (rt->artist);
-	      rt->title = NULL;
-	      rt->artist = NULL;
+	      if (rt->title != NULL)
+		{
+		  g_free (rt->title);
+		  rt->title = NULL;
+		}
+	      if (rt->artist != NULL)
+		{
+		  g_free (rt->artist);
+		  rt->artist = NULL;
+		}
 	      rt->refresh = TRUE;
 	    }
 
@@ -316,8 +325,6 @@ radiotext_decode (rtstruct * rt)
 	      if (rt->plustext != NULL &&
 		  rtp_start[i] + rtp_len[i] <= strlen (rt->plustext))
 		{
-		  if (temptext != NULL)
-		    g_free (temptext);
 		  temptext =
 		    g_strndup (rt->plustext + rtp_start[i], rtp_len[i] + 1);
 
@@ -351,15 +358,18 @@ radiotext_decode (rtstruct * rt)
 			rt->refresh = TRUE;
 		      break;
 		    }
-		  g_free (temptext);
-		  temptext = NULL;
+		  if (temptext != NULL)
+		    {
+		      g_free (temptext);
+		      temptext = NULL;
+		    }
 		}
 	    }
 	}
     }
   else
     log_print (hlog, LOG_DEBUG,
-	       "RDS-Error: [RTDecode] Length not correct (MFL= %d, len= %d)",
+	       "RDS error: Length not correct (MFL= %d, len= %d)",
 	       mtext[4], rt->index);
 }
 
@@ -373,147 +383,140 @@ radiotext_read_data (rtstruct * rt, const guchar * data, gint len)
   gint offset = len;
   gint rdsl = data[offset - 2];	// RDS DataFieldLength
   // RDS DataSync = 0xfd @ end
-  if (data[offset - 1] == 0xfd && rdsl > 0)
-    {
-      // Reverse data from end to start     
-      for (i = offset - 3, val; i > offset - 3 - rdsl; i--)
-	{
-	  val = data[i];
+  if (data[offset - 1] != 0xfd || rdsl <= 0)
+    return;
 
-	  // Start of RDS-data
-	  if (val == 0xfe)
+  // Reverse data from end to start     
+  for (i = offset - 3, val; i > offset - 3 - rdsl; i--)
+    {
+      val = data[i];
+
+      // Start of RDS-data
+      if (val == 0xfe)
+	{
+	  rt->index = -1;
+	  rt->rt_start = 1;
+	  rt->rt_bstuff = 0;
+	}
+
+      // "Middle" of RDS-data
+      if (rt->rt_start)
+	{
+	  // Bytestuffing reverse: 0xfd00->0xfd, 0xfd01->0xfe, 0xfd02->0xff
+	  if (rt->rt_bstuff)
 	    {
-	      rt->index = -1;
-	      rt->rt_start = 1;
+	      switch (val)
+		{
+		case 0x00:
+		  rt->mtext[rt->index] = 0xfd;
+		  break;
+		case 0x01:
+		  rt->mtext[rt->index] = 0xfe;
+		  break;
+		case 0x02:
+		  rt->mtext[rt->index] = 0xff;
+		  break;
+		default:
+		  // Should never be!
+		  rt->mtext[++rt->index] = val;
+		  g_assert (FALSE);
+		}
 	      rt->rt_bstuff = 0;
-	      log_print (hlog, LOG_DEBUG, "RDS-Start: ");
+	    }
+	  else
+	    rt->mtext[++rt->index] = val;
+
+	  // Check for stuffing
+	  if (val == 0xfd && rt->index > 0)
+	    rt->rt_bstuff = 1;
+
+	  // Early check for used MEC
+	  if (rt->index == 5)
+	    {
+	      switch (val)
+		{
+		case 0x07:	// PTY
+		case 0x0a:	// Radiotext
+		case 0x46:	// ODA-Data
+		  rt->mec = val;
+		  break;
+		default:
+		  rt->rt_start = 0;
+		  log_print (hlog, LOG_DEBUG,
+			     "mec %02x unknown, ignored", val);
+		}
 	    }
 
-	  // "Middle" of RDS-data
-	  if (rt->rt_start)
+	  // max. rdslength, garbage ?
+	  if (rt->index >= mframel)
 	    {
-	      //log_print (hlog, LOG_DEBUG, "%02x ", val);
+	      log_print (hlog, LOG_DEBUG, "RDS error: too long, garbage");
+	      rt->rt_start = 0;
+	    }
+	}
 
-	      // Bytestuffing reverse: 0xfd00->0xfd, 0xfd01->0xfe, 0xfd02->0xff
-	      if (rt->rt_bstuff)
+      // End of RDS-data
+      if (rt->rt_start && val == 0xff)
+	{
+	  rt->rt_start = 0;
+
+	  //  min. rdslength, garbage ?
+	  if (rt->index >= 9)
+	    {
+	      // crc16-check
+	      unsigned short crc16 =
+		crc16_ccitt (rt->mtext, rt->index - 3, 1);
+	      if (crc16 ==
+		  (rt->mtext[rt->index - 2] << 8) + rt->mtext[rt->index - 1])
 		{
-		  switch (val)
-		    {
-		    case 0x00:
-		      rt->mtext[rt->index] = 0xfd;
-		      break;
-		    case 0x01:
-		      rt->mtext[rt->index] = 0xfe;
-		      break;
-		    case 0x02:
-		      rt->mtext[rt->index] = 0xff;
-		      break;
-		    default:
-		      // Should never be!
-		      rt->mtext[++rt->index] = val;
-		    }
-		  rt->rt_bstuff = 0;
-		  log_print (hlog, LOG_DEBUG, "(Bytestuffing -> %02x) ",
-			     rt->mtext[rt->index]);
-		}
-	      else
-		rt->mtext[++rt->index] = val;
-
-	      // Check for stuffing
-	      if (val == 0xfd && rt->index > 0)
-		rt->rt_bstuff = 1;
-
-	      // Early check for used MEC
-	      if (rt->index == 5)
-		{
-		  switch (val)
+		  switch (rt->mec)
 		    {
 		    case 0x07:	// PTY
-		    case 0x0a:	// Radiotext
-		    case 0x46:	// ODA-Data
-		      rt->mec = val;
-		      break;
-		    default:
-		      rt->rt_start = 0;
-		      log_print (hlog, LOG_DEBUG,
-				 "(RDS-MEC '%02x' not used -> End)", val);
-		    }
-		}
-
-	      // max. rdslength, garbage ?
-	      if (rt->index >= mframel)
-		{
-		  log_print (hlog, LOG_DEBUG,
-			     "RDS-Error: too long, garbage ?");
-		  rt->rt_start = 0;
-		}
-	    }
-
-	  // End of RDS-data
-	  if (rt->rt_start && val == 0xff)
-	    {
-	      log_print (hlog, LOG_DEBUG, "(RDS-End)");
-	      rt->rt_start = 0;
-
-	      //  min. rdslength, garbage ?
-	      if (rt->index < 9)
-		log_print (hlog, LOG_DEBUG,
-			   "RDS-Error: too short -> garbage ?");
-	      else
-		{
-		  // crc16-check
-		  unsigned short crc16 =
-		    crc16_ccitt (rt->mtext, rt->index - 3, 1);
-		  if (crc16 !=
-		      (rt->mtext[rt->index - 2] << 8) + rt->mtext[rt->index -
-								  1])
-		    log_print (hlog, LOG_INFO,
-			       "RDS-Error: CRC # calc = %04x <--> transmit = %02x%02x",
-			       crc16, rt->mtext[rt->index - 2],
-			       rt->mtext[rt->index - 1]);
-		  else
-		    {
-		      switch (rt->mec)
+		      log_print (hlog, LOG_DEBUG, "mec %d: PTY", rt->mec);
+		      if (rt->mtext[8] <= 15)
 			{
-			case 0x07:	// PTY
-			  log_print (hlog, LOG_DEBUG, "mec %d: PTY", rt->mec);
-			  if (rt->mtext[8] <= 15)
-			    {
-			      log_print (hlog, LOG_DEBUG,
-					 "RDS-PTY set to '%s'",
-					 pty_string[rt->mtext[8]]);
-			      g_free (rt->pty);
-			      rt->pty = g_strdup (pty_string[rt->mtext[8]]);
-			      rt->refresh = TRUE;
-			    }
-			  else
-			    log_print (hlog, LOG_DEBUG,
-				       "RDS-PTY has unknown value '%d'",
-				       rt->mtext[8]);
-			  break;
-			case 0x0a:	// Radiotext
-			  log_print (hlog, LOG_DEBUG, "mec %d: Radiotext",
+			  log_print (hlog, LOG_DEBUG,
+				     "RDS-PTY set to '%s'",
+				     pty_string[rt->mtext[8]]);
+			  if (rt->pty != NULL)
+			    g_free (rt->pty);
+			  rt->pty = g_strdup (pty_string[rt->mtext[8]]);
+			  rt->refresh = TRUE;
+			}
+		      else
+			log_print (hlog, LOG_DEBUG,
+				   "RDS-PTY has unknown value '%d'",
+				   rt->mtext[8]);
+		      break;
+		    case 0x0a:	// Radiotext
+		      log_print (hlog, LOG_DEBUG, "mec %02x: Radiotext",
+				 rt->mec);
+		      radiotext_decode (rt);
+		      break;
+		    case 0x46:	// ODA-Data
+		      log_print (hlog, LOG_DEBUG, "mec %02x: ODA-Data",
+				 rt->mec);
+		      if ((rt->mtext[7] << 8) + rt->mtext[8] == 0x4bd7)
+			{
+			  log_print (hlog, LOG_DEBUG, "mec %02x: RT+",
 				     rt->mec);
 			  radiotext_decode (rt);
-			  break;
-			case 0x46:	// ODA-Data
-			  log_print (hlog, LOG_DEBUG, "mec %d: ODA-Data",
-				     rt->mec);
-			  if ((rt->mtext[7] << 8) + rt->mtext[8] == 0x4bd7)
-			    {
-			      log_print (hlog, LOG_DEBUG, "mec %d: RT+",
-					 rt->mec);
-			      radiotext_decode (rt);
-			    }
-			  break;
-			default:
-			  log_print (hlog, LOG_DEBUG,
-				     "mec %d: unknown, ignored", rt->mec);
-			  break;
 			}
+		      break;
+		    default:
+		      log_print (hlog, LOG_DEBUG,
+				 "mec %02x: unknown, ignored", rt->mec);
+		      break;
 		    }
 		}
+	      else
+		log_print (hlog, LOG_INFO,
+			   "RDS error: CRC: calc = %04x != transmit = %02x%02x",
+			   crc16, rt->mtext[rt->index - 2],
+			   rt->mtext[rt->index - 1]);
 	    }
+	  else
+	    log_print (hlog, LOG_DEBUG, "RDS error: too short, garbage");
 	}
     }
 }
