@@ -160,8 +160,27 @@ dvb_init (void)
   config = config_init ();
   config_from_db (config);
 
-  if (log_open (&hlog, "auddacious-dvb", config->loglvl) != RC_OK)
-    hlog = NULL;
+  if (config->log_tofile && config->log_filename != NULL)
+    {
+      if (log_file_open
+	  (&hlog, config->log_filename, config->log_append,
+	   config->log_level) != RC_OK)
+	{
+	  // Fall back to glib logging
+	  if (log_glib_open
+	      (&hlog, "auddacious-dvb", config->log_level) == RC_OK)
+	    log_print (hlog, LOG_INFO,
+		       "Logging to file %s failed, falling back to GLib logging",
+		       config->log_filename);
+	  else
+	    hlog = NULL;
+	}
+    }
+  else
+    {
+      if (log_glib_open (&hlog, "auddacious-dvb", config->log_level) != RC_OK)
+	hlog = NULL;
+    }
 
   log_print (hlog, LOG_INFO, "logging started");
 

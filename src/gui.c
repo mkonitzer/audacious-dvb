@@ -47,6 +47,7 @@ static Widgets widgets = { 0 };
 
 static void config_to_gui (cfgstruct * config);
 static void dvb_configure_ok (GtkWidget * w, gpointer data);
+static void logToFileClicked (GtkWidget * w, gpointer user_data);
 static void recordClicked (GtkWidget * w, gpointer user_data);
 static void isplitClicked (GtkWidget * w, gpointer user_data);
 static void vsplitClicked (GtkWidget * w, gpointer user_data);
@@ -117,6 +118,10 @@ dvb_configure (void)
 
   gtk_signal_connect (GTK_OBJECT
 		      (glade_xml_get_widget
+		       (widgets.configXml, "logToFileCheck")), "clicked",
+		      G_CALLBACK (logToFileClicked), NULL);
+  gtk_signal_connect (GTK_OBJECT
+		      (glade_xml_get_widget
 		       (widgets.configXml, "recordCheck")), "clicked",
 		      G_CALLBACK (recordClicked), NULL);
   gtk_signal_connect (GTK_OBJECT
@@ -140,9 +145,24 @@ dvb_configure_ok (GtkWidget * w, gpointer data)
   config_from_gui (config);
   config_to_db (config);
 
-  log_set_level (hlog, config->loglvl);
+  log_set_level (hlog, config->log_level);
 
   gtk_widget_destroy (GTK_WIDGET (widgets.configBox));
+}
+
+
+static void
+logToFileClicked (GtkWidget * w, gpointer user_data)
+{
+  gboolean b;
+  b =
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "logToFileCheck")));
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "logFileEntry"), b);
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "logAppendCheck"), b);
 }
 
 
@@ -227,11 +247,26 @@ config_to_gui (cfgstruct * config)
 			     (glade_xml_get_widget
 			      (widgets.configXml, "devnoSpin")),
 			     config->devno);
+
+  // Logging
   gtk_combo_box_set_active (GTK_COMBO_BOX
 			    (glade_xml_get_widget
-			     (widgets.configXml, "loggingCombo")),
-			    config->loglvl);
+			     (widgets.configXml, "logLevelCombo")),
+			    config->log_level);
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				(glade_xml_get_widget
+				 (widgets.configXml, "logToFileCheck")),
+				config->log_tofile);
+  gtk_entry_set_text (GTK_ENTRY
+		      (glade_xml_get_widget
+		       (widgets.configXml, "logFileEntry")),
+		      config->log_filename);
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				(glade_xml_get_widget
+				 (widgets.configXml, "logAppendCheck")),
+				config->log_append);
 
+  // Recording
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
 				(glade_xml_get_widget
 				 (widgets.configXml, "recordCheck")),
@@ -249,6 +284,7 @@ config_to_gui (cfgstruct * config)
 				 (widgets.configXml, "overwriteCheck")),
 				config->rec_overwrite);
 
+  // Splitting
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
 				(glade_xml_get_widget
 				 (widgets.configXml, "isplitCheck")),
@@ -257,7 +293,6 @@ config_to_gui (cfgstruct * config)
 			     (glade_xml_get_widget
 			      (widgets.configXml, "isplitSpin")),
 			     config->isplit_ival);
-
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
 				(glade_xml_get_widget
 				 (widgets.configXml, "vsplitCheck")),
@@ -275,6 +310,7 @@ config_to_gui (cfgstruct * config)
 			      (widgets.configXml, "vsplitminlenSpin")),
 			     config->vsplit_minlen);
 
+  // Information retrieval
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
 				(glade_xml_get_widget
 				 (widgets.configXml, "dvbCheck")),
@@ -292,6 +328,8 @@ config_to_gui (cfgstruct * config)
 				 (widgets.configXml, "madCheck")),
 				config->info_mmusic);
 
+  // Make dialog elements (in)active
+  logToFileClicked (NULL, NULL);
   isplitClicked (NULL, NULL);
   vsplitClicked (NULL, NULL);
   recordClicked (NULL, NULL);
@@ -300,15 +338,33 @@ config_to_gui (cfgstruct * config)
 static void
 config_from_gui (cfgstruct * config)
 {
+  // DVB card
   config->devno =
     gtk_spin_button_get_value (GTK_SPIN_BUTTON
 			       (glade_xml_get_widget
 				(widgets.configXml, "devnoSpin")));
-  config->loglvl =
+
+  // Logging
+  config->log_level =
     gtk_combo_box_get_active (GTK_COMBO_BOX
 			      (glade_xml_get_widget
-			       (widgets.configXml, "loggingCombo")));
+			       (widgets.configXml, "logLevelCombo")));
+  config->log_tofile =
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "logToFileCheck")));
+  if (config->log_filename != NULL)
+    g_free (config->log_filename);
+  config->log_filename =
+    g_strdup (gtk_entry_get_text
+	      (GTK_ENTRY
+	       (glade_xml_get_widget (widgets.configXml, "logFileEntry"))));
+  config->log_append =
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "logAppendCheck")));
 
+  // Recording
   config->rec =
     gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
 				  (glade_xml_get_widget
@@ -328,6 +384,7 @@ config_from_gui (cfgstruct * config)
 				  (glade_xml_get_widget
 				   (widgets.configXml, "overwriteCheck")));
 
+  // Splitting
   config->isplit =
     gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
 				  (glade_xml_get_widget
@@ -336,7 +393,6 @@ config_from_gui (cfgstruct * config)
     gtk_spin_button_get_value (GTK_SPIN_BUTTON
 			       (glade_xml_get_widget
 				(widgets.configXml, "isplitSpin")));
-
   config->vsplit =
     gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
 				  (glade_xml_get_widget
@@ -354,6 +410,7 @@ config_from_gui (cfgstruct * config)
 			       (glade_xml_get_widget
 				(widgets.configXml, "vsplitminlenSpin")));
 
+  // Information retrieval
   config->info_dvbstat =
     gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
 				  (glade_xml_get_widget

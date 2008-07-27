@@ -40,7 +40,8 @@ enum lvltype
 };
 
 
-gint log_open (gpointer *, gchar *, enum lvltype);
+gint log_glib_open (gpointer *, gchar *, enum lvltype);
+gint log_file_open (gpointer *, gchar *, gboolean, enum lvltype);
 gint log_close (gpointer);
 gint log_print (gpointer, enum lvltype, const gchar *, ...);
 gint log_set_level (gpointer hlog, enum lvltype);

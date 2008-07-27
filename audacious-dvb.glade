@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Tue Jul 15 12:02:22 2008 -->
+<!--Generated with glade3 3.4.5 on Sun Jul 27 23:20:36 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="fileinfo">
     <property name="title" translatable="yes">DVB Stream Information</property>
@@ -1286,11 +1286,11 @@
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkAlignment" id="loggingAligment">
+                              <widget class="GtkAlignment" id="logLevelAligment">
                                 <property name="visible">True</property>
                                 <property name="bottom_padding">8</property>
                                 <child>
-                                  <widget class="GtkComboBox" id="loggingCombo">
+                                  <widget class="GtkComboBox" id="logLevelCombo">
                                     <property name="visible">True</property>
                                     <property name="items" translatable="yes">No logging (0)\n
 Alert (1)\n
@@ -1306,6 +1306,61 @@ Debug (7)</property>
                               <packing>
                                 <property name="expand">False</property>
                                 <property name="position">3</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkAlignment" id="logToFileCheckAlignment">
+                                <property name="visible">True</property>
+                                <property name="bottom_padding">6</property>
+                                <child>
+                                  <widget class="GtkCheckButton" id="logToFileCheck">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="label" translatable="yes">Print log messages to text file:</property>
+                                    <property name="response_id">0</property>
+                                    <property name="draw_indicator">True</property>
+                                  </widget>
+                                </child>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">4</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkAlignment" id="logFileAlignment">
+                                <property name="visible">True</property>
+                                <property name="bottom_padding">6</property>
+                                <child>
+                                  <widget class="GtkEntry" id="logFileEntry">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="max_length">50</property>
+                                  </widget>
+                                </child>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">5</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkAlignment" id="logAppendCheckAlignment">
+                                <property name="visible">True</property>
+                                <property name="bottom_padding">6</property>
+                                <child>
+                                  <widget class="GtkCheckButton" id="logAppendCheck">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="label" translatable="yes">Append to existing file</property>
+                                    <property name="response_id">0</property>
+                                    <property name="draw_indicator">True</property>
+                                  </widget>
+                                </child>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">6</property>
                               </packing>
                             </child>
                           </widget>
@@ -1380,7 +1435,7 @@ Debug (7)</property>
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkAlignment" id="fnameButtonAlignment">
+                              <widget class="GtkAlignment" id="fnameAlignment">
                                 <property name="visible">True</property>
                                 <property name="bottom_padding">6</property>
                                 <child>

@@ -25,11 +25,16 @@
 #define __AUDACIOUS_DVB_CFG_H__
 
 #include <glib.h>
+#include "log.h"
 
 typedef struct _cfgstruct
 {
   gint devno;			/* DVB device number */
-  gint loglvl;			/* Log level */
+
+  enum lvltype log_level;	/* Log level */
+  gboolean log_tofile;		/* Log to file (TRUE) xor to glib (FALSE) */
+  gchar *log_filename;		/* Log filename */
+  gboolean log_append;		/* Append to existing log file? */
 
   gboolean rec;			/* Activate recording of stream? */
   gchar *rec_fname;		/* Filename for recording */
