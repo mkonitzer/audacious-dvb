@@ -171,10 +171,17 @@ static void
 isplitClicked (GtkWidget * w, gpointer user_data)
 {
   gboolean b;
-  b =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "isplitCheck")));
+  if (b =
+      gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				    (glade_xml_get_widget
+				     (widgets.configXml, "isplitCheck"))))
+    {
+      // Volume and interval splitting are mutually exclusive
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				    (glade_xml_get_widget
+				     (widgets.configXml, "vsplitCheck")),
+				    FALSE);
+    }
   gtk_widget_set_sensitive (glade_xml_get_widget
 			    (widgets.configXml, "isplitSpin"), b);
 }
@@ -184,10 +191,17 @@ static void
 vsplitClicked (GtkWidget * w, gpointer user_data)
 {
   gboolean b;
-  b =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "vsplitCheck")));
+  if (b =
+      gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				    (glade_xml_get_widget
+				     (widgets.configXml, "vsplitCheck"))))
+    {
+      // Volume and interval splitting are mutually exclusive
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				    (glade_xml_get_widget
+				     (widgets.configXml, "isplitCheck")),
+				    FALSE);
+    }
   gtk_widget_set_sensitive (glade_xml_get_widget
 			    (widgets.configXml, "vsplitvolSpin"), b);
   gtk_widget_set_sensitive (glade_xml_get_widget
