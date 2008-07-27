@@ -26,13 +26,7 @@
 
 #include <glib.h>
 
-#define RC_LOG_OPEN_PREFIX_NPE	      3000
-#define RC_LOG_OPEN_HLOG_NPE	      3001
-#define RC_LOG_OPEN_MALLOC_FAILED     3002
-#define RC_LOG_OPEN_PREFIX_TOO_LONG   3003
-#define RC_LOG_CLOSE_HANDLE_INVALID   3100
-#define RC_LOG_PRINT_HANDLE_INVALID   3200
-#define RC_LOG_SET_LVL_HANDLE_INVALID 3300
+#define RC_LOG_ERROR		      3001
 
 enum lvltype
 { LOG_EMERG = 0,
