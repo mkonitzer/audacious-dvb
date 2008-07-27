@@ -203,13 +203,13 @@ radiotext_decode (rtstruct * rt)
    * byte 1+2 = ADD (10bit SiteAdress + 6bit EncoderAdress)
    * byte 3   = SQC (Sequence Counter 0x00 = not used)
    * byte 4 = MFL (Message Field Length)
-   * byte 5 = MEC (Message Element Code, 0x0a for RT, 0x46 for RTplus)
+   * byte 5 = MEC (Message Element Code)
    */
   guchar *mtext = rt->mtext;
   gint leninfo = mtext[4];
   if (rt->index >= leninfo + 7)
     {
-      if (mtext[5] == 0x0a)
+      if (mtext[5] == 0x0a)	// RT
 	{
 	  /* byte 6+7 = DSN+PSN (DataSetNumber+ProgramServiceNumber, 
 	   *                           ignore here, always 0x00 ?)
@@ -256,7 +256,7 @@ radiotext_decode (rtstruct * rt)
 	  g_free (temptext);
 	  temptext = NULL;
 	}
-      else if (mtext[5] == 0x46)
+      else if (mtext[5] == 0x46)	// RTplus
 	{
 	  /* RTplus tags V2.1 (only if RT)
 	   * byte 6   = MEL, only 8 byte for 2 tags
@@ -307,52 +307,49 @@ radiotext_decode (rtstruct * rt)
 	      rt->artist = NULL;
 	      rt->refresh = TRUE;
 	    }
-	  else
+
+	  for (i = 0; i < 2; i++)
 	    {
-	      for (i = 0; i < 2; i++)
+	      if (rt->plustext != NULL &&
+		  rtp_start[i] + rtp_len[i] <= strlen (rt->plustext))
 		{
-		  if (rt->plustext != NULL &&
-		      rtp_start[i] + rtp_len[i] <= strlen (rt->plustext))
+		  if (temptext != NULL)
+		    g_free (temptext);
+		  temptext =
+		    g_strndup (rt->plustext + rtp_start[i], rtp_len[i] + 1);
+
+		  // Print RTplus info
+		  if (rtp_type[i] >= 0 &&
+		      rtp_type[i] < sizeof (rtp_typename) &&
+		      rtp_typename[rtp_type[i]] != NULL)
 		    {
-		      if (temptext != NULL)
-			g_free (temptext);
-		      temptext =
-			g_strndup (rt->plustext + rtp_start[i],
-				   rtp_len[i] + 1);
-
-		      // Print RTplus info
-		      if (rtp_type[i] >= 0 &&
-			  rtp_type[i] < sizeof (rtp_typename) &&
-			  rtp_typename[rtp_type[i]] != NULL)
-			{
-			  log_print (hlog, LOG_INFO,
-				     "RTplus[%d]: %s (type %s)", i,
-				     temptext, rtp_typename[rtp_type[i]]);
-			}
-		      else
-			{
-			  log_print (hlog, LOG_INFO,
-				     "RTplus[%d]: %s (unknown type %u)", i,
-				     temptext, rtp_type[i]);
-			}
-
-		      // Set title or artist if given
-		      switch (rtp_type[i])
-			{
-			case 1:	// Item_Title
-			  if (is_updated
-			      (temptext, &rt->title, DVB_STRING_RADIOTEXT))
-			    rt->refresh = TRUE;
-			  break;
-			case 4:	// Item_Artist
-			  if (is_updated
-			      (temptext, &rt->artist, DVB_STRING_RADIOTEXT))
-			    rt->refresh = TRUE;
-			  break;
-			}
-		      g_free (temptext);
-		      temptext = NULL;
+		      log_print (hlog, LOG_INFO,
+				 "RTplus[%d]: %s (type %s)", i,
+				 temptext, rtp_typename[rtp_type[i]]);
 		    }
+		  else
+		    {
+		      log_print (hlog, LOG_INFO,
+				 "RTplus[%d]: %s (unknown type %u)", i,
+				 temptext, rtp_type[i]);
+		    }
+
+		  // Set title or artist if given
+		  switch (rtp_type[i])
+		    {
+		    case 1:	// Item_Title
+		      if (is_updated
+			  (temptext, &rt->title, DVB_STRING_RADIOTEXT))
+			rt->refresh = TRUE;
+		      break;
+		    case 4:	// Item_Artist
+		      if (is_updated
+			  (temptext, &rt->artist, DVB_STRING_RADIOTEXT))
+			rt->refresh = TRUE;
+		      break;
+		    }
+		  g_free (temptext);
+		  temptext = NULL;
 		}
 	    }
 	}
