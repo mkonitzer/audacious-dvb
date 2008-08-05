@@ -24,7 +24,6 @@
 #include <glib.h>
 #include <string.h>
 
-#include <audacious/configdb.h>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <glade/glade.h>
@@ -144,7 +143,7 @@ dvb_configure_ok (GtkWidget * w, gpointer data)
 {
   config_from_gui (config);
   config_to_db (config);
-
+  
   log_set_level (hlog, config->log_level);
 
   gtk_widget_destroy (GTK_WIDGET (widgets.configBox));

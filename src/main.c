@@ -160,8 +160,10 @@ dvb_init (void)
   config = config_init ();
   config_from_db (config);
 
+  // Check if we want to log to file or to glib
   if (config->log_tofile && config->log_filename != NULL)
     {
+      // Try file logging
       if (log_file_open
 	  (&hlog, config->log_filename, config->log_append,
 	   config->log_level) != RC_OK)
@@ -178,6 +180,7 @@ dvb_init (void)
     }
   else
     {
+      // Try glib logging
       if (log_glib_open (&hlog, "auddacious-dvb", config->log_level) != RC_OK)
 	hlog = NULL;
     }
