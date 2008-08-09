@@ -51,28 +51,8 @@ extern gpointer hlog;
 #define DISEQC_POWER_OFF_WAIT (1000 * 1000)
 #define DISEQC_POWER_ON_WAIT   (500 * 1000)
 
-typedef struct _HDVB
-{
-  gint dvb_num;
-  gchar *dvb_fedn;
-  gint dvb_fedh;
-  gchar *dvb_dmxdn;
-  gint dvb_dmxdh;
-  gchar *dvb_audn;
-  gint dvb_audh;
-  gint dvb_admx;
-  gint dvb_ddmx;
-  struct dmx_pes_filter_params dvb_dmx;
-  struct dvb_frontend_info dvb_fe_info;
-} HDVB;
 
-
-static gint check_status (gpointer hdvb, gint type,
-			  struct dvb_frontend_parameters *feparams,
-			  guint base);
-
-
-gpointer *
+HDVB *
 dvb_open (gint devnum)
 {
   HDVB *h = g_malloc0 (sizeof (HDVB));
@@ -91,14 +71,13 @@ dvb_open (gint devnum)
       return NULL;
     }
 
-  return (gpointer *) h;
+  return h;
 }
 
 
 gint
-dvb_close (gpointer hdvb)
+dvb_close (HDVB * h)
 {
-  HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
     return RC_NPE;
 
@@ -122,9 +101,8 @@ dvb_close (gpointer hdvb)
 
 
 gint
-dvb_filter (gpointer hdvb, gint pid)
+dvb_filter (HDVB * h, gint pid)
 {
-  HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
     return RC_NPE;
 
@@ -172,13 +150,12 @@ dvb_filter (gpointer hdvb, gint pid)
 
 
 gint
-dvb_packet (gpointer hdvb, guchar * pkt, gint t)
+dvb_packet (HDVB * h, guchar * pkt, gint t)
 {
   gint r, sel;
   fd_set rfd;
   struct timeval tv;
 
-  HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
     return RC_NPE;
 
@@ -222,9 +199,8 @@ dvb_packet (gpointer hdvb, guchar * pkt, gint t)
 
 
 gint
-dvb_unfilter (gpointer hdvb)
+dvb_unfilter (HDVB * h)
 {
-  HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
     return RC_NPE;
 
@@ -241,7 +217,7 @@ dvb_unfilter (gpointer hdvb)
 
 
 gint
-dvb_section (gpointer hdvb, gint pid, gint sect, gint sid, gint sct,
+dvb_section (HDVB * h, gint pid, gint sect, gint sid, gint sct,
 	     guchar * s, gint t)
 {
   gint sel, r, fd;
@@ -249,7 +225,6 @@ dvb_section (gpointer hdvb, gint pid, gint sect, gint sid, gint sct,
   struct timeval tv;
   struct dmx_sct_filter_params fp;
 
-  HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
     return RC_NPE;
 
@@ -352,12 +327,11 @@ dvb_section (gpointer hdvb, gint pid, gint sect, gint sid, gint sct,
 
 
 gint
-dvb_apid (gpointer hdvb, guint pid)
+dvb_apid (HDVB * h, guint pid)
 {
   struct dmx_pes_filter_params fp;
   gint rc;
 
-  HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
     return RC_NPE;
 
@@ -406,13 +380,12 @@ dvb_apid (gpointer hdvb, guint pid)
 
 
 gint
-dvb_apkt (gpointer hdvb, guchar * pkt, guint len, guint t, gint * rcvd)
+dvb_apkt (HDVB * h, guchar * pkt, guint len, guint t, gint * rcvd)
 {
   gint r, sel;
   fd_set rfd;
   struct timeval tv;
 
-  HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
     return RC_NPE;
 
@@ -457,12 +430,11 @@ dvb_apkt (gpointer hdvb, guchar * pkt, guint len, guint t, gint * rcvd)
 
 
 gint
-dvb_dpid (gpointer hdvb, guint pid)
+dvb_dpid (HDVB * h, guint pid)
 {
   struct dmx_sct_filter_params fp;
   struct dmx_pes_filter_params pfp;
 
-  HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
     return RC_NPE;
 
@@ -532,13 +504,12 @@ dvb_dpid (gpointer hdvb, guint pid)
 
 
 gint
-dvb_dpkt (void *hdvb, guchar * s, gint len, gint t, gint * rcvd)
+dvb_dpkt (HDVB * h, guchar * s, gint len, gint t, gint * rcvd)
 {
   gint r, sel;
   fd_set fds;
   struct timeval tv;
 
-  HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
     return RC_NPE;
 
@@ -583,13 +554,16 @@ dvb_dpkt (void *hdvb, guchar * s, gint len, gint t, gint * rcvd)
 
 
 gint
-dvb_get_pid (gpointer hdvb, gint s, guint * apid, guint * dpid)
+dvb_get_pid (HDVB * h, gint s, guint * apid, guint * dpid)
 {
   gint rc, len, pmt, pil, es, es_type, es_audio, es_data;
   guint sid;
   guchar sct[4096], *p, *q;
 
-  if ((rc = dvb_section (hdvb, 0, 0, 0, 0, sct, 10000)) != RC_OK)
+  if (h == NULL)
+    return RC_NPE;
+
+  if ((rc = dvb_section (h, 0, 0, 0, 0, sct, 10000)) != RC_OK)
     {
       log_print (hlog, LOG_ERR,
 		 "dvb_section() failed in dvb_get_pid(), rc = %d", rc);
@@ -609,7 +583,7 @@ dvb_get_pid (gpointer hdvb, gint s, guint * apid, guint * dpid)
 
       if (sid == s)
 	{
-	  if ((rc = dvb_section (hdvb, pmt, 2, sid, 0, sct, 10000)) != RC_OK)
+	  if ((rc = dvb_section (h, pmt, 2, sid, 0, sct, 10000)) != RC_OK)
 	    {
 	      log_print (hlog, LOG_ERR,
 			 "dvb_section() failed in dvb_get_pid(), rc = %d",
@@ -671,11 +645,10 @@ dvb_get_pid (gpointer hdvb, gint s, guint * apid, guint * dpid)
 
 
 static int
-diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v,
+diseqc_send_msg (HDVB * h, fe_sec_voltage_t v,
 		 struct dvb_diseqc_master_cmd cmd, fe_sec_tone_mode_t t,
 		 guchar sat_no)
 {
-  HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
     return RC_NPE;
 
@@ -736,11 +709,11 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v,
 
 
 static int
-do_diseqc (gpointer hdvb, guchar sat_no, gint polv, gint hi_lo)
+do_diseqc (HDVB * h, guchar sat_no, gint polv, gint hi_lo)
 {
   struct dvb_diseqc_master_cmd cmd =
     { {0xe0, 0x10, 0x38, 0xf0, 0x00, 0x00}, 4 };
-  HDVB *h = (HDVB *) hdvb;
+
   if (h == NULL)
     return RC_NPE;
 
@@ -751,7 +724,7 @@ do_diseqc (gpointer hdvb, guchar sat_no, gint polv, gint hi_lo)
       cmd.msg[3] =
 	0xf0 | (((sat_no * 4) & 0x0f) | (polv ? 0 : 2) | (hi_lo ? 1 : 0));
 
-      return diseqc_send_msg (hdvb, polv ? SEC_VOLTAGE_13 : SEC_VOLTAGE_18,
+      return diseqc_send_msg (h, polv ? SEC_VOLTAGE_13 : SEC_VOLTAGE_18,
 			      cmd, hi_lo ? SEC_TONE_ON : SEC_TONE_OFF,
 			      sat_no);
     }
@@ -788,7 +761,7 @@ do_diseqc (gpointer hdvb, guchar sat_no, gint polv, gint hi_lo)
 
 
 static gint
-check_status (gpointer hdvb, gint type,
+check_status (HDVB * h, gint type,
 	      struct dvb_frontend_parameters *feparams, guint base)
 {
   guint strength;
@@ -797,7 +770,6 @@ check_status (gpointer hdvb, gint type,
   gint locks = 0, ok = 0;
   time_t tm1, tm2;
 
-  HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
     return RC_NPE;
 
@@ -898,12 +870,11 @@ check_status (gpointer hdvb, gint type,
 
 
 gint
-dvb_get_status (gpointer hdvb, dvbstatstruct * st)
+dvb_get_status (HDVB * h, dvbstatstruct * st)
 {
   guint status;
   dvbstatstruct _st;
 
-  HDVB *h = (HDVB *) hdvb;
   if (h == NULL || st == NULL)
     return RC_NPE;
 
@@ -942,7 +913,7 @@ dvb_get_status (gpointer hdvb, dvbstatstruct * st)
 
 
 gint
-dvb_tune (gpointer hdvb, tunestruct * t)
+dvb_tune (HDVB * h, tunestruct * t)
 {
   gint res, hi_lo = 0;
   guint base = 0;
@@ -950,7 +921,6 @@ dvb_tune (gpointer hdvb, tunestruct * t)
   struct dvb_frontend_parameters feparams;
   struct dvb_frontend_info fe_info;
 
-  HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
     return RC_NPE;
 
@@ -968,7 +938,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
     }
 
   log_print (hlog, LOG_INFO, "Using DVB card '%s'", fe_info.name);
-  tunetext = dvb_tune_to_text (hdvb, t);
+  tunetext = dvb_tune_to_text (h, t);
 
   if (t->freq < 1000000)
     t->freq *= 1000UL;
@@ -1018,8 +988,7 @@ dvb_tune (gpointer hdvb, tunestruct * t)
       feparams.u.qpsk.symbol_rate = t->srate;
       feparams.u.qpsk.fec_inner = FEC_AUTO;
 
-      if (do_diseqc (hdvb, t->diseqc, (t->pol == 'V' ? 1 : 0), hi_lo) !=
-	  RC_OK)
+      if (do_diseqc (h, t->diseqc, (t->pol == 'V' ? 1 : 0), hi_lo) != RC_OK)
 	{
 	  log_print (hlog, LOG_ERR, "DiSEqC setting failed");
 	  return RC_DVB_ERROR;
@@ -1049,15 +1018,15 @@ dvb_tune (gpointer hdvb, tunestruct * t)
       return RC_DVB_ERROR;
     }
 
-  return check_status (hdvb, fe_info.type, &feparams, base);
+  return check_status (h, fe_info.type, &feparams, base);
 }
 
 
 gchar *
-dvb_tune_to_text (gpointer hdvb, tunestruct * t)
+dvb_tune_to_text (HDVB * h, tunestruct * t)
 {
   gchar *text = NULL;
-  HDVB *h = (HDVB *) hdvb;
+
   if (h == NULL)
     return NULL;
 

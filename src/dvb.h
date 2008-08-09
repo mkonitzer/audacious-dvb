@@ -26,6 +26,7 @@
 
 #include <linux/dvb/frontend.h>
 #include <linux/dvb/version.h>
+#include <linux/dvb/dmx.h>
 #include <glib.h>
 
 #undef DVB_ATSC
@@ -75,27 +76,41 @@ typedef struct _dvbstatstruct
 #define RC_DVB_ERROR                    2001
 #define RC_DVB_TIMEOUT                  2002
 
+typedef struct _HDVB
+{
+  gint dvb_num;
+  gchar *dvb_fedn;
+  gint dvb_fedh;
+  gchar *dvb_dmxdn;
+  gint dvb_dmxdh;
+  gchar *dvb_audn;
+  gint dvb_audh;
+  gint dvb_admx;
+  gint dvb_ddmx;
+  struct dmx_pes_filter_params dvb_dmx;
+  struct dvb_frontend_info dvb_fe_info;
+} HDVB;
 
-gpointer *dvb_open (gint);
-gint dvb_close (gpointer);
-gint dvb_filter (gpointer, gint);
-gint dvb_packet (gpointer, guchar *, gint);
-gint dvb_unfilter (gpointer);
-gint dvb_section (gpointer, gint, gint, gint, gint, guchar *, gint);
-gint dvb_apid (gpointer, guint);
-gint dvb_apkt (gpointer, guchar *, guint, guint, gint *);
-gint dvb_dpid (gpointer, guint);
-gint dvb_dpkt (gpointer, guchar *, gint, gint, gint *);
-gint dvb_get_pid (gpointer, gint, guint *, guint *);
+HDVB *dvb_open (gint);
+gint dvb_close (HDVB *);
+gint dvb_filter (HDVB *, gint);
+gint dvb_packet (HDVB *, guchar *, gint);
+gint dvb_unfilter (HDVB *);
+gint dvb_section (HDVB *, gint, gint, gint, gint, guchar *, gint);
+gint dvb_apid (HDVB *, guint);
+gint dvb_apkt (HDVB *, guchar *, guint, guint, gint *);
+gint dvb_dpid (HDVB *, guint);
+gint dvb_dpkt (HDVB *, guchar *, gint, gint, gint *);
+gint dvb_get_pid (HDVB *, gint, guint *, guint *);
 
 tunestruct *dvb_tune_init (void);
-gint dvb_tune (gpointer, tunestruct *);
+gint dvb_tune (HDVB *, tunestruct *);
 gint dvb_tune_parse_url (const gchar *, tunestruct *);
-gchar *dvb_tune_to_text (gpointer, tunestruct *);
+gchar *dvb_tune_to_text (HDVB *, tunestruct *);
 void dvb_tune_exit (tunestruct *);
 
 dvbstatstruct *dvb_status_init (void);
-gint dvb_get_status (gpointer, dvbstatstruct *);
+gint dvb_get_status (HDVB *, dvbstatstruct *);
 void dvb_status_exit (dvbstatstruct *);
 
 #endif // __AUDACIOUS_DVB_DVB_H__
