@@ -35,7 +35,7 @@
 extern gpointer hlog;
 
 
-const gchar *pty_string[] = {
+static const gchar *pty_string[] = {
   "unknown program type",
   "News",
   "Current affairs",
@@ -54,7 +54,7 @@ const gchar *pty_string[] = {
   "Other music"
 };
 
-guchar rds_addchar[128] = {
+static const guchar rds_addchar[128] = {
   0xe1, 0xe0, 0xe9, 0xe8, 0xed, 0xec, 0xf3, 0xf2,
   0xfa, 0xf9, 0xd1, 0xc7, 0x8c, 0xdf, 0x8e, 0x8f,
   0xe2, 0xe4, 0xea, 0xeb, 0xee, 0xef, 0xf4, 0xf6,
@@ -73,7 +73,7 @@ guchar rds_addchar[128] = {
   0xfe, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff
 };
 
-const gchar *rtp_typename[] = {
+static const gchar *rtp_typename[] = {
   NULL,				/* 0: Class if the RadioText contains no RT+ information */
   "ITEM.TITLE",			/* 1: Title of item; e.g. track title of an album */
   "ITEM.ALBUM",			/* 2: The collection name to which this track belongs */
@@ -137,7 +137,7 @@ const gchar *rtp_typename[] = {
 };
 
 
-gushort
+static gushort
 crc16_ccitt (guchar * daten, gint len, gint skipfirst)
 {
   // CRC16-CCITT: x^16 + x^12 + x^5 + 1
@@ -169,7 +169,7 @@ radiotext_init (void)
 }
 
 
-void
+static void
 radiotext_events_insert (rtstruct * rt, gchar * newtext)
 {
   // Shift Radiotext events
@@ -193,9 +193,8 @@ radiotext_events_to_text (rtstruct * rt)
 static void
 radiotext_decode (rtstruct * rt)
 {
-  gint i, ii;
-  gchar *temptext = NULL;
-
+  guchar *mtext = NULL;
+  gint leninfo;
   if (rt == NULL)
     return;
 
@@ -205,8 +204,8 @@ radiotext_decode (rtstruct * rt)
    * byte 4 = MFL (Message Field Length)
    * byte 5 = MEC (Message Element Code)
    */
-  guchar *mtext = rt->mtext;
-  gint leninfo = mtext[4];
+  mtext = rt->mtext;
+  leninfo = mtext[4];
   if (rt->index >= leninfo + 7)
     {
       if (mtext[5] == 0x0a)	// RT
@@ -219,6 +218,8 @@ radiotext_decode (rtstruct * rt)
 	   *   bit 1-4 = Transmission-Number
 	   *   bit 5+6 = Buffer-Config (ignored, always 0x01?)
 	   */
+	  gint i, ii;
+	  gchar *temptext = NULL;
 	  if (mtext[8] == 0 || mtext[8] > RT_MEL || mtext[8] > leninfo - 4)
 	    {
 	      log_print
@@ -229,8 +230,6 @@ radiotext_decode (rtstruct * rt)
 	    }
 
 	  // Decode Radiotext event
-	  if (temptext != NULL)
-	    g_free (temptext);
 	  temptext = g_malloc0 (mtext[8]);
 	  for (i = 1, ii = 0; i < mtext[8]; i++)
 	    {
@@ -276,7 +275,8 @@ radiotext_decode (rtstruct * rt)
 	   *   bit 13#2..14#5 = Startmarker
 	   *   bit 14#4..14#0 = Length
 	   */
-
+	  gint i;
+	  guint rtp_type[2], rtp_start[2], rtp_len[2];
 	  if (mtext[6] > leninfo - 2 || mtext[6] != 8)
 	    {
 	      log_print (hlog, LOG_DEBUG,
@@ -286,7 +286,6 @@ radiotext_decode (rtstruct * rt)
 	    }
 
 	  // Extract RTplus info
-	  guint rtp_type[2], rtp_start[2], rtp_len[2];
 	  rtp_type[0] = (0x38 & mtext[10] << 3) | mtext[11] >> 5;
 	  rtp_start[0] = (0x3e & mtext[11] << 1) | mtext[12] >> 7;
 	  rtp_len[0] = 0x3f & mtext[12] >> 1;
@@ -325,7 +324,7 @@ radiotext_decode (rtstruct * rt)
 	      if (rt->plustext != NULL &&
 		  rtp_start[i] + rtp_len[i] <= strlen (rt->plustext))
 		{
-		  temptext =
+		  gchar *temptext =
 		    g_strndup (rt->plustext + rtp_start[i], rtp_len[i] + 1);
 
 		  // Print RTplus info

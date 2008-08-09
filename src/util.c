@@ -30,7 +30,7 @@
 extern gpointer hlog;
 
 
-void
+static void
 str_remove_non_ascii (gchar * s)
 {
   if (s == NULL)
@@ -42,7 +42,7 @@ str_remove_non_ascii (gchar * s)
 }
 
 
-void
+static void
 str_remove_dvbsi_control_codes (gchar * s)
 {
   gint i, l = 0, len;
@@ -100,7 +100,7 @@ str_remove_dvbsi_control_codes (gchar * s)
 }
 
 
-void
+static void
 str_replace_non_printable (gchar * s)
 {
   gchar *ch, *chplus1;
@@ -302,7 +302,8 @@ gtk_entry_printf (GtkWidget * w, const gchar * fmt, ...)
   g_free (msg);
 }
 
-inline void
+
+void
 gtk_entry_set_text_safe (GtkEntry * entry, const gchar * text)
 {
   gtk_entry_set_text (entry, (text ? text : ""));

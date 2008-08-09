@@ -738,12 +738,11 @@ diseqc_send_msg (gpointer hdvb, fe_sec_voltage_t v,
 static int
 do_diseqc (gpointer hdvb, guchar sat_no, gint polv, gint hi_lo)
 {
+  struct dvb_diseqc_master_cmd cmd =
+    { {0xe0, 0x10, 0x38, 0xf0, 0x00, 0x00}, 4 };
   HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
     return RC_NPE;
-
-  struct dvb_diseqc_master_cmd cmd =
-    { {0xe0, 0x10, 0x38, 0xf0, 0x00, 0x00}, 4 };
 
   if (sat_no != 0)
     {
@@ -1057,11 +1056,11 @@ dvb_tune (gpointer hdvb, tunestruct * t)
 gchar *
 dvb_tune_to_text (gpointer hdvb, tunestruct * t)
 {
+  gchar *text = NULL;
   HDVB *h = (HDVB *) hdvb;
   if (h == NULL)
     return NULL;
 
-  gchar *text = NULL;
   switch (h->dvb_fe_info.type)
     {
     case FE_OFDM:

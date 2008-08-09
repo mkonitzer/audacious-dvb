@@ -59,6 +59,8 @@ static void dvb_exit (void);
 
 static gboolean dvb_pes_pkt (InputPlayback *, guchar *, gint, gint);
 static gboolean dvb_payload (InputPlayback *, guchar *, gint, gint);
+static gboolean write_output (InputPlayback *, struct mad_pcm *,
+			      struct mad_header *);
 static gboolean dvb_mpeg_frame (InputPlayback *, guchar *, guint);
 static gchar *dvb_build_file_title (void);
 
@@ -74,19 +76,19 @@ static gboolean dvb_status_timer (gpointer);
 
 
 // Miscellaneous globals
-gboolean playing = FALSE, paused = FALSE;
+static gboolean playing = FALSE, paused = FALSE;
 gpointer hlog = NULL;		// This is used everywhere :)
-gpointer hdvb = NULL;		// EPG retrieval uses this
+static gpointer hdvb = NULL;
 
 // Internal interfaces
-cfgstruct *config = NULL;
-mmstruct *mmusic = NULL;
-rtstruct *rt = NULL;
-epgstruct *epg = NULL;
-statstruct *station = NULL;
-tunestruct *tune = NULL;
-dvbstatstruct *dvbstat = NULL;
-recstruct *record = NULL;
+cfgstruct *config = NULL;	// This is used in gui.c
+static mmstruct *mmusic = NULL;
+static rtstruct *rt = NULL;
+static epgstruct *epg = NULL;
+static statstruct *station = NULL;
+static tunestruct *tune = NULL;
+static dvbstatstruct *dvbstat = NULL;
+static recstruct *record = NULL;
 
 // Threads
 static GThread *gt_feed = NULL;
@@ -121,8 +123,8 @@ static gint sft[] = {
 };
 
 // Recording stuff
-time_t isplit_last = 0;
-time_t vsplit_last = 0;
+static time_t isplit_last = 0;
+static time_t vsplit_last = 0;
 
 InputPlugin dvb_ip = {
   .description = "DVB Input Plugin",
@@ -872,9 +874,9 @@ dvb_build_file_title (void)
 }
 
 
-gboolean
-write_output (InputPlayback * playback, struct mad_pcm * pcm,
-	      struct mad_header * header)
+static gboolean
+write_output (InputPlayback * playback, struct mad_pcm *pcm,
+	      struct mad_header *header)
 {
   mad_fixed_t const *left_ch, *right_ch;
   mad_fixed_t *output;

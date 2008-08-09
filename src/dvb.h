@@ -86,7 +86,6 @@ gint dvb_apid (gpointer, guint);
 gint dvb_apkt (gpointer, guchar *, guint, guint, gint *);
 gint dvb_dpid (gpointer, guint);
 gint dvb_dpkt (gpointer, guchar *, gint, gint, gint *);
-gint dvb_volume (gpointer, gint);
 gint dvb_get_pid (gpointer, gint, guint *, guint *);
 
 tunestruct *dvb_tune_init (void);

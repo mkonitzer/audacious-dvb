@@ -45,11 +45,12 @@ gboolean
 record_open (recstruct * rec, const gchar * filename, gboolean append,
 	     gboolean overwrite)
 {
+  const gchar *dot = NULL;
   if (rec == NULL)
     return FALSE;
 
   // Try to split filename into prefix and suffix
-  const gchar *dot = g_strrstr (filename, ".");
+  dot = g_strrstr (filename, ".");
   if (dot == NULL)
     return FALSE;
 
@@ -113,11 +114,12 @@ record_open (recstruct * rec, const gchar * filename, gboolean append,
 gboolean
 record_next (recstruct * rec, gboolean append, gboolean overwrite)
 {
+  gchar *tmp = NULL;
   if (rec == NULL || rec->fn_prefix == NULL || rec->fn_suffix == NULL)
     return FALSE;
 
-  gchar *tmp = g_strdup_printf ("%s-%u%s", rec->fn_prefix, ++rec->fn_idx,
-				rec->fn_suffix);
+  tmp = g_strdup_printf ("%s-%u%s", rec->fn_prefix, ++rec->fn_idx,
+			 rec->fn_suffix);
 
   if (overwrite)
     rec->filename = tmp;
@@ -164,7 +166,7 @@ record_next (recstruct * rec, gboolean append, gboolean overwrite)
 }
 
 
-size_t
+gint
 record_write (recstruct * rec, guchar * buf, size_t len)
 {
   if (rec == NULL)

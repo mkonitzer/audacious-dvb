@@ -27,6 +27,8 @@
 #ifndef __AUDACIOUS_DVB_RTXT_H__
 #define __AUDACIOUS_DVB_RTXT_H__
 
+#include <glib.h>
+
 #define RT_MEL 65		// MessageElementLength, max. 64+1 byte
 #define RT_EVNTS 20		// Number of stored Radiotext events
 
@@ -48,7 +50,7 @@ typedef struct _rtstruct
 
 rtstruct *radiotext_init (void);
 void radiotext_read_data (rtstruct *, const guchar *, gint);
-gchar *radiotext_events_to_text (rtstruct * rt);
+gchar *radiotext_events_to_text (rtstruct *);
 void radiotext_exit (rtstruct *);
 
 #endif // __AUDACIOUS_DVB_RTXT_H__

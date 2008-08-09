@@ -24,6 +24,9 @@
 #ifndef __AUDACIOUS_DVB_RECORD_H__
 #define __AUDACIOUS_DVB_RECORD_H__
 
+#include <stdio.h>
+#include <glib.h>
+
 #define RECORD_INDEX_MAX    1000
 
 typedef struct _recstruct
@@ -38,7 +41,7 @@ typedef struct _recstruct
 recstruct *record_init (void);
 gboolean record_open (recstruct * rec, const gchar *, gboolean, gboolean);
 gboolean record_next (recstruct *, gboolean, gboolean);
-size_t record_write (recstruct *, guchar *, size_t);
+gint record_write (recstruct *, guchar *, size_t);
 void record_close (recstruct *);
 void record_exit (recstruct *);
 

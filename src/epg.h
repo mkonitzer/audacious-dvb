@@ -44,6 +44,4 @@ epgstruct *epg_init (void);
 gint epg_read_data (epgstruct *, const guchar *, gint);
 void epg_exit (epgstruct *);
 
-void clean_string (gchar * s);
-
 #endif // __AUDACIOUS_DVB_EPG_H__

@@ -24,6 +24,8 @@
 #ifndef __AUDACIOUS_DVB_MMUSIC_H__
 #define __AUDACIOUS_DVB_MMUSIC_H__
 
+#include <glib.h>
+
 typedef struct _mmstruct
 {
   gchar *title;
@@ -38,7 +40,7 @@ typedef struct _mmstruct
 } mmstruct;
 
 mmstruct *madmusic_init (void);
-void madmusic_read_data (mmstruct *, const guchar *, gint);
-void madmusic_exit (mmstruct *);
+void madmusic_read_data (mmstruct*, const guchar *, gint);
+void madmusic_exit (mmstruct*);
 
 #endif // __AUDACIOUS_DVB_MMUSIC_H__

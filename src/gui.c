@@ -33,6 +33,7 @@
 #include "cfg.h"
 #include "dvb.h"
 #include "epg.h"
+#include "glwidgets.h"
 #include "rtxt.h"
 #include "mmusic.h"
 #include "config.h"
@@ -40,17 +41,16 @@
 
 extern gpointer hlog;
 extern cfgstruct *config;
-extern gchar *glwidgets;
 
-static Widgets widgets = { 0 };
+static Widgets widgets = { NULL };
 
-static void config_to_gui (cfgstruct * config);
-static void dvb_configure_ok (GtkWidget * w, gpointer data);
-static void logToFileClicked (GtkWidget * w, gpointer user_data);
-static void recordClicked (GtkWidget * w, gpointer user_data);
-static void isplitClicked (GtkWidget * w, gpointer user_data);
-static void vsplitClicked (GtkWidget * w, gpointer user_data);
-static void config_from_gui (cfgstruct * config);
+static void config_to_gui (cfgstruct *);
+static void dvb_configure_ok (GtkWidget *, gpointer);
+static void logToFileClicked (GtkWidget *, gpointer);
+static void recordClicked (GtkWidget *, gpointer);
+static void isplitClicked (GtkWidget *, gpointer);
+static void vsplitClicked (GtkWidget *, gpointer);
+static void config_from_gui (cfgstruct *);
 
 
 void
@@ -143,7 +143,7 @@ dvb_configure_ok (GtkWidget * w, gpointer data)
 {
   config_from_gui (config);
   config_to_db (config);
-  
+
   log_set_level (hlog, config->log_level);
 
   gtk_widget_destroy (GTK_WIDGET (widgets.configBox));
@@ -486,7 +486,7 @@ infobox_redraw (void)
 }
 
 
-inline gboolean
+gboolean
 infobox_is_visible (void)
 {
   return (widgets.infoBox != NULL);
@@ -496,10 +496,10 @@ infobox_is_visible (void)
 void
 infobox_update_service (statstruct * st)
 {
+  GtkWidget *provEntry, *statEntry;
   if (widgets.infoBox == NULL)
     return;
 
-  GtkWidget *provEntry, *statEntry;
   provEntry = glade_xml_get_widget (widgets.infoXml, "providerEntry");
   statEntry = glade_xml_get_widget (widgets.infoXml, "stationEntry");
   if (st != NULL)
@@ -518,12 +518,12 @@ infobox_update_service (statstruct * st)
 void
 infobox_update_radiotext (rtstruct * rt)
 {
-  if (widgets.infoBox == NULL)
-    return;
-
   gchar *events = NULL;
   GtkTextBuffer *rtevTextBuffer;
   GtkWidget *rtptitleEntry, *rtpartistEntry, *rtpptyEntry, *rtevTextView;
+  if (widgets.infoBox == NULL)
+    return;
+
   rtptitleEntry = glade_xml_get_widget (widgets.infoXml, "rttitleEntry");
   rtpartistEntry = glade_xml_get_widget (widgets.infoXml, "rtartistEntry");
   rtpptyEntry = glade_xml_get_widget (widgets.infoXml, "rtptyEntry");
@@ -556,12 +556,12 @@ infobox_update_radiotext (rtstruct * rt)
 void
 infobox_update_epg (epgstruct * epg)
 {
-  if (widgets.infoBox == NULL)
-    return;
-
   GtkTextBuffer *epgevddescTextBuffer;
   GtkWidget *epglangEntry, *epgatypeEntry,
     *epgevnameEntry, *epgevdescEntry, *epgevddescTextView;
+  if (widgets.infoBox == NULL)
+    return;
+
   epglangEntry = glade_xml_get_widget (widgets.infoXml, "epglangEntry");
   epgatypeEntry = glade_xml_get_widget (widgets.infoXml, "epgatypeEntry");
   epgevnameEntry = glade_xml_get_widget (widgets.infoXml, "epgevnameEntry");
@@ -601,10 +601,10 @@ infobox_update_epg (epgstruct * epg)
 void
 infobox_update_mmusic (mmstruct * mmusic)
 {
+  GtkWidget *mmtitleEntry, *mmartistEntry, *mmalbumEntry, *mmtrnumEntry;
   if (widgets.infoBox == NULL)
     return;
 
-  GtkWidget *mmtitleEntry, *mmartistEntry, *mmalbumEntry, *mmtrnumEntry;
   mmtitleEntry = glade_xml_get_widget (widgets.infoXml, "mmtitleEntry");
   mmartistEntry = glade_xml_get_widget (widgets.infoXml, "mmartistEntry");
   mmalbumEntry = glade_xml_get_widget (widgets.infoXml, "mmalbumEntry");
@@ -628,13 +628,13 @@ infobox_update_mmusic (mmstruct * mmusic)
 void
 infobox_update_dvb (gpointer hdvb, dvbstatstruct * dvb, tunestruct * tune)
 {
-  if (widgets.infoBox == NULL)
-    return;
-
   GtkWidget *dvbtuneEntry, *dvbpidEntry, *dvbstrProgressBar,
     *dvbsnrProgressBar, *dvbuncEntry, *dvbberEntry, *dvbsignalCheckButton,
     *dvbcarrierCheckButton, *dvbviterbiCheckButton, *dvbsyncCheckButton,
     *dvblockCheckButton, *dvbtimedoutCheckButton;
+  if (widgets.infoBox == NULL)
+    return;
+
   dvbtuneEntry = glade_xml_get_widget (widgets.infoXml, "dvbtuneEntry");
   dvbpidEntry = glade_xml_get_widget (widgets.infoXml, "dvbpidEntry");
   dvbstrProgressBar =
