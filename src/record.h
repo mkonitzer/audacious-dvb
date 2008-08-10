@@ -41,7 +41,7 @@ typedef struct _recstruct
 recstruct *record_init (void);
 gboolean record_open (recstruct * rec, const gchar *, gboolean, gboolean);
 gboolean record_next (recstruct *, gboolean, gboolean);
-gint record_write (recstruct *, guchar *, size_t);
+gint record_write (const recstruct *, const guchar *, size_t);
 void record_close (recstruct *);
 void record_exit (recstruct *);
 

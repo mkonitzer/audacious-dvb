@@ -40,10 +40,10 @@ enum lvltype
   LOG_DEBUG = 7
 };
 
-gint log_glib_open (gpointer *, gchar *, enum lvltype);
-gint log_file_open (gpointer *, gchar *, gboolean, enum lvltype);
+gint log_glib_open (gpointer *, const gchar *, enum lvltype);
+gint log_file_open (gpointer *, const gchar *, gboolean, enum lvltype);
 gint log_close (gpointer);
-gint log_print (gpointer, enum lvltype, const gchar *, ...);
+gint log_print (const gpointer, enum lvltype, const gchar *, ...);
 gint log_set_level (gpointer, enum lvltype);
 
 #endif // __AUDACIOUS_DVB_LOG_H__

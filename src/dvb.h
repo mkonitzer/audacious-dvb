@@ -106,11 +106,11 @@ gint dvb_get_pid (HDVB *, gint, guint *, guint *);
 tunestruct *dvb_tune_init (void);
 gint dvb_tune (HDVB *, tunestruct *);
 gint dvb_tune_parse_url (const gchar *, tunestruct *);
-gchar *dvb_tune_to_text (HDVB *, tunestruct *);
+gchar *dvb_tune_to_text (const HDVB *, const tunestruct *);
 void dvb_tune_exit (tunestruct *);
 
 dvbstatstruct *dvb_status_init (void);
-gint dvb_get_status (HDVB *, dvbstatstruct *);
+gint dvb_get_status (const HDVB *, dvbstatstruct *);
 void dvb_status_exit (dvbstatstruct *);
 
 #endif // __AUDACIOUS_DVB_DVB_H__

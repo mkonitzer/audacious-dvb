@@ -50,14 +50,15 @@ typedef struct _Widgets
 void dvb_about (void);
 void dvb_configure (void);
 
-void infobox_show (statstruct *, rtstruct *, epgstruct *, mmstruct *);
+void infobox_show (const statstruct *, const rtstruct *, const epgstruct *,
+		   const mmstruct *);
 void infobox_hide (void);
 void infobox_redraw (void);
 gboolean infobox_is_visible (void);
-void infobox_update_service (statstruct *);
-void infobox_update_radiotext (rtstruct *);
-void infobox_update_epg (epgstruct *);
-void infobox_update_mmusic (mmstruct *);
-void infobox_update_dvb (gpointer, dvbstatstruct *, tunestruct *);
+void infobox_update_service (const statstruct *);
+void infobox_update_radiotext (const rtstruct *);
+void infobox_update_epg (const epgstruct *);
+void infobox_update_mmusic (const mmstruct *);
+void infobox_update_dvb (HDVB *, const dvbstatstruct *, const tunestruct *);
 
 #endif // __AUDACIOUS_DVB_GUI_H__

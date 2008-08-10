@@ -167,7 +167,7 @@ record_next (recstruct * rec, gboolean append, gboolean overwrite)
 
 
 gint
-record_write (recstruct * rec, guchar * buf, size_t len)
+record_write (const recstruct * rec, const guchar * buf, size_t len)
 {
   if (rec == NULL)
     return -1;

@@ -41,7 +41,7 @@ typedef struct _HLOG
 
 
 gint
-log_glib_open (gpointer * hlog, gchar * pfx, enum lvltype lvl)
+log_glib_open (gpointer * hlog, const gchar * pfx, enum lvltype lvl)
 {
   HLOG *hl;
 
@@ -65,7 +65,7 @@ log_glib_open (gpointer * hlog, gchar * pfx, enum lvltype lvl)
 
 
 gint
-log_file_open (gpointer * hlog, gchar * filename, gboolean append,
+log_file_open (gpointer * hlog, const gchar * filename, gboolean append,
 	       enum lvltype lvl)
 {
   HLOG *hl;
@@ -122,7 +122,7 @@ log_close (gpointer hlog)
 
 
 gint
-log_print (gpointer hlog, enum lvltype lvl, const gchar * fmt, ...)
+log_print (const gpointer hlog, enum lvltype lvl, const gchar * fmt, ...)
 {
   HLOG *hl;
   hl = (HLOG *) hlog;

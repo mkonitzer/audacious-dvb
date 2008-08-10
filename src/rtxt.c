@@ -184,7 +184,7 @@ radiotext_events_insert (rtstruct * rt, gchar * newtext)
 
 
 gchar *
-radiotext_events_to_text (rtstruct * rt)
+radiotext_events_to_text (const rtstruct * rt)
 {
   return (rt != NULL ? g_strjoinv ("\n", rt->event) : NULL);
 }

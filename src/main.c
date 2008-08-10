@@ -57,11 +57,11 @@ static gint dvb_get_time (InputPlayback *);
 static void dvb_file_info_box (gchar *);
 static void dvb_exit (void);
 
-static gboolean dvb_pes_pkt (InputPlayback *, guchar *, gint, gint);
-static gboolean dvb_payload (InputPlayback *, guchar *, gint, gint);
-static gboolean write_output (InputPlayback *, struct mad_pcm *,
-			      struct mad_header *);
-static gboolean dvb_mpeg_frame (InputPlayback *, guchar *, guint);
+static gboolean dvb_pes_pkt (InputPlayback *, const guchar *, gint, gint);
+static gboolean dvb_payload (InputPlayback *, const guchar *, gint, gint);
+static gboolean write_output (InputPlayback *, const struct mad_pcm *,
+			      const struct mad_header *);
+static gboolean dvb_mpeg_frame (InputPlayback *, const guchar *, guint);
 static gchar *dvb_build_file_title (void);
 
 // Thread functions
@@ -614,7 +614,8 @@ dvb_status_timer (gpointer args)
 
 
 static gboolean
-dvb_pes_pkt (InputPlayback * playback, guchar * buf, gint len, gint reset)
+dvb_pes_pkt (InputPlayback * playback, const guchar * buf, gint len,
+	     gint reset)
 {
   gint i, stream_id, PES_packet_length, j, pp_len;
   static gint pbh, pbl;
@@ -726,7 +727,8 @@ dvb_pes_pkt (InputPlayback * playback, guchar * buf, gint len, gint reset)
 
 
 static gboolean
-dvb_payload (InputPlayback * playback, guchar * buf, gint len, gint reset)
+dvb_payload (InputPlayback * playback, const guchar * buf, gint len,
+	     gint reset)
 {
   gint br, sf, fl, num_samples;
   gint i, mpv, mpl, bri, tlu, sfi, pad;
@@ -875,8 +877,8 @@ dvb_build_file_title (void)
 
 
 static gboolean
-write_output (InputPlayback * playback, struct mad_pcm *pcm,
-	      struct mad_header *header)
+write_output (InputPlayback * playback, const struct mad_pcm *pcm,
+	      const struct mad_header *header)
 {
   mad_fixed_t const *left_ch, *right_ch;
   mad_fixed_t *output;
@@ -962,7 +964,7 @@ write_output (InputPlayback * playback, struct mad_pcm *pcm,
 
 
 static gboolean
-dvb_mpeg_frame (InputPlayback * playback, guchar * frame, guint len)
+dvb_mpeg_frame (InputPlayback * playback, const guchar * frame, guint len)
 {
   if (playback == NULL)
     {

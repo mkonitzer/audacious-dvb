@@ -44,7 +44,7 @@ extern cfgstruct *config;
 
 static Widgets widgets = { NULL };
 
-static void config_to_gui (cfgstruct *);
+static void config_to_gui (const cfgstruct *);
 static void dvb_configure_ok (GtkWidget *, gpointer);
 static void logToFileClicked (GtkWidget *, gpointer);
 static void recordClicked (GtkWidget *, gpointer);
@@ -239,8 +239,9 @@ vsplitClicked (GtkWidget * w, gpointer user_data)
 			    (widgets.configXml, "vsplit5Label"), b);
 }
 
+
 static void
-config_to_gui (cfgstruct * config)
+config_to_gui (const cfgstruct * config)
 {
   gtk_spin_button_set_value (GTK_SPIN_BUTTON
 			     (glade_xml_get_widget
@@ -333,6 +334,7 @@ config_to_gui (cfgstruct * config)
   vsplitClicked (NULL, NULL);
   recordClicked (NULL, NULL);
 }
+
 
 static void
 config_from_gui (cfgstruct * config)
@@ -428,9 +430,10 @@ config_from_gui (cfgstruct * config)
 				   (widgets.configXml, "madCheck")));
 }
 
+
 void
-infobox_show (statstruct * station, rtstruct * rt, epgstruct * epg,
-	      mmstruct * mmusic)
+infobox_show (const statstruct * station, const rtstruct * rt,
+	      const epgstruct * epg, const mmstruct * mmusic)
 {
   if (widgets.infoBox)
     {
@@ -494,7 +497,7 @@ infobox_is_visible (void)
 
 
 void
-infobox_update_service (statstruct * st)
+infobox_update_service (const statstruct * st)
 {
   GtkWidget *provEntry, *statEntry;
   if (widgets.infoBox == NULL)
@@ -516,7 +519,7 @@ infobox_update_service (statstruct * st)
 
 
 void
-infobox_update_radiotext (rtstruct * rt)
+infobox_update_radiotext (const rtstruct * rt)
 {
   gchar *events = NULL;
   GtkTextBuffer *rtevTextBuffer;
@@ -554,7 +557,7 @@ infobox_update_radiotext (rtstruct * rt)
 
 
 void
-infobox_update_epg (epgstruct * epg)
+infobox_update_epg (const epgstruct * epg)
 {
   GtkTextBuffer *epgevddescTextBuffer;
   GtkWidget *epglangEntry, *epgatypeEntry,
@@ -599,7 +602,7 @@ infobox_update_epg (epgstruct * epg)
 
 
 void
-infobox_update_mmusic (mmstruct * mmusic)
+infobox_update_mmusic (const mmstruct * mmusic)
 {
   GtkWidget *mmtitleEntry, *mmartistEntry, *mmalbumEntry, *mmtrnumEntry;
   if (widgets.infoBox == NULL)
@@ -626,7 +629,8 @@ infobox_update_mmusic (mmstruct * mmusic)
 }
 
 void
-infobox_update_dvb (gpointer hdvb, dvbstatstruct * dvb, tunestruct * tune)
+infobox_update_dvb (HDVB * hdvb, const dvbstatstruct * dvb,
+		    const tunestruct * tune)
 {
   GtkWidget *dvbtuneEntry, *dvbpidEntry, *dvbstrProgressBar,
     *dvbsnrProgressBar, *dvbuncEntry, *dvbberEntry, *dvbsignalCheckButton,

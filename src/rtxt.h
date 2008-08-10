@@ -50,7 +50,7 @@ typedef struct _rtstruct
 
 rtstruct *radiotext_init (void);
 void radiotext_read_data (rtstruct *, const guchar *, gint);
-gchar *radiotext_events_to_text (rtstruct *);
+gchar *radiotext_events_to_text (const rtstruct *);
 void radiotext_exit (rtstruct *);
 
 #endif // __AUDACIOUS_DVB_RTXT_H__

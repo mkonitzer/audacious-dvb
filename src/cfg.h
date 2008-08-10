@@ -58,7 +58,7 @@ typedef struct _cfgstruct
 
 cfgstruct *config_init (void);
 gboolean config_from_db (cfgstruct *);
-gboolean config_to_db (cfgstruct *);
+gboolean config_to_db (const cfgstruct *);
 void config_exit (cfgstruct *);
 
 #endif // __AUDACIOUS_DVB_CFG_H__

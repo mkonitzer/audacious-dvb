@@ -33,7 +33,7 @@
 extern gpointer hlog;
 
 
-mmstruct*
+mmstruct *
 madmusic_init (void)
 {
   return g_malloc0 (sizeof (mmstruct));
@@ -72,7 +72,7 @@ replace_crlf (gchar * s)
 
 
 void
-madmusic_read_data (mmstruct* mm, const guchar * buf, gint len)
+madmusic_read_data (mmstruct * mm, const guchar * buf, gint len)
 {
   gint field = 0, ftna = 0, toai = 0, trnum = 0;
   gchar toan[32];
@@ -174,7 +174,7 @@ madmusic_read_data (mmstruct* mm, const guchar * buf, gint len)
 
 
 void
-madmusic_exit (mmstruct* mm)
+madmusic_exit (mmstruct * mm)
 {
   g_free (mm);
 }

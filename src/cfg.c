@@ -120,7 +120,7 @@ config_from_db (cfgstruct * config)
 
 
 gboolean
-config_to_db (cfgstruct * config)
+config_to_db (const cfgstruct * config)
 {
   ConfigDb *db;
 

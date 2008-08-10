@@ -645,7 +645,7 @@ dvb_get_pid (HDVB * h, gint s, guint * apid, guint * dpid)
 
 
 static int
-diseqc_send_msg (HDVB * h, fe_sec_voltage_t v,
+diseqc_send_msg (const HDVB * h, fe_sec_voltage_t v,
 		 struct dvb_diseqc_master_cmd cmd, fe_sec_tone_mode_t t,
 		 guchar sat_no)
 {
@@ -709,7 +709,7 @@ diseqc_send_msg (HDVB * h, fe_sec_voltage_t v,
 
 
 static int
-do_diseqc (HDVB * h, guchar sat_no, gint polv, gint hi_lo)
+do_diseqc (const HDVB * h, guchar sat_no, gint polv, gint hi_lo)
 {
   struct dvb_diseqc_master_cmd cmd =
     { {0xe0, 0x10, 0x38, 0xf0, 0x00, 0x00}, 4 };
@@ -761,8 +761,8 @@ do_diseqc (HDVB * h, guchar sat_no, gint polv, gint hi_lo)
 
 
 static gint
-check_status (HDVB * h, gint type,
-	      struct dvb_frontend_parameters *feparams, guint base)
+check_status (const HDVB * h, gint type,
+	      const struct dvb_frontend_parameters *feparams, guint base)
 {
   guint strength;
   fe_status_t festatus;
@@ -870,7 +870,7 @@ check_status (HDVB * h, gint type,
 
 
 gint
-dvb_get_status (HDVB * h, dvbstatstruct * st)
+dvb_get_status (const HDVB * h, dvbstatstruct * st)
 {
   guint status;
   dvbstatstruct _st;
@@ -1023,7 +1023,7 @@ dvb_tune (HDVB * h, tunestruct * t)
 
 
 gchar *
-dvb_tune_to_text (HDVB * h, tunestruct * t)
+dvb_tune_to_text (const HDVB * h, const tunestruct * t)
 {
   gchar *text = NULL;
 
