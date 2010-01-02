@@ -556,32 +556,28 @@ feed_thread (gpointer args)
     {
       // Try to fetch an audio packet from DVB card
       rc = dvb_apkt (hdvb, pkt, sizeof (pkt), 1000, &ar);
-      if (rc == RC_OK)
-	{
-	  toctr = 0;
-	  if (!paused && !dvb_pes_pkt (playback, pkt, ar, 0))
-	    break;
-	}
-      else
-	{
-	  if (rc == RC_DVB_TIMEOUT)
-	    {
-	      log_print (hlog, LOG_DEBUG, "dvb_apkt() timeout");
-	      if (++toctr > 9)
-		{
-		  log_print (hlog, LOG_DEBUG,
-			     "dvb_apkt() timed out too often, giving up");
-		  break;
-		}
-	    }
-	  else
-	    {
-	      log_print (hlog, LOG_ERR,
-			 "dvb_apkt() returned rc = %d, giving up", rc);
-	      break;
-	    }
-	}
-    }
+      switch (rc)
+        {
+        case RC_OK:
+          toctr = 0;
+          if (!paused && !dvb_pes_pkt (playback, pkt, ar, 0))
+            playing = FALSE;
+          break;
+        case RC_DVB_TIMEOUT:
+          log_print (hlog, LOG_DEBUG, "dvb_apkt() timeout");
+          if (++toctr > 9)
+            {
+              log_print (hlog, LOG_DEBUG,
+                         "dvb_apkt() timed out too often, giving up");
+              playing = FALSE;
+            }
+          break;
+        default:
+          log_print (hlog, LOG_ERR,
+                     "dvb_apkt() returned rc = %d, giving up", rc);
+          playing = FALSE;
+        }
+      }
 
   log_print (hlog, LOG_DEBUG, "play-loop terminated");
 
@@ -642,85 +638,72 @@ dvb_pes_pkt (InputPlayback * playback, const guchar * buf, gint len,
 
   while (1)
     {
-      if (pbl < pbh)
+      if (pbl >= pbh)
 	{
-	  if ((pbh - pbl) > 4)
-	    {
-	      for (i = pbl; i < (pbh - 4); i++)
-		{
-		  if ((pesbuf[i] == 0x00) &&
-		      (pesbuf[i + 1] == 0x00) &&
-		      (pesbuf[i + 2] == 0x01) && ((pesbuf[i + 3] >> 4) > 0xa))
-		    break;
-		}
-
-	      if (i < (pbh - 4))
-		{
-		  if (i > pbl)
-		    {
-		      memcpy (pesbuf, &pesbuf[i], pbh - i);
-		      pbl = 0;
-		      pbh = pbh - i;
-		    }
-		  else
-		    {
-		      stream_id = pesbuf[i + 3];
-		      PES_packet_length =
-			(pesbuf[i + 4] << 8) | pesbuf[i + 5];
-		      if (PES_packet_length == 0)
-			{
-			  /* So now what? */
-			  for (j = (i + 4); j < (pbh - 4); j++)
-			    {
-			      if ((pesbuf[j] == 0x00) &&
-				  (pesbuf[j + 1] == 0x00) &&
-				  (pesbuf[j + 2] == 0x01) &&
-				  ((pesbuf[j + 3] >> 4) > 0xa))
-				break;
-			    }
-
-			  if (j < (pbh - 4))
-			    PES_packet_length = j - i - 6;
-			  else
-			    return TRUE;
-			}
-
-		      if ((pbh - pbl) > (PES_packet_length + 6))
-			{
-			  /* Uhmmmm, complete? */
-			  p = &pesbuf[i];
-			  pp = p + 9 + p[8];
-			  pp_len = PES_packet_length - 3 - p[8];
-			  if (!dvb_payload (playback, pp, pp_len, 0))
-			    return FALSE;
-
-			  g_memmove (pesbuf,
-				     &pesbuf[i + 6 + PES_packet_length],
-				     pbh - (i + 6 + PES_packet_length));
-			  pbl = 0;
-			  pbh -= (i + 6 + PES_packet_length);
-			}
-		      else
-			return TRUE;
-		    }
-		}
-	      else
-		{
-		  memcpy (pesbuf, &pesbuf[i], pbh - i);
-		  pbl = 0;
-		  pbh -= i;
-		  return TRUE;
-		}
-	    }
-	  else
-	    return TRUE;
-	}
-      else
-	{
-	  pbl = 0;
+          pbl = 0;
 	  pbh = 0;
 	  return TRUE;
-	}
+        }
+      if ((pbh - pbl) <= 4)
+        return TRUE;
+      for (i = pbl; i < (pbh - 4); i++)
+        {
+          if ((pesbuf[i] == 0x00) &&
+              (pesbuf[i + 1] == 0x00) &&
+              (pesbuf[i + 2] == 0x01) && ((pesbuf[i + 3] >> 4) > 0xa))
+            break;
+        }
+
+      if (i >= (pbh - 4))
+        {
+          memcpy (pesbuf, &pesbuf[i], pbh - i);
+          pbl = 0;
+          pbh -= i;
+          return TRUE;
+        }
+      if (i > pbl)
+        {
+          memcpy (pesbuf, &pesbuf[i], pbh - i);
+          pbl = 0;
+          pbh = pbh - i;
+        }
+      else
+        {
+          stream_id = pesbuf[i + 3];
+          PES_packet_length =
+            (pesbuf[i + 4] << 8) | pesbuf[i + 5];
+          if (PES_packet_length == 0)
+            {
+              /* So now what? */
+              for (j = (i + 4); j < (pbh - 4); j++)
+                {
+                  if ((pesbuf[j] == 0x00) &&
+                      (pesbuf[j + 1] == 0x00) &&
+                      (pesbuf[j + 2] == 0x01) &&
+                      ((pesbuf[j + 3] >> 4) > 0xa))
+                    break;
+                }
+
+              if (j >= (pbh - 4))
+                return TRUE;
+              PES_packet_length = j - i - 6;
+            }
+
+          if ((pbh - pbl) <= (PES_packet_length + 6))
+            return TRUE;
+          /* Uhmmmm, complete? */
+          p = &pesbuf[i];
+          pp = p + 9 + p[8];
+          pp_len = PES_packet_length - 3 - p[8];
+          if (!dvb_payload (playback, pp, pp_len, 0))
+            return FALSE;
+
+          g_memmove (pesbuf,
+                     &pesbuf[i + 6 + PES_packet_length],
+                     pbh - (i + 6 + PES_packet_length));
+          pbl = 0;
+          pbh -= (i + 6 + PES_packet_length);
+        }
     }
   return TRUE;
 }
@@ -755,63 +738,61 @@ dvb_payload (InputPlayback * playback, const guchar * buf, gint len,
 	    {
 	      if (mpbuf[i] == 0xff && (mpbuf[i + 1] & 0xf0) == 0xf0)
 		break;
-	    }
+            }
 
-	  if (i < (bph - 4))
-	    {
-	      /* yes, we may have an entire frame */
-	      mpv = (mpbuf[1] >> 3) & 1;
-	      mpl = (mpbuf[1] >> 1) & 3;
-	      bri = (mpbuf[2] >> 4) & 0xf;
-	      sfi = (mpbuf[2] >> 2) & 3;
-	      pad = (mpbuf[2] >> 1) & 1;
+          if (i >= (bph - 4))
+            /* whoops, that sucks */
+            return TRUE;
 
-	      tlu = bri | (mpl << 4) | (mpv << 6);
-	      br = brt[tlu];
+          /* yes, we may have an entire frame */
+          mpv = (mpbuf[1] >> 3) & 1;
+          mpl = (mpbuf[1] >> 1) & 3;
+          bri = (mpbuf[2] >> 4) & 0xf;
+          sfi = (mpbuf[2] >> 2) & 3;
+          pad = (mpbuf[2] >> 1) & 1;
 
-	      tlu = sfi | (mpv << 2);
-	      sf = sft[tlu];
+          tlu = bri | (mpl << 4) | (mpv << 6);
+          br = brt[tlu];
 
-	      if (sf == 0 || br == 0)
-		{
-		  /* Uhm, no, this is not it */
-		  memcpy (mpbuf, &mpbuf[i], bph - i);
-		  bph -= i;
-		  return TRUE;
-		}
+          tlu = sfi | (mpv << 2);
+          sf = sft[tlu];
 
-	      if (mpl == 3)
-		{
-		  num_samples = 384;
-		  fl = (12 * (br * 1000) / sf + pad) * 4;
-		}
-	      else
-		{
-		  num_samples = 1152;
-		  fl = 144 * (br * 1000) / sf + pad;
-		}
+          if (sf == 0 || br == 0)
+            {
+              /* Uhm, no, this is not it */
+              memcpy (mpbuf, &mpbuf[i], bph - i);
+              bph -= i;
+              return TRUE;
+            }
 
-	      if (fl > bph)
-		return TRUE;
+          if (mpl == 3)
+            {
+              num_samples = 384;
+              fl = (12 * (br * 1000) / sf + pad) * 4;
+            }
+          else
+            {
+              num_samples = 1152;
+              fl = 144 * (br * 1000) / sf + pad;
+            }
 
-	      if ((mpbuf[fl] == 0xff) && ((mpbuf[fl + 1] & 0xf0) == 0xf0))
-		{
-		  if (!dvb_mpeg_frame (playback, mpbuf, fl))
-		    return FALSE;
-		  if (rt != NULL)
-		    radiotext_read_data (rt, mpbuf, fl);
-		  g_memmove (mpbuf, &mpbuf[fl], bph - fl);
-		  bph -= fl;
-		}
-	      else
-		{
-		  g_memmove (mpbuf, &mpbuf[i], bph - i);
-		  bph -= i;
-		}
-	    }
-	  else
-	    /* whoops, that sucks */
-	    return TRUE;
+          if (fl > bph)
+            return TRUE;
+
+          if ((mpbuf[fl] == 0xff) && ((mpbuf[fl + 1] & 0xf0) == 0xf0))
+            {
+              if (!dvb_mpeg_frame (playback, mpbuf, fl))
+                return FALSE;
+              if (rt != NULL)
+                radiotext_read_data (rt, mpbuf, fl);
+              g_memmove (mpbuf, &mpbuf[fl], bph - fl);
+              bph -= fl;
+            }
+          else
+            {
+              g_memmove (mpbuf, &mpbuf[i], bph - i);
+              bph -= i;
+            }
 	}
       else
 	{
@@ -819,16 +800,14 @@ dvb_payload (InputPlayback * playback, const guchar * buf, gint len,
 	    {
 	      if ((mpbuf[i] == 0xff) && ((mpbuf[i + 1] & 0xf0) == 0xf0))
 		break;
-	    }
+            }
 
-	  if (i < (bph - 4))
-	    {
-	      g_memmove (mpbuf, &mpbuf[i], bph - i);
-	      bph -= i;
-	    }
-	  else
-	    /* No sync in buffer yet, that hurts */
-	    return TRUE;
+          if (i >= (bph - 4))
+            /* No sync in buffer yet, that hurts */
+            return TRUE;
+
+          g_memmove (mpbuf, &mpbuf[i], bph - i);
+          bph -= i;
 	}
     }
   return TRUE;
@@ -1195,37 +1174,33 @@ epg_thread (gpointer arg)
   while (playing)
     {
       rc = dvb_section (hdvb, 0x0012, 0x4e, sid, sct, s, 1000);
-      if (rc == RC_OK)
-	{
-	  toctr = 0;
-	  len = 3 + (((s[1] << 8) | s[2]) & 0xfff);
-	  log_print (hlog, LOG_DEBUG, "EPG section lenght = %d", len);
+      switch (rc)
+        {
+        case RC_OK:
+          toctr = 0;
+          len = 3 + (((s[1] << 8) | s[2]) & 0xfff);
+          log_print (hlog, LOG_DEBUG, "EPG section lenght = %d", len);
 
-	  epg_read_data (epg, s, len);
-	  if (s[6] != s[7])
-	    sct++;
-	  else
-	    sct = 0;
-	}
-      else
-	{
-	  if (rc == RC_DVB_TIMEOUT)
-	    {
-	      log_print (hlog, LOG_DEBUG, "dvb_section() timeout");
-	      if (++toctr > 9)
-		{
-		  log_print (hlog, LOG_DEBUG,
-			     "dvb_section() timed out too often, giving up");
-		  break;
-		}
-	    }
-	  else
-	    {
-	      log_print (hlog, LOG_ERR,
-			 "dvb_section() returned rc = %d, giving up", rc);
-	      break;
-	    }
-	}
+          epg_read_data (epg, s, len);
+          if (s[6] != s[7])
+            sct++;
+          else
+            sct = 0;
+          break;
+        case RC_DVB_TIMEOUT:
+          log_print (hlog, LOG_DEBUG, "dvb_section() timeout");
+          if (++toctr > 9)
+            {
+              log_print (hlog, LOG_DEBUG,
+                         "dvb_section() timed out too often, giving up");
+              playing = FALSE;
+            }
+          break;
+        default:
+          log_print (hlog, LOG_ERR,
+                     "dvb_section() returned rc = %d, giving up", rc);
+          playing = FALSE;
+        }
     }
 
   epg_exit (epg);
@@ -1263,58 +1238,52 @@ mmusic_thread (gpointer arg)
     {
       memset (sect, 0xff, sizeof (sect));
       rc = dvb_dpkt (hdvb, sect, sizeof (sect), 1000, &dr);
-      if (rc == RC_OK)
-	{
-	  toctr = 0;
-	  slen = ((sect[1] << 8) | sect[2]) & 0xfff;
-	  blen = ((sect[22] << 8) | sect[23]) & 0xfff;
-	  if (blen <= (slen - 21))
-	    {
-	      madmusic_read_data (mmusic, &sect[24], blen - 2);
-	      fbf = 0;
-	    }
-	  else
-	    {
-	      off = ((sect[18] << 8) | sect[19]);
-	      if (fbf == off)
-		{
-		  memcpy (&rtxt[off], &sect[24], slen - 21);
-		  if ((off + (slen - 21)) >= blen)
-		    {
-		      madmusic_read_data (mmusic, rtxt, blen - 2);
-		      fbf = 0;
-		    }
-		  else
-		    fbf += (slen - 21 - 4);
-		}
-	      else
-		{
-		  log_print (hlog, LOG_WARN,
-			     "Warning! Offset out of whack, is %d, should be %d!",
-			     off, fbf);
-		  fbf = 0;
-		}
-	    }
-	}
-      else
-	{
-	  if (rc == RC_DVB_TIMEOUT)
-	    {
-	      log_print (hlog, LOG_DEBUG, "dvb_dpkt() timeout");
-	      if (++toctr > 9)
-		{
-		  log_print (hlog, LOG_DEBUG,
-			     "dvb_dpkt() timed out too often, giving up");
-		  break;
-		}
-	    }
-	  else
-	    {
-	      log_print (hlog, LOG_ERR,
-			 "dvb_dpkt() returned rc = %d, giving up", rc);
-	      break;
-	    }
-	}
+      switch (rc)
+        {
+        case RC_OK:
+          toctr = 0;
+          slen = ((sect[1] << 8) | sect[2]) & 0xfff;
+          blen = ((sect[22] << 8) | sect[23]) & 0xfff;
+          if (blen <= (slen - 21))
+            {
+              madmusic_read_data (mmusic, &sect[24], blen - 2);
+              fbf = 0;
+              break;
+            }
+
+          off = ((sect[18] << 8) | sect[19]);
+          if (fbf != off)
+            {
+              log_print (hlog, LOG_WARN,
+                         "Warning! Offset out of whack, is %d, should be %d!",
+                         off, fbf);
+              fbf = 0;
+              break;
+            }
+
+          memcpy (&rtxt[off], &sect[24], slen - 21);
+          if ((off + (slen - 21)) >= blen)
+            {
+              madmusic_read_data (mmusic, rtxt, blen - 2);
+              fbf = 0;
+            }
+          else
+            fbf += (slen - 21 - 4);
+          break;
+        case RC_DVB_TIMEOUT:
+          log_print (hlog, LOG_DEBUG, "dvb_dpkt() timeout");
+          if (++toctr > 9)
+            {
+              log_print (hlog, LOG_DEBUG,
+                         "dvb_dpkt() timed out too often, giving up");
+              playing = FALSE;
+            }
+          break;
+        default:
+          log_print (hlog, LOG_ERR,
+                     "dvb_dpkt() returned rc = %d, giving up", rc);
+          playing = FALSE;
+        }
     }
 
   madmusic_exit (mmusic);
