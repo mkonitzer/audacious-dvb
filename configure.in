@@ -19,8 +19,8 @@ AM_PATH_GLIB_2_0(2.6.0, , AC_MSG_ERROR([*** GLIB >= 2.6.0 not installed - please
 AM_PATH_GTK_2_0(2.6.0, , AC_MSG_ERROR([*** GTK+ >= 2.6.0 not installed - please install first ***]), gthread)
 
 # Audacious
-PKG_CHECK_MODULES(AUDACIOUS, [audacious >= 1.4.0], ,
-	AC_MSG_ERROR([*** Audacious >= 1.4.0 is not installed - please install first ***]))
+PKG_CHECK_MODULES(AUDACIOUS, [audacious >= 1.5.0], ,
+	AC_MSG_ERROR([*** Audacious >= 1.5.0 is not installed - please install first ***]))
 AC_MSG_CHECKING([for Audacious input plugin directory])
 AC_ARG_WITH(plugindir,
 	AC_HELP_STRING([--with-plugindir=DIR], [set the directory where Audacious-DVB will be installed @<:@default=autodetect@:>@]),

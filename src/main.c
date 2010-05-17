@@ -30,10 +30,7 @@
 #include <sys/param.h>
 #include <linux/dvb/dmx.h>
 #include <linux/dvb/frontend.h>
-#include <audacious/output.h>
 #include <audacious/plugin.h>
-#include <audacious/strings.h>
-#include <audacious/vfs.h>
 #include <mad.h>
 
 #include "gui.h"
@@ -49,12 +46,12 @@
 
 
 static void dvb_init (void);
-static gint dvb_is_our_file (gchar *);
+static gint dvb_is_our_file (const gchar *);
 static void dvb_play (InputPlayback *);
 static void dvb_stop (InputPlayback *);
 static void dvb_pause (InputPlayback *, gshort);
 static gint dvb_get_time (InputPlayback *);
-static void dvb_file_info_box (gchar *);
+static void dvb_file_info_box (const gchar *);
 static void dvb_exit (void);
 
 static gboolean dvb_pes_pkt (InputPlayback *, const guchar *, gint, gint);
@@ -126,7 +123,7 @@ static gint sft[] = {
 static time_t isplit_last = 0;
 static time_t vsplit_last = 0;
 
-InputPlugin dvb_ip = {
+static InputPlugin dvb_ip = {
   .description = "DVB Input Plugin",
   .init = dvb_init,
   .about = dvb_about,
@@ -140,13 +137,13 @@ InputPlugin dvb_ip = {
   .file_info_box = dvb_file_info_box,
 };
 
-InputPlugin *dvb_iplist[] = { &dvb_ip, NULL };
+static InputPlugin *dvb_iplist[] = { &dvb_ip, NULL };
 
-DECLARE_PLUGIN (dvb, NULL, NULL, dvb_iplist, NULL, NULL, NULL, NULL, NULL);
+SIMPLE_INPUT_PLUGIN (dvb, dvb_iplist);
 
 
 static void
-dvb_file_info_box (gchar * s)
+dvb_file_info_box (const gchar * s)
 {
   // Show infobox
   infobox_show (station, rt, epg, mmusic);
@@ -215,7 +212,7 @@ dvb_exit (void)
 
 
 static gint
-dvb_is_our_file (gchar * s)
+dvb_is_our_file (const gchar * s)
 {
   gint rc;
 
@@ -407,7 +404,6 @@ dvb_play (InputPlayback * playback)
       dvb_stop (playback);
       return;
     }
-  playback->set_pb_ready (playback);
   feed_thread (playback);
 }
 
@@ -417,7 +413,7 @@ dvb_stop (InputPlayback * playback)
 {
   if (playing)
     {
-      playing = paused = FALSE;
+      playback->playing = playing = paused = FALSE;
 
       // Stop all threads
       if (gt_feed != NULL)
@@ -526,7 +522,7 @@ static gint
 dvb_get_time (InputPlayback * playback)
 {
   if (playing)
-    return playback->output->output_time ();
+    return playback->output->written_time ();
 
   return 0;
 }
@@ -859,39 +855,26 @@ static gboolean
 write_output (InputPlayback * playback, const struct mad_pcm *pcm,
 	      const struct mad_header *header)
 {
-  mad_fixed_t const *left_ch, *right_ch;
-  mad_fixed_t *output;
-  guint nsamples, outlen = 0, outbyte = 0, pos = 0, i, ms;
+  guint i, ms, channel, channels = MAD_NCHANNELS (header);
+  guint outbyte = sizeof (gfloat) * channels * pcm->length;
+  gfloat * output = g_malloc (outbyte);
+  gfloat * outend = output + channels * pcm->length;
   gdouble vu = 0, dB;
 
-  nsamples = pcm->length;
-  left_ch = pcm->samples[0];
-  right_ch = pcm->samples[1];
-  outlen = nsamples * MAD_NCHANNELS (header);
-  outbyte = outlen * sizeof (mad_fixed_t);
-  output = (mad_fixed_t *) g_malloc (outbyte);
-
-  // Merge samples to inverleaved audio, calculate audio energy level
-  while (nsamples--)
+  for (channel = 0; channel < channels; channel++)
     {
-      output[pos++] = *left_ch;
+      const mad_fixed_t * from = pcm->samples[channel];
+      gfloat * to = output + channel;
 
-      if (MAD_NCHANNELS (header) == 2)
-	{
-	  output[pos++] = *right_ch;
-	  vu +=
-	    fabs (mad_f_todouble (*left_ch)) +
-	    fabs (mad_f_todouble (*right_ch));
-	  right_ch++;
-	}
-      else
-	vu += fabs (mad_f_todouble (*left_ch));
-      left_ch++;
+      while (to < outend)
+        {
+          gdouble sample = mad_f_todouble (*from++);
+          *to = (gfloat) sample;
+          vu += fabs (sample);
+          to += channels;
+        }
     }
-  if (MAD_NCHANNELS (header) == 2)
-    vu /= 2 * pcm->length;
-  else
-    vu /= pcm->length;
+  vu /= channels * pcm->length;
 
   // Check audio energy level if we need to split files
   if (config->vsplit && config->rec)
@@ -934,8 +917,7 @@ write_output (InputPlayback * playback, const struct mad_pcm *pcm,
     }
 
   if (audio_opened)
-    playback->pass_audio (playback, FMT_FIXED32, MAD_NCHANNELS (header),
-			  outbyte, output, NULL);
+    playback->pass_audio (playback, FMT_FLOAT, channels, outbyte, output, NULL);
 
   g_free (output);
   return audio_opened;
@@ -1014,13 +996,19 @@ dvb_mpeg_frame (InputPlayback * playback, const guchar * frame, guint len)
   if (!audio_opened)
     {
       if (!playback->
-	  output->open_audio (FMT_FIXED32, madframe.header.samplerate,
+	  output->open_audio (FMT_FLOAT, madframe.header.samplerate,
 			      MAD_NCHANNELS (&madframe.header)))
 	{
+	  playback->error = TRUE;
 	  log_print (hlog, LOG_WARN,
 		     "open_audio() failed in dvb_mpeg_frame()");
 	  return FALSE;
 	}
+
+      // Tell Audacious how we're doing
+      playback->playing = TRUE;
+      playback->error = FALSE;
+      playback->set_pb_ready(playback);
 
       audio_opened = TRUE;
     }
