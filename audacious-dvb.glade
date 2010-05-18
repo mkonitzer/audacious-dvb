@@ -1216,6 +1216,7 @@
     <property name="title" translatable="yes">DVB Plugin Configuration</property>
     <property name="window_position">GTK_WIN_POS_CENTER</property>
     <property name="destroy_with_parent">True</property>
+    <property name="type_hint">dialog</property>
     <child>
       <widget class="GtkAlignment" id="cfgAlignment">
         <property name="visible">True</property>
