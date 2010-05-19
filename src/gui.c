@@ -203,6 +203,8 @@ isplitClicked (GtkWidget * w, gpointer user_data)
     }
   gtk_widget_set_sensitive (glade_xml_get_widget
 			    (widgets.configXml, "isplitSpin"), b);
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "isplitLabel"), b);
 }
 
 
