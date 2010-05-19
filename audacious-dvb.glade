@@ -1405,12 +1405,30 @@ Debug (7)</property>
                         <child>
                           <widget class="GtkVBox" id="recordVbox">
                             <property name="visible">True</property>
-                            <child>
-                              <widget class="GtkAlignment" id="recordCheckAlignment">
+			    <child>
+                              <widget class="GtkAlignment" id="reconpauseCheckAlignment">
                                 <property name="visible">True</property>
                                 <property name="bottom_padding">6</property>
                                 <child>
-                                  <widget class="GtkCheckButton" id="recordCheck">
+                                  <widget class="GtkCheckButton" id="reconpauseCheck">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="label" translatable="yes">Use 'Pause' to toggle recording</property>
+                                    <property name="response_id">0</property>
+                                    <property name="draw_indicator">True</property>
+                                  </widget>
+                                </child>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkAlignment" id="reconplayCheckAlignment">
+                                <property name="visible">True</property>
+                                <property name="bottom_padding">6</property>
+                                <child>
+                                  <widget class="GtkCheckButton" id="reconplayCheck">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="label" translatable="yes">Record stream while playing</property>
@@ -1421,6 +1439,7 @@ Debug (7)</property>
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
+                                <property name="position">1</property>
                               </packing>
                             </child>
                             <child>
@@ -1432,7 +1451,7 @@ Debug (7)</property>
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="position">1</property>
+                                <property name="position">2</property>
                               </packing>
                             </child>
                             <child>
@@ -1449,7 +1468,7 @@ Debug (7)</property>
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="position">2</property>
+                                <property name="position">3</property>
                               </packing>
                             </child>
                             <child>
@@ -1468,7 +1487,7 @@ Debug (7)</property>
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="position">3</property>
+                                <property name="position">4</property>
                               </packing>
                             </child>
                             <child>
@@ -1487,7 +1506,7 @@ Debug (7)</property>
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="position">4</property>
+                                <property name="position">5</property>
                               </packing>
                             </child>
                             <child>
@@ -1708,7 +1727,7 @@ Debug (7)</property>
                               </widget>
                               <packing>
                                 <property name="fill">False</property>
-                                <property name="position">5</property>
+                                <property name="position">6</property>
                               </packing>
                             </child>
                           </widget>

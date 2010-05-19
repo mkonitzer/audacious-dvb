@@ -322,7 +322,7 @@ dvb_play (InputPlayback * playback)
     }
 
   // Initialize recording
-  if (config->rec)
+  if (config->rec_onplay)
     {
       record = record_init ();
       if (record != NULL)
@@ -513,8 +513,45 @@ dvb_stop (InputPlayback * playback)
 static void
 dvb_pause (InputPlayback * playback, gshort i)
 {
-  paused = (i == 0 ? FALSE : TRUE);
-  playback->output->pause (i);
+  if (config->rec_onpause)
+    {
+      // Pause toggles recording
+      if (record != NULL)
+	{
+          // Stop recording
+	  record_exit (record);
+	  record = NULL;
+          return;
+	}
+      // Start recording
+      record = record_init ();
+      if (record != NULL)
+	{
+	  if (record_open
+	      (record, config->rec_fname, config->rec_append,
+	       config->rec_overwrite) != TRUE)
+	    {
+	      log_print (hlog, LOG_WARN, "record_open(%s, %d) failed.",
+			 config->rec_fname, config->rec_append);
+	      record_exit (record);
+	      record = NULL;
+	    }
+
+	  // Last splitting (=start time) occured now
+	  if (config->isplit)
+	    time (&isplit_last);
+	  if (config->vsplit)
+	    time (&vsplit_last);
+	}
+      else
+	log_print (hlog, LOG_WARN, "record_init() failed.");
+    }
+  else
+    {
+      // 'Real' pause
+      paused = (i == 0 ? FALSE : TRUE);
+      playback->output->pause (i);
+    }
 }
 
 
@@ -877,7 +914,7 @@ write_output (InputPlayback * playback, const struct mad_pcm *pcm,
   vu /= channels * pcm->length;
 
   // Check audio energy level if we need to split files
-  if (config->vsplit && config->rec)
+  if (record != NULL && config->vsplit)
     {
       sumarr[sap++] = vu;
       ms = sap * pcm->length * 1000 / header->bitrate;

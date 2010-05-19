@@ -39,7 +39,8 @@ config_init (void)
   config->log_append = TRUE;
 
   // Recording
-  config->rec = FALSE;
+  config->rec_onplay = FALSE;
+  config->rec_onpause = FALSE;
   config->rec_fname = g_strdup ("/tmp/audacious-dvb-rec.mp2");
   config->rec_append = TRUE;
   config->rec_overwrite = TRUE;
@@ -87,7 +88,8 @@ config_from_db (cfgstruct * config)
   aud_cfg_db_get_bool (db, "dvb", "log.append", &config->log_append);
 
   // Recording
-  aud_cfg_db_get_bool (db, "dvb", "rec", &config->rec);
+  aud_cfg_db_get_bool (db, "dvb", "rec.onplay", &config->rec_onplay);
+  aud_cfg_db_get_bool (db, "dvb", "rec.onpause", &config->rec_onpause);
   if (config->rec_fname != NULL)
     {
       g_free (config->rec_fname);
@@ -137,7 +139,8 @@ config_to_db (const cfgstruct * config)
   aud_cfg_db_set_bool (db, "dvb", "log.append", config->log_append);
 
   // Recording
-  aud_cfg_db_set_bool (db, "dvb", "rec", config->rec);
+  aud_cfg_db_set_bool (db, "dvb", "rec.onplay", config->rec_onplay);
+  aud_cfg_db_set_bool (db, "dvb", "rec.onpause", config->rec_onpause);
   aud_cfg_db_set_string (db, "dvb", "rec.fname", config->rec_fname);
   aud_cfg_db_set_bool (db, "dvb", "rec.append", config->rec_append);
   aud_cfg_db_set_bool (db, "dvb", "rec.overwrite", config->rec_overwrite);

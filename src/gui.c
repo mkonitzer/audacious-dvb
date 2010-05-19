@@ -121,7 +121,11 @@ dvb_configure (void)
 		      G_CALLBACK (logToFileClicked), NULL);
   gtk_signal_connect (GTK_OBJECT
 		      (glade_xml_get_widget
-		       (widgets.configXml, "recordCheck")), "clicked",
+		       (widgets.configXml, "reconplayCheck")), "clicked",
+		      G_CALLBACK (recordClicked), NULL);
+  gtk_signal_connect (GTK_OBJECT
+		      (glade_xml_get_widget
+		       (widgets.configXml, "reconpauseCheck")), "clicked",
 		      G_CALLBACK (recordClicked), NULL);
   gtk_signal_connect (GTK_OBJECT
 		      (glade_xml_get_widget
@@ -172,7 +176,10 @@ recordClicked (GtkWidget * w, gpointer user_data)
   b =
     gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
 				  (glade_xml_get_widget
-				   (widgets.configXml, "recordCheck")));
+				   (widgets.configXml, "reconplayCheck"))) ||
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "reconpauseCheck")));
   gtk_widget_set_sensitive (glade_xml_get_widget
 			    (widgets.configXml, "fnameEntry"), b);
   gtk_widget_set_sensitive (glade_xml_get_widget
@@ -271,8 +278,12 @@ config_to_gui (const cfgstruct * config)
   // Recording
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
 				(glade_xml_get_widget
-				 (widgets.configXml, "recordCheck")),
-				config->rec);
+				 (widgets.configXml, "reconpauseCheck")),
+				config->rec_onpause);
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				(glade_xml_get_widget
+				 (widgets.configXml, "reconplayCheck")),
+				config->rec_onplay);
   gtk_entry_set_text_safe (GTK_ENTRY
 			   (glade_xml_get_widget
 			    (widgets.configXml, "fnameEntry")),
@@ -368,10 +379,14 @@ config_from_gui (cfgstruct * config)
 				   (widgets.configXml, "logAppendCheck")));
 
   // Recording
-  config->rec =
+  config->rec_onplay =
     gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
 				  (glade_xml_get_widget
-				   (widgets.configXml, "recordCheck")));
+				   (widgets.configXml, "reconplayCheck")));
+  config->rec_onpause =
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "reconpauseCheck")));
   if (config->rec_fname != NULL)
     g_free (config->rec_fname);
   config->rec_fname =

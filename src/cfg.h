@@ -36,7 +36,8 @@ typedef struct _cfgstruct
   gchar *log_filename;		/* Log filename */
   gboolean log_append;		/* Append to existing log file? */
 
-  gboolean rec;			/* Activate recording of stream? */
+  gboolean rec_onplay;		/* Activate recording of stream? */
+  gboolean rec_onpause;         /* Activate 'Pause' to toggle recording? */
   gchar *rec_fname;		/* Filename for recording */
   gboolean rec_append;		/* Append to existing file? */
   gboolean rec_overwrite;	/* Overwrite existing file? */
