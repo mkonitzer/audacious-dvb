@@ -431,14 +431,14 @@ dvb_stop (InputPlayback * playback)
       if (gt_get_name != NULL)
 	{
 	  log_print (hlog, LOG_INFO,
-		     "Waiting for get_name_thread thread() to die...");
-	  g_thread_join (gt_get_name);
+		     "Waiting for get_name_thread() to die...");
+          g_thread_join (gt_get_name);
 	  gt_get_name = NULL;
 	}
       if (gt_mmusic != NULL)
 	{
 	  log_print (hlog, LOG_INFO,
-		     "Waiting for mmusic_thread thread() to die...");
+		     "Waiting for mmusic_thread() to die...");
 	  g_thread_join (gt_mmusic);
 	  gt_mmusic = NULL;
 	}
