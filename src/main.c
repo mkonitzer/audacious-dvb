@@ -1177,6 +1177,7 @@ epg_thread (gpointer arg)
   gint sid, rc, len, sct = 0;
   guint toctr = 0;
   guchar s[4096];
+  gboolean epg_playing = TRUE;
 
   log_print (hlog, LOG_INFO, "epg_thread() starting");
 
@@ -1196,7 +1197,7 @@ epg_thread (gpointer arg)
 
   epg_read_data (epg, NULL, 0);
 
-  while (playing)
+  while (playing && epg_playing)
     {
       rc = dvb_section (hdvb, 0x0012, 0x4e, sid, sct, s, 1000);
       switch (rc)
@@ -1218,13 +1219,13 @@ epg_thread (gpointer arg)
             {
               log_print (hlog, LOG_DEBUG,
                          "dvb_section() timed out too often, giving up");
-              playing = FALSE;
+              epg_playing = FALSE;
             }
           break;
         default:
           log_print (hlog, LOG_ERR,
                      "dvb_section() returned rc = %d, giving up", rc);
-          playing = FALSE;
+          epg_playing = FALSE;
         }
     }
 
@@ -1245,6 +1246,7 @@ mmusic_thread (gpointer arg)
   gint rc, dr, slen, blen, off = 0, fbf = 0;
   guint toctr = 0;
   guchar sect[5120], rtxt[32768];
+  gboolean mm_playing = TRUE;
 
   log_print (hlog, LOG_INFO, "mmusic_thread() starting");
 
@@ -1259,7 +1261,7 @@ mmusic_thread (gpointer arg)
       return NULL;
     }
 
-  while (playing)
+  while (playing && mm_playing)
     {
       memset (sect, 0xff, sizeof (sect));
       rc = dvb_dpkt (hdvb, sect, sizeof (sect), 1000, &dr);
@@ -1301,13 +1303,13 @@ mmusic_thread (gpointer arg)
             {
               log_print (hlog, LOG_DEBUG,
                          "dvb_dpkt() timed out too often, giving up");
-              playing = FALSE;
+              mm_playing = FALSE;
             }
           break;
         default:
           log_print (hlog, LOG_ERR,
                      "dvb_dpkt() returned rc = %d, giving up", rc);
-          playing = FALSE;
+          mm_playing = FALSE;
         }
     }
 
