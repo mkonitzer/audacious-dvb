@@ -88,7 +88,6 @@ static dvbstatstruct *dvbstat = NULL;
 static recstruct *record = NULL;
 
 // Threads
-static GThread *gt_feed = NULL;
 static GThread *gt_get_name = NULL;
 static GThread *gt_epg = NULL;
 static GThread *gt_mmusic = NULL;
@@ -185,9 +184,6 @@ dvb_init (void)
     }
 
   log_print (hlog, LOG_INFO, "logging started");
-
-  if (!g_thread_supported ())
-    g_thread_init (NULL);
 
   aud_uri_set_plugin ("dvb://", &dvb_ip);
 }
@@ -398,7 +394,7 @@ dvb_play (InputPlayback * playback)
   mad_stream_options (&madstream, MAD_OPTION_IGNORECRC);
 
   // Initialize audio packet retrieval (including Radiotext info)
-  if ((gt_feed = g_thread_self ()) == NULL)
+  if (g_thread_self () == NULL)
     {
       log_print (hlog, LOG_CRIT, "g_thread_self() failed for dvb_play().");
       dvb_stop (playback);
@@ -416,12 +412,6 @@ dvb_stop (InputPlayback * playback)
       playback->playing = playing = paused = FALSE;
 
       // Stop all threads
-      if (gt_feed != NULL)
-	{
-	  log_print (hlog, LOG_INFO, "Waiting for feed_thread() to die...");
-	  g_thread_join (gt_feed);
-	  gt_feed = NULL;
-	}
       if (dvb_status_timer_id != 0)
 	{
 	  log_print (hlog, LOG_INFO, "Removing dvb_status_timer()...");
@@ -448,6 +438,12 @@ dvb_stop (InputPlayback * playback)
 	  g_thread_join (gt_epg);
 	  gt_epg = NULL;
 	}
+      if (playback->thread != NULL)
+	{
+	  log_print (hlog, LOG_INFO, "Waiting for feed_thread() to die...");
+          g_thread_join (playback->thread);
+          playback->thread = NULL;
+        }
       if (infobox_timer_id != 0)
 	{
 	  log_print (hlog, LOG_DEBUG, "Removing infobox_timer()...");
