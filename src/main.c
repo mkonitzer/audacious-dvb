@@ -59,7 +59,6 @@ static gboolean dvb_payload (InputPlayback *, const guchar *, gint, gint);
 static gboolean write_output (InputPlayback *, const struct mad_pcm *,
 			      const struct mad_header *);
 static gboolean dvb_mpeg_frame (InputPlayback *, const guchar *, guint);
-static gchar *dvb_build_file_title (void);
 
 // Thread functions
 static gpointer feed_thread (gpointer);
@@ -72,13 +71,20 @@ static gboolean infobox_timer (gpointer);
 static gboolean dvb_status_timer (gpointer);
 
 
+// Tuple functions
+static gboolean update_tuple_str (Tuple *, gint, const gchar *);
+static gboolean update_tuple_int (Tuple *, gint, gint);
+static gboolean update_tuple (Tuple*, const gchar*, const struct mad_header,
+                              const statstruct*, const rtstruct*, const mmstruct*);
+
+
 // Miscellaneous globals
 static gboolean playing = FALSE, paused = FALSE;
-gpointer hlog = NULL;		// This is used everywhere :)
+gpointer hlog = NULL;
 static gpointer hdvb = NULL;
 
 // Internal interfaces
-cfgstruct *config = NULL;	// This is used in gui.c
+cfgstruct *config = NULL;
 static mmstruct *mmusic = NULL;
 static rtstruct *rt = NULL;
 static epgstruct *epg = NULL;
@@ -86,6 +92,7 @@ static statstruct *station = NULL;
 static tunestruct *tune = NULL;
 static dvbstatstruct *dvbstat = NULL;
 static recstruct *record = NULL;
+static Tuple *tuple = NULL;
 
 // Threads
 static GThread *gt_get_name = NULL;
@@ -387,6 +394,9 @@ dvb_play (InputPlayback * playback)
 	dvb_status_timer_id = g_timeout_add (750, dvb_status_timer, NULL);
     }
 
+  // Initialize tuple info
+  tuple = tuple_new_from_filename (playback->filename);
+
   // Initialize MPEG decoder
   mad_frame_init (&madframe);
   mad_synth_init (&madsynth);
@@ -478,6 +488,12 @@ dvb_stop (InputPlayback * playback)
 	  dvb_status_exit (dvbstat);
 	  dvbstat = NULL;
 	}
+      // Free tuple info
+      if (tuple != NULL)
+        {
+          tuple_free (tuple)
+          tuple = NULL;
+        }
       if (tune != NULL)
 	{
 	  dvb_tune_exit (tune);
@@ -843,44 +859,83 @@ dvb_payload (InputPlayback * playback, const guchar * buf, gint len,
 }
 
 
-static gchar *
-dvb_build_file_title (void)
+static gboolean
+update_tuple_str (Tuple * tuple, gint item, const gchar * newstr)
 {
-  if (station == NULL)
-    return NULL;
+  const gchar * oldstr = aud_tuple_get_string (tuple, item, NULL);
+  gboolean changed = (newstr == NULL && oldstr != NULL) ||
+          (newstr != NULL && (oldstr == NULL || strcmp (oldstr, newstr)));
+  if (changed)
+    aud_tuple_associate_string (tuple, item, NULL, newstr);
+  return changed;
+}
 
-  // Title consists of:
-  gchar *title;
-  // (1) station name
-  title = g_strdup (station->svc_name);
 
-  // (2a) Radiotext info
-  if (rt && rt->title != NULL)
+static gboolean
+update_tuple_int (Tuple * tuple, gint item, gint newint)
+{
+  gint oldint = aud_tuple_get_int (tuple, item, NULL);
+  gboolean changed = (oldint != newint);
+  if (changed)
+    aud_tuple_associate_int (tuple, item, NULL, newint);
+  return changed;
+}
+
+
+static gboolean
+dvb_update_tuple (Tuple* tuple, const gchar* fn, const struct mad_header mh,
+    const statstruct* st, const rtstruct* rt, const mmstruct* mm)
+{
+  gboolean changed = FALSE;
+  gchar *stname = NULL;
+
+  // File name
+  changed = changed || update_tuple_str (tuple, FIELD_FILE_NAME, fn);
+
+  // Audio format
+  changed = changed || update_tuple_int (tuple, FIELD_LENGTH, -1);
+  changed = changed || update_tuple_int(tuple, FIELD_BITRATE, mh.bitrate / 1000);
+  changed = changed || update_tuple_str (tuple, FIELD_MIMETYPE, "audio/mpeg");
+  changed = changed || update_tuple_str(tuple, FIELD_CODEC, "MPEG Audio (MP2)");
+  changed = changed || update_tuple_str(tuple, FIELD_QUALITY, "lossy");
+
+  // Station Name
+  if (st && st->svc_name)
+    stname = g_strdup (st->svc_name);
+  else
+    stname = g_strdup ("Unknown");
+
+  // RadioText/MadMusic info
+  if (rt && (rt->title != NULL || rt->artist != NULL))
     {
-      gchar *tmp = title;
+      // Radiotext info available
+      changed = changed || update_tuple_str (tuple, FIELD_ALBUM, stname);
+      if (rt->title != NULL)
+        changed = changed || update_tuple_str (tuple, FIELD_TITLE, rt->title);
       if (rt->artist != NULL)
-	title = g_strconcat (title, ": ", rt->artist, " - ", rt->title, NULL);
-      else
-	title = g_strconcat (title, ": ", rt->title, NULL);
-      g_free (tmp);
-      return title;
+	stname = g_strconcat (stname, ": ", rt->artist, NULL);
+      changed = changed || update_tuple_str (tuple, FIELD_ARTIST, stname);
     }
-
-  // (2b) MadMusic info
-  if (mmusic && mmusic->title != NULL)
+  else if (mm && (mm->title != NULL || mm->artist != NULL))
     {
-      gchar *tmp = title;
-      if (mmusic->artist != NULL)
-	title =
-	  g_strconcat (title, ": ", mmusic->artist, " - ", mmusic->title,
-		       NULL);
-      else
-	title = g_strconcat (title, ": ", mmusic->title, NULL);
-      g_free (tmp);
-      return title;
+      // MadMusic info available
+      changed = changed || update_tuple_str (tuple, FIELD_ALBUM, stname);
+      if (mm->title != NULL)
+        changed = changed || update_tuple_str (tuple, FIELD_TITLE, mm->title);
+      if (mm->artist != NULL)
+	stname = g_strconcat (stname, ": ", mm->artist, NULL);
+      changed = changed || update_tuple_str (tuple, FIELD_ARTIST, stname);
+    }
+  else
+    {
+      // Neither RadioText nor MadMusic info available
+      changed = changed || update_tuple_str (tuple, FIELD_TITLE, stname);
+      changed = changed || update_tuple_str (tuple, FIELD_ARTIST, NULL);
+      changed = changed || update_tuple_str (tuple, FIELD_ALBUM, NULL);
     }
 
-  return title;
+  g_free (stname);
+  return changed;
 }
 
 
@@ -1046,21 +1101,14 @@ dvb_mpeg_frame (InputPlayback * playback, const guchar * frame, guint len)
       audio_opened = TRUE;
     }
 
-  // look if file title has changed
-  gchar *newtitle;
-  newtitle = dvb_build_file_title ();
-  if (playback->title == NULL
-      || (newtitle != NULL && strcmp (newtitle, playback->title) != 0))
+  // Check if tuple info has changed
+  if (dvb_update_tuple (tuple, playback->filename, madframe.header, station, rt, mmusic))
     {
-      playback->set_params (playback, newtitle, -1,
-			    madframe.header.bitrate,
+      mowgli_object_ref (tuple);
+      playback->set_tuple (playback, tuple);
+      playback->set_params (playback, NULL, 0, madframe.header.bitrate,
 			    madframe.header.samplerate,
 			    MAD_NCHANNELS (&madframe.header));
-      if (playback->title != NULL)
-	{
-	  g_free (playback->title);
-	  playback->title = newtitle;
-	}
     }
 
   return write_output (playback, &madsynth.pcm, &madframe.header);
