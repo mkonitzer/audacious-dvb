@@ -74,7 +74,7 @@ static gboolean dvb_status_timer (gpointer);
 // Tuple functions
 static gboolean update_tuple_str (Tuple *, gint, const gchar *);
 static gboolean update_tuple_int (Tuple *, gint, gint);
-static gboolean update_tuple (Tuple*, const gchar*, const struct mad_header,
+static gboolean update_tuple (Tuple*, const struct mad_header,
                               const statstruct*, const rtstruct*, const mmstruct*);
 
 
@@ -883,14 +883,11 @@ update_tuple_int (Tuple * tuple, gint item, gint newint)
 
 
 static gboolean
-dvb_update_tuple (Tuple* tuple, const gchar* fn, const struct mad_header mh,
+dvb_update_tuple (Tuple* tuple, const struct mad_header mh,
     const statstruct* st, const rtstruct* rt, const mmstruct* mm)
 {
   gboolean changed = FALSE;
   gchar *stname = NULL;
-
-  // File name
-  changed = changed || update_tuple_str (tuple, FIELD_FILE_NAME, fn);
 
   // Audio format
   changed = changed || update_tuple_int (tuple, FIELD_LENGTH, -1);
@@ -1102,7 +1099,7 @@ dvb_mpeg_frame (InputPlayback * playback, const guchar * frame, guint len)
     }
 
   // Check if tuple info has changed
-  if (dvb_update_tuple (tuple, playback->filename, madframe.header, station, rt, mmusic))
+  if (dvb_update_tuple (tuple, madframe.header, station, rt, mmusic))
     {
       mowgli_object_ref (tuple);
       playback->set_tuple (playback, tuple);
