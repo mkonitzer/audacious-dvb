@@ -24,6 +24,7 @@
 #include <glib.h>
 #include <glib/gstdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "log.h"
 #include "util.h"
@@ -142,11 +143,19 @@ log_print (const gpointer hlog, enum lvltype lvl, const gchar * fmt, ...)
       else
 	{
 	  GTimeVal now;
+	  struct tm *tm = NULL;
+	  gchar buf[64];
 	  gchar *nowstr = NULL;
 	  g_get_current_time (&now);
-	  nowstr = g_time_val_to_iso8601 (&now);
-	  g_fprintf (hl->file, "%s %s\n", nowstr, msg);
-	  g_free (nowstr);
+	  tm = localtime (&now.tv_sec);
+	  if (strftime (buf, sizeof (buf) - 1, "%c", tm) != 0 &&
+		(nowstr = g_locale_to_utf8 (buf, -1, NULL, NULL, NULL)) != NULL)
+	    {
+	      g_fprintf (hl->file, "%s %s\n", nowstr, msg);
+	      g_free (nowstr);
+	    }
+	  else
+	    g_fprintf (hl->file, "%s\n", msg);
 	  fflush (hl->file);
 	}
       g_free (msg);
