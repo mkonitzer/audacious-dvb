@@ -71,11 +71,17 @@ static gboolean infobox_timer (gpointer);
 static gboolean dvb_status_timer (gpointer);
 
 
-// Tuple functions
+// Title/Tuple functions
+#ifndef __AUDACIOUS_PLUGIN_API__
+#error "__AUDACIOUS_PLUGIN_API__ is undefined for some reason, aborting."
+#elif __AUDACIOUS_PLUGIN_API__ < 12
+static gchar * build_file_title (void);
+#else
 static gboolean update_tuple_str (Tuple *, gint, const gchar *);
 static gboolean update_tuple_int (Tuple *, gint, gint);
 static gboolean update_tuple (Tuple*, const struct mad_header,
                               const statstruct*, const rtstruct*, const mmstruct*);
+#endif
 
 
 // Miscellaneous globals
@@ -394,8 +400,10 @@ dvb_play (InputPlayback * playback)
 	dvb_status_timer_id = g_timeout_add (750, dvb_status_timer, NULL);
     }
 
+#if __AUDACIOUS_PLUGIN_API__ >= 12
   // Initialize tuple info
   tuple = tuple_new_from_filename (playback->filename);
+#endif
 
   // Initialize MPEG decoder
   mad_frame_init (&madframe);
@@ -859,6 +867,49 @@ dvb_payload (InputPlayback * playback, const guchar * buf, gint len,
 }
 
 
+#if __AUDACIOUS_PLUGIN_API__ < 12
+static gchar *
+dvb_build_file_title (void)
+{
+  if (station == NULL)
+    return NULL;
+
+  // Title consists of:
+  gchar *title;
+  // (1) station name
+  title = g_strdup (station->svc_name);
+
+  // (2a) Radiotext info
+  if (rt && rt->title != NULL)
+    {
+      gchar *tmp = title;
+      if (rt->artist != NULL)
+	title = g_strconcat (title, ": ", rt->artist, " - ", rt->title, NULL);
+      else
+	title = g_strconcat (title, ": ", rt->title, NULL);
+      g_free (tmp);
+      return title;
+    }
+
+  // (2b) MadMusic info
+  if (mmusic && mmusic->title != NULL)
+    {
+      gchar *tmp = title;
+      if (mmusic->artist != NULL)
+	title =
+	  g_strconcat (title, ": ", mmusic->artist, " - ", mmusic->title,
+		       NULL);
+      else
+	title = g_strconcat (title, ": ", mmusic->title, NULL);
+      g_free (tmp);
+      return title;
+    }
+
+  return title;
+}
+
+#else
+
 static gboolean
 update_tuple_str (Tuple * tuple, gint item, const gchar * newstr)
 {
@@ -883,7 +934,7 @@ update_tuple_int (Tuple * tuple, gint item, gint newint)
 
 
 static gboolean
-dvb_update_tuple (Tuple* tuple, const struct mad_header mh,
+update_tuple (Tuple* tuple, const struct mad_header mh,
     const statstruct* st, const rtstruct* rt, const mmstruct* mm)
 {
   gboolean changed = FALSE;
@@ -934,6 +985,7 @@ dvb_update_tuple (Tuple* tuple, const struct mad_header mh,
   g_free (stname);
   return changed;
 }
+#endif
 
 
 static gboolean
@@ -1098,8 +1150,26 @@ dvb_mpeg_frame (InputPlayback * playback, const guchar * frame, guint len)
       audio_opened = TRUE;
     }
 
+#if __AUDACIOUS_PLUGIN_API__ < 12
+  // Look if file title has changed
+  gchar *newtitle;
+  newtitle = dvb_build_file_title ();
+  if (playback->title == NULL
+      || (newtitle != NULL && strcmp (newtitle, playback->title) != 0))
+    {
+      playback->set_params (playback, newtitle, -1,
+			    madframe.header.bitrate,
+			    madframe.header.samplerate,
+			    MAD_NCHANNELS (&madframe.header));
+      if (playback->title != NULL)
+	{
+	  g_free (playback->title);
+	  playback->title = newtitle;
+	}
+    }
+#else
   // Check if tuple info has changed
-  if (dvb_update_tuple (tuple, madframe.header, station, rt, mmusic))
+  if (update_tuple (tuple, madframe.header, station, rt, mmusic))
     {
       mowgli_object_ref (tuple);
       playback->set_tuple (playback, tuple);
@@ -1107,6 +1177,7 @@ dvb_mpeg_frame (InputPlayback * playback, const guchar * frame, guint len)
 			    madframe.header.samplerate,
 			    MAD_NCHANNELS (&madframe.header));
     }
+#endif
 
   return write_output (playback, &madsynth.pcm, &madframe.header);
 }
