@@ -22,6 +22,8 @@ PKG_CHECK_MODULES(AUDACIOUS, [audacious >= 1.5.0], ,
 	AC_MSG_ERROR([*** Audacious >= 1.5.0 is not installed - please install first ***]))
 SAVED_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS $AUDACIOUS_CFLAGS"
+SAVED_CPPFLAGS="$CPPFLAGS"
+CPPFLAGS="$CPPFLAGS $AUDACIOUS_CFLAGS"
 AC_CHECK_HEADERS([audacious/misc.h])
 AC_CHECK_TYPE([mcs_handle_t],
     AC_DEFINE([HAVE_MCS_HANDLE_T], 1,
@@ -42,6 +44,7 @@ AC_ARG_WITH(plugindir,
 	[plugindir="`$PKG_CONFIG --variable=input_plugin_dir audacious`"])
 AC_MSG_RESULT([$plugindir])
 AC_SUBST(PLUGIN_DIR, "$plugindir")
+CPPFLAGS="$SAVED_CPPFLAGS"
 CFLAGS="$SAVED_CFLAGS"
 
 # libglade
