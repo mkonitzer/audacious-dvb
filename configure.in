@@ -29,6 +29,10 @@ AC_CHECK_TYPE([mcs_handle_t],
     AC_DEFINE([HAVE_MCS_HANDLE_T], 1,
 	[Define to 1 if your Audacious has the type `mcs_handle_t'.]),
     [],	[[#include <audacious/configdb.h>]])
+AC_CHECK_DECL([FMT_FIXED32],
+    AC_DEFINE([HAVE_DECL_FMT_FIXED32], 1,
+	[Define to 1 if your Audacious has declared `FMT_FIXED32'.]),
+    [],	[[#include <audacious/plugin.h>]])
 AC_MSG_CHECKING([for Audacious input plugin directory])
 AC_ARG_WITH(plugindir,
 	AS_HELP_STRING([--with-plugindir=DIR],[set the directory where Audacious-DVB will be installed @<:@default=autodetect@:>@]),

@@ -1009,21 +1009,37 @@ write_output (InputPlayback * playback, const struct mad_pcm *pcm,
 	      const struct mad_header *header)
 {
   guint i, ms, channel, channels = MAD_NCHANNELS (header);
+#ifdef HAVE_DECL_FMT_FIXED32
+  guint outbyte = sizeof (mad_fixed_t) * channels * pcm->length;
+  mad_fixed_t * output = g_malloc (outbyte);
+  mad_fixed_t * outend = output + channels * pcm->length;
+#else
   guint outbyte = sizeof (gfloat) * channels * pcm->length;
   gfloat * output = g_malloc (outbyte);
   gfloat * outend = output + channels * pcm->length;
-  gdouble vu = 0, dB;
+#endif
+  gdouble vu = 0;
 
   for (channel = 0; channel < channels; channel++)
     {
       const mad_fixed_t * from = pcm->samples[channel];
+#ifdef HAVE_DECL_FMT_FIXED32
+      mad_fixed_t * to = output + channel;
+#else
       gfloat * to = output + channel;
+#endif
 
       while (to < outend)
         {
+#ifdef HAVE_DECL_FMT_FIXED32
+          mad_fixed_t sample = (*from++);
+          *to = sample;
+          vu += fabs (mad_f_todouble (sample));
+#else
           gdouble sample = mad_f_todouble (*from++);
           *to = (gfloat) sample;
           vu += fabs (sample);
+#endif
           to += channels;
         }
     }
@@ -1041,7 +1057,7 @@ write_output (InputPlayback * playback, const struct mad_pcm *pcm,
 	    vu += sumarr[i];
 	  vu /= sap;
 
-	  dB = 20 * log10 (vu);
+	  gdouble dB = 20 * log10 (vu);
 
 	  if (dB < config->vsplit_vol)
 	    {
@@ -1070,7 +1086,12 @@ write_output (InputPlayback * playback, const struct mad_pcm *pcm,
     }
 
   if (audio_opened)
+#ifdef HAVE_DECL_FMT_FIXED32
+    playback->pass_audio (playback, FMT_FIXED32, MAD_NCHANNELS (header),
+			  outbyte, output, NULL);
+#else
     playback->output->write_audio (output, outbyte);
+#endif
 
   g_free (output);
   return audio_opened;
@@ -1148,9 +1169,15 @@ dvb_mpeg_frame (InputPlayback * playback, const guchar * frame, guint len)
   // open audio card (if not already done)
   if (!audio_opened)
     {
+#ifdef HAVE_DECL_FMT_FIXED32
+      if (!playback->
+ 	  output->open_audio (FMT_FIXED32, madframe.header.samplerate,
+			      MAD_NCHANNELS (&madframe.header)))
+#else
       if (!playback->
 	  output->open_audio (FMT_FLOAT, madframe.header.samplerate,
 			      MAD_NCHANNELS (&madframe.header)))
+#endif
 	{
 	  playback->error = TRUE;
 	  log_print (hlog, LOG_WARN,
