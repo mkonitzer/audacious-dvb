@@ -1070,7 +1070,7 @@ write_output (InputPlayback * playback, const struct mad_pcm *pcm,
     }
 
   if (audio_opened)
-    playback->pass_audio (playback, FMT_FLOAT, channels, outbyte, output, NULL);
+    playback->output->write_audio (output, outbyte);
 
   g_free (output);
   return audio_opened;
