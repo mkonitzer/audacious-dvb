@@ -51,7 +51,8 @@
 
 static void dvb_init (void);
 static gint dvb_is_our_file (const gchar *);
-static void dvb_play (InputPlayback *);
+static gboolean dvb_play (InputPlayback *, const gchar *, VFSFile *, gint, gint, gboolean);
+static void dvb_play_file (InputPlayback *);
 static void dvb_stop (InputPlayback *);
 static void dvb_pause (InputPlayback *, gshort);
 static gint dvb_get_time (InputPlayback *);
@@ -145,7 +146,10 @@ static InputPlugin dvb_ip = {
   .about = dvb_about,
   .configure = dvb_configure,
   .is_our_file = dvb_is_our_file,
-  .play_file = dvb_play,
+  .play_file = dvb_play_file,
+#if __AUDACIOUS_PLUGIN_API__ >= 16
+  .play = dvb_play,
+#endif
   .stop = dvb_stop,
   .pause = dvb_pause,
   .get_time = dvb_get_time,
@@ -237,15 +241,16 @@ dvb_is_our_file (const gchar * s)
 }
 
 
-static void
-dvb_play (InputPlayback * playback)
+static gboolean
+dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
+	gint start_time, gint stop_time, gboolean pause)
 {
   gint rc;
 
   if (playing)
-    return;
+    return FALSE;
 
-  log_print (hlog, LOG_INFO, "dvb_play(\"%s\");", playback->filename);
+  log_print (hlog, LOG_INFO, "dvb_play(\"%s\");", filename);
 
   // Update info box
   if (infobox_is_visible ())
@@ -271,12 +276,12 @@ dvb_play (InputPlayback * playback)
     {
       log_print (hlog, LOG_ERR, "dvb_open() failed.");
       playing = FALSE;
-      return;
+      return FALSE;
     }
 
   // Initialize tuning information
   tune = dvb_tune_init ();
-  if ((rc = dvb_tune_parse_url (playback->filename, tune)) != RC_OK)
+  if ((rc = dvb_tune_parse_url (filename, tune)) != RC_OK)
     {
       log_print (hlog, LOG_ERR, "dvb_parse_url() returned %d.", rc);
       playing = FALSE;
@@ -284,7 +289,7 @@ dvb_play (InputPlayback * playback)
       tune = NULL;
       dvb_close (hdvb);
       hdvb = NULL;
-      return;
+      return FALSE;
     }
 
   // Tune DVB device to stations's frequency
@@ -296,12 +301,12 @@ dvb_play (InputPlayback * playback)
       tune = NULL;
       dvb_close (hdvb);
       hdvb = NULL;
-      return;
+      return FALSE;
     }
 
   // Initialize service info
   station = g_malloc0 (sizeof (statstruct));
-  station->svc_name = g_strdup (playback->filename);
+  station->svc_name = g_strdup (filename);
 
   // Get audio PIDs from SID
   if ((rc =
@@ -313,7 +318,7 @@ dvb_play (InputPlayback * playback)
       tune = NULL;
       dvb_close (hdvb);
       hdvb = NULL;
-      return;
+      return FALSE;
     }
 
   // Get station and provider name
@@ -331,7 +336,7 @@ dvb_play (InputPlayback * playback)
       tune = NULL;
       dvb_close (hdvb);
       hdvb = NULL;
-      return;
+      return FALSE;
     }
 
   // Initialize recording
@@ -406,7 +411,7 @@ dvb_play (InputPlayback * playback)
 
 #if __AUDACIOUS_PLUGIN_API__ >= 12
   // Initialize tuple info
-  tuple = tuple_new_from_filename (playback->filename);
+  tuple = tuple_new_from_filename (filename);
 #endif
 
   // Initialize MPEG decoder
@@ -420,9 +425,16 @@ dvb_play (InputPlayback * playback)
     {
       log_print (hlog, LOG_CRIT, "g_thread_self() failed for dvb_play().");
       dvb_stop (playback);
-      return;
+      return FALSE;
     }
   feed_thread (playback);
+  return TRUE;
+}
+
+static void
+dvb_play_file (InputPlayback * playback)
+{
+  dvb_play (playback, playback->filename, NULL, 0, 0, FALSE);
 }
 
 
