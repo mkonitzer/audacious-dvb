@@ -21,6 +21,8 @@
    along with audacious-dvb; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <math.h>
@@ -45,7 +47,6 @@
 #include "mmusic.h"
 #include "record.h"
 #include "util.h"
-#include "config.h"
 
 
 static void dvb_init (void);
