@@ -869,7 +869,7 @@ dvb_payload (InputPlayback * playback, const guchar * buf, gint len,
 
 #if __AUDACIOUS_PLUGIN_API__ < 12
 static gchar *
-dvb_build_file_title (void)
+build_file_title (void)
 {
   if (station == NULL)
     return NULL;
@@ -1153,7 +1153,7 @@ dvb_mpeg_frame (InputPlayback * playback, const guchar * frame, guint len)
 #if __AUDACIOUS_PLUGIN_API__ < 12
   // Look if file title has changed
   gchar *newtitle;
-  newtitle = dvb_build_file_title ();
+  newtitle = build_file_title ();
   if (playback->title == NULL
       || (newtitle != NULL && strcmp (newtitle, playback->title) != 0))
     {
