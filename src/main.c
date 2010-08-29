@@ -30,6 +30,9 @@
 #include <sys/param.h>
 #include <linux/dvb/dmx.h>
 #include <linux/dvb/frontend.h>
+#ifdef HAVE_AUDACIOUS_MISC_H
+#include <audacious/misc.h>
+#endif
 #include <audacious/plugin.h>
 #include <mad.h>
 
@@ -913,11 +916,11 @@ build_file_title (void)
 static gboolean
 update_tuple_str (Tuple * tuple, gint item, const gchar * newstr)
 {
-  const gchar * oldstr = aud_tuple_get_string (tuple, item, NULL);
+  const gchar * oldstr = tuple_get_string (tuple, item, NULL);
   gboolean changed = (newstr == NULL && oldstr != NULL) ||
           (newstr != NULL && (oldstr == NULL || strcmp (oldstr, newstr)));
   if (changed)
-    aud_tuple_associate_string (tuple, item, NULL, newstr);
+    tuple_associate_string (tuple, item, NULL, newstr);
   return changed;
 }
 
@@ -925,10 +928,10 @@ update_tuple_str (Tuple * tuple, gint item, const gchar * newstr)
 static gboolean
 update_tuple_int (Tuple * tuple, gint item, gint newint)
 {
-  gint oldint = aud_tuple_get_int (tuple, item, NULL);
+  gint oldint = tuple_get_int (tuple, item, NULL);
   gboolean changed = (oldint != newint);
   if (changed)
-    aud_tuple_associate_int (tuple, item, NULL, newint);
+    tuple_associate_int (tuple, item, NULL, newint);
   return changed;
 }
 

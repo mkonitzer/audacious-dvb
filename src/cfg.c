@@ -26,6 +26,7 @@
 #include <audacious/plugin.h>
 
 #include "cfg.h"
+#include "config.h"
 
 cfgstruct *
 config_init (void)
@@ -66,7 +67,11 @@ config_init (void)
 gboolean
 config_from_db (cfgstruct * config)
 {
+#ifdef HAVE_MCS_HANDLE_T
+  mcs_handle_t *db;
+#else
   ConfigDb *db;
+#endif
 
   if ((db = aud_cfg_db_open ()) == NULL)
     return FALSE;
@@ -124,7 +129,11 @@ config_from_db (cfgstruct * config)
 gboolean
 config_to_db (const cfgstruct * config)
 {
+#ifdef HAVE_MCS_HANDLE_T
+  mcs_handle_t *db;
+#else
   ConfigDb *db;
+#endif
 
   if ((db = aud_cfg_db_open ()) == NULL)
     return FALSE;
