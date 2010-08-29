@@ -55,7 +55,7 @@ config_init (void)
   config->vsplit_minlen = 15;
 
   // Information retrieval
-  config->info_dvbstat = TRUE;
+  config->info_dvbstat = FALSE;
   config->info_rt = TRUE;
   config->info_epg = TRUE;
   config->info_mmusic = FALSE;
