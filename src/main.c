@@ -485,7 +485,7 @@ dvb_stop (InputPlayback * playback)
       playback->output->abort_write();
 #endif
 
-      // Stop all threads
+      // Stop all helper threads
       if (dvb_status_timer_id != 0)
 	{
 	  log_print (hlog, LOG_INFO, "Removing dvb_status_timer()...");
@@ -525,21 +525,18 @@ dvb_stop (InputPlayback * playback)
 	  radiotext_exit (rt);
 	  rt = NULL;
 	}
-
       // Free record structures
       if (record != NULL)
 	{
 	  record_exit (record);
 	  record = NULL;
 	}
-
       // Free station info
       if (station != NULL)
 	{
 	  g_free (station);
 	  station = NULL;
 	}
-
       // Free DVB stuff
       if (dvbstat != NULL)
 	{
@@ -552,11 +549,13 @@ dvb_stop (InputPlayback * playback)
           tuple_free (tuple)
           tuple = NULL;
         }
+      // Free tuning structure
       if (tune != NULL)
 	{
 	  dvb_tune_exit (tune);
 	  tune = NULL;
 	}
+      // Free DVB interface
       if (hdvb != NULL)
 	{
 	  dvb_unfilter (hdvb);
