@@ -1,8 +1,14 @@
+audacious-dvb (0.8.1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Marius Konitzer <m.konitzer@gmx.de>  Sat, 26 Mar 2011 17:00:49 +0100
+
 audacious-dvb (0.8.0) unstable; urgency=low
 
   * New upstream release.
 
- -- Marius Konitzer <marius@marius.localnet.local>  Mon, 28 Jul 2008 00:16:08 +0200
+ -- Marius Konitzer <m.konitzer@gmx.de>  Mon, 28 Jul 2008 00:16:08 +0200
 
 audacious-dvb (0.7.0) unstable; urgency=low
 

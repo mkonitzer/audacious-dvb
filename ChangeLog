@@ -1,3 +1,11 @@
+2011-03-26  Marius Konitzer  <m.konitzer@gmx.de>
+
+	Released 0.8.1.
+
+	* Support Audacious versions from 1.5.0 to 2.5 beta1
+	* New option "Use 'Pause' to toggle recording"
+	* Code cleanup and bug-fixes
+
 2008-07-28  Marius Konitzer  <m.konitzer@gmx.de>
 
 	Released 0.8.0.
