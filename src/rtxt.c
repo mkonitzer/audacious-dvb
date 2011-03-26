@@ -241,7 +241,7 @@ radiotext_decode (rtstruct * rt)
 	  if (rt->plustext != NULL)
 	    g_free (rt->plustext);
 	  rt->plustext = g_strndup (temptext, RT_MEL - 1);
-	  log_print (hlog, LOG_INFO, "Radiotext: %s", rt->plustext);
+	  log_print (hlog, LOG_NOTICE, "Radiotext: %s", rt->plustext);
 
 	  // Update event list if we have a new Radiotext event
 	  g_free (temptext);
@@ -474,7 +474,7 @@ radiotext_read_data (rtstruct * rt, const guchar * data, gint len)
 		      log_print (hlog, LOG_DEBUG, "mec %d: PTY", rt->mec);
 		      if (rt->mtext[8] <= 15)
 			{
-			  log_print (hlog, LOG_DEBUG,
+			  log_print (hlog, LOG_NOTICE,
 				     "RDS-PTY set to '%s'",
 				     pty_string[rt->mtext[8]]);
 			  if (rt->pty != NULL)

@@ -98,7 +98,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	case 0x4d:		// short_event_descriptor
 	  if (dl < 5)
 	    {
-	      log_print (hlog, LOG_INFO, "EIT[short_event_descriptor]: "
+	      log_print (hlog, LOG_DEBUG, "EIT[short_event_descriptor]: "
 			 "wrong description length: %u (expected >=5)", dl);
 	      break;
 	    }
@@ -125,7 +125,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	    epg->refresh = TRUE;
 
 	  if (epg->refresh)
-	    log_print (hlog, LOG_INFO, "EIT[short_event_descriptor]: "
+	    log_print (hlog, LOG_NOTICE, "EIT[short_event_descriptor]: "
 		       "%s,\"%s\",\"%s\"", lang, name, text);
 
 	  if (name != NULL)
@@ -143,7 +143,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	case 0x4e:		// extended_event_descriptor
 	  if (dl < 6)
 	    {
-	      log_print (hlog, LOG_INFO, "EIT[extended_event_descriptor]: "
+	      log_print (hlog, LOG_DEBUG, "EIT[extended_event_descriptor]: "
 			 "wrong description length: %u (expected >=6)", dl);
 	      break;
 	    }
@@ -176,7 +176,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 		}
 	    }
 
-	  log_print (hlog, LOG_INFO, "EIT[extended_event_descriptor]: "
+	  log_print (hlog, LOG_NOTICE, "EIT[extended_event_descriptor]: "
 		     "%d/%d,%s,\"%s\"", cdn, ldn, lang, newtext);
 
 	  if (newtext != NULL)
@@ -202,7 +202,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	case 0x50:		// component_descriptor
 	  if (dl < 6)
 	    {
-	      log_print (hlog, LOG_INFO, "EIT[component_descriptor]: "
+	      log_print (hlog, LOG_DEBUG, "EIT[component_descriptor]: "
 			 "wrong description length: %u (expected >=6)", dl);
 	      break;
 	    }
@@ -220,7 +220,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	  if (is_updated (lang, &epg->lang, DVB_STRING_DVBSI))
 	    epg->refresh = TRUE;
 	  if (epg->refresh)
-	    log_print (hlog, LOG_INFO, "EIT[component_descriptor]: "
+	    log_print (hlog, LOG_NOTICE, "EIT[component_descriptor]: "
 		       "%s, %s (%lu,%lu)", lang, stype, cnt, cty);
 
 	  if (stype != NULL)
@@ -233,7 +233,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	case 0x69:		// PDC_descriptor
 	  if (dl != 3)
 	    {
-	      log_print (hlog, LOG_INFO, "EIT[PDC_descriptor]: "
+	      log_print (hlog, LOG_DEBUG, "EIT[PDC_descriptor]: "
 			 "wrong description length: %u (expected 3)", dl);
 	      break;
 	    }
@@ -254,7 +254,7 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 	    }
 
 	  if (epg->refresh)
-	    log_print (hlog, LOG_INFO, "EIT[PDC_descriptor]: "
+	    log_print (hlog, LOG_NOTICE, "EIT[PDC_descriptor]: "
 		       "%02u.%02u. %02u:%02u", pil_mday, pil_mon, pil_hour,
 		       pil_min);
 	  break;

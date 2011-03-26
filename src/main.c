@@ -1288,7 +1288,7 @@ get_name_thread (gpointer arg)
 			station->refresh = TRUE;
 
 		      if (station->refresh)
-			log_print (hlog, LOG_INFO,
+			log_print (hlog, LOG_NOTICE,
 				   "Service name: \"%s\", \"%s\"", prov,
 				   name);
 
