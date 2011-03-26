@@ -88,6 +88,12 @@ static gpointer get_name_thread (gpointer);
 static gpointer epg_thread (gpointer);
 static gpointer mmusic_thread (gpointer);
 
+// Mutexes
+static GStaticMutex gmt_feed = G_STATIC_MUTEX_INIT;
+static GStaticMutex gmt_get_name = G_STATIC_MUTEX_INIT;
+static GStaticMutex gmt_epg = G_STATIC_MUTEX_INIT;
+static GStaticMutex gmt_mmusic = G_STATIC_MUTEX_INIT;
+
 // Timer functions
 static gboolean infobox_timer (gpointer);
 static gboolean dvb_status_timer (gpointer);
@@ -512,6 +518,13 @@ dvb_stop (InputPlayback * playback)
 	  g_thread_join (gt_epg);
 	  gt_epg = NULL;
 	}
+
+      // Stop feed thread
+      log_print (hlog, LOG_INFO, "Waiting for feed_thread() to die...");
+      g_static_mutex_lock (&gmt_feed);
+      g_static_mutex_unlock (&gmt_feed);
+
+      // Stop infobox timer
       if (infobox_timer_id != 0)
 	{
 	  log_print (hlog, LOG_DEBUG, "Removing infobox_timer()...");
@@ -655,7 +668,6 @@ feed_thread (InputPlayback * playback)
   log_print (hlog, LOG_INFO, "feed_thread() starting");
 
   // Prevent feed_thread from being called twice
-  static GStaticMutex gmt_feed = G_STATIC_MUTEX_INIT;
   g_static_mutex_lock (&gmt_feed);
 
   // Initialize stream demuxer
@@ -1298,7 +1310,6 @@ get_name_thread (gpointer arg)
 
   log_print (hlog, LOG_INFO, "get_name_thread(%d) starting", svc_sid);
 
-  static GStaticMutex gmt_get_name = G_STATIC_MUTEX_INIT;
   g_static_mutex_lock (&gmt_get_name);
 
   while (playing)
@@ -1397,7 +1408,6 @@ epg_thread (gpointer arg)
 
   log_print (hlog, LOG_INFO, "epg_thread() starting");
 
-  static GStaticMutex gmt_epg = G_STATIC_MUTEX_INIT;
   g_static_mutex_lock (&gmt_epg);
 
   sid = *((gint *) arg);
@@ -1466,7 +1476,6 @@ mmusic_thread (gpointer arg)
 
   log_print (hlog, LOG_INFO, "mmusic_thread() starting");
 
-  static GStaticMutex gmt_mmusic = G_STATIC_MUTEX_INIT;
   g_static_mutex_lock (&gmt_mmusic);
 
   /* Make sure information retrieval is initialized */
