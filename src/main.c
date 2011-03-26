@@ -48,6 +48,8 @@
 #include "record.h"
 #include "util.h"
 
+#define MAX_DVB_TIMEOUT     9
+
 #ifdef __AUDACIOUS_PLUGIN_API__
 #define AUD_PLUGIN_API	__AUDACIOUS_PLUGIN_API__
 #else
@@ -679,7 +681,7 @@ feed_thread (InputPlayback * playback)
           break;
         case RC_DVB_TIMEOUT:
           log_print (hlog, LOG_DEBUG, "dvb_apkt() timeout");
-          if (++toctr > 9)
+          if (++toctr > MAX_DVB_TIMEOUT)
             {
               log_print (hlog, LOG_DEBUG,
                          "dvb_apkt() timed out too often, giving up");
@@ -1430,7 +1432,7 @@ epg_thread (gpointer arg)
           break;
         case RC_DVB_TIMEOUT:
           log_print (hlog, LOG_DEBUG, "dvb_section() timeout");
-          if (++toctr > 9)
+          if (++toctr > MAX_DVB_TIMEOUT)
             {
               log_print (hlog, LOG_DEBUG,
                          "dvb_section() timed out too often, giving up");
@@ -1514,7 +1516,7 @@ mmusic_thread (gpointer arg)
           break;
         case RC_DVB_TIMEOUT:
           log_print (hlog, LOG_DEBUG, "dvb_dpkt() timeout");
-          if (++toctr > 9)
+          if (++toctr > MAX_DVB_TIMEOUT)
             {
               log_print (hlog, LOG_DEBUG,
                          "dvb_dpkt() timed out too often, giving up");
