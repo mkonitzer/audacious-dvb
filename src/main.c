@@ -48,13 +48,28 @@
 #include "record.h"
 #include "util.h"
 
+#ifdef __AUDACIOUS_PLUGIN_API__
+#define AUD_PLUGIN_API	__AUDACIOUS_PLUGIN_API__
+#else
+#ifdef _AUD_PLUGIN_VERSION
+#define AUD_PLUGIN_API	_AUD_PLUGIN_VERSION
+#else
+#error "Unable to detect version of plugin API. Aborting."
+#endif
+#endif
 
+#if _AUD_PLUGIN_VERSION < 19
 static void dvb_init (void);
 static gint dvb_is_our_file (const gchar *);
-static gboolean dvb_play (InputPlayback *, const gchar *, VFSFile *, gint, gint, gboolean);
 static void dvb_play_file (InputPlayback *);
-static void dvb_stop (InputPlayback *);
 static void dvb_pause (InputPlayback *, gshort);
+#else
+static gboolean dvb_init (void);
+static gint dvb_is_our_file_from_vfs (const gchar *, VFSFile *);
+static void dvb_pause (InputPlayback *, gboolean);
+#endif
+static gboolean dvb_play (InputPlayback *, const gchar *, VFSFile *, gint, gint, gboolean);
+static void dvb_stop (InputPlayback *);
 static gint dvb_get_time (InputPlayback *);
 static void dvb_file_info_box (const gchar *);
 static void dvb_exit (void);
@@ -66,7 +81,7 @@ static gboolean write_output (InputPlayback *, const struct mad_pcm *,
 static gboolean dvb_mpeg_frame (InputPlayback *, const guchar *, guint);
 
 // Thread functions
-static gpointer feed_thread (gpointer);
+static gboolean feed_thread (InputPlayback *);
 static gpointer get_name_thread (gpointer);
 static gpointer epg_thread (gpointer);
 static gpointer mmusic_thread (gpointer);
@@ -77,9 +92,7 @@ static gboolean dvb_status_timer (gpointer);
 
 
 // Title/Tuple functions
-#ifndef __AUDACIOUS_PLUGIN_API__
-#error "__AUDACIOUS_PLUGIN_API__ is undefined for some reason, aborting."
-#elif __AUDACIOUS_PLUGIN_API__ < 12
+#if AUD_PLUGIN_API < 12
 static gchar * build_file_title (void);
 #else
 static gboolean update_tuple_str (Tuple *, gint, const gchar *);
@@ -145,16 +158,20 @@ static InputPlugin dvb_ip = {
   .init = dvb_init,
   .about = dvb_about,
   .configure = dvb_configure,
-  .is_our_file = dvb_is_our_file,
-  .play_file = dvb_play_file,
-#if __AUDACIOUS_PLUGIN_API__ >= 16
-  .play = dvb_play,
-#endif
   .stop = dvb_stop,
   .pause = dvb_pause,
   .get_time = dvb_get_time,
   .cleanup = dvb_exit,
   .file_info_box = dvb_file_info_box,
+#if AUD_PLUGIN_API >= 16
+  .play = dvb_play,
+#endif
+#if _AUD_PLUGIN_VERSION < 18
+  .is_our_file = dvb_is_our_file,
+  .play_file = dvb_play_file,
+#else
+  .is_our_file_from_vfs  = dvb_is_our_file_from_vfs,
+#endif
 };
 
 static InputPlugin *dvb_iplist[] = { &dvb_ip, NULL };
@@ -173,8 +190,13 @@ dvb_file_info_box (const gchar * s)
 }
 
 
+#if _AUD_PLUGIN_VERSION < 19
 static void
 dvb_init (void)
+#else
+static gboolean
+dvb_init (void)
+#endif
 {
   config = config_init ();
   config_from_db (config);
@@ -207,6 +229,9 @@ dvb_init (void)
   log_print (hlog, LOG_INFO, "logging started");
 
   aud_uri_set_plugin ("dvb://", &dvb_ip);
+#if _AUD_PLUGIN_VERSION >= 19
+  return TRUE;
+#endif
 }
 
 
@@ -228,12 +253,17 @@ dvb_exit (void)
 }
 
 
+#if _AUD_PLUGIN_VERSION < 19
 static gint
-dvb_is_our_file (const gchar * s)
+dvb_is_our_file (const gchar * filename)
+#else
+static gint
+dvb_is_our_file_from_vfs (const gchar * filename, VFSFile * file)
+#endif
 {
   gint rc;
 
-  if ((rc = dvb_tune_parse_url (s, NULL)) == RC_OK)
+  if ((rc = dvb_tune_parse_url (filename, NULL)) == RC_OK)
     return 1;
 
   log_print (hlog, LOG_DEBUG, "dvb_parse_url() returned rc = %d", rc);
@@ -409,7 +439,7 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
 	dvb_status_timer_id = g_timeout_add (750, dvb_status_timer, NULL);
     }
 
-#if __AUDACIOUS_PLUGIN_API__ >= 12
+#if AUD_PLUGIN_API >= 12
   // Initialize tuple info
   tuple = tuple_new_from_filename (filename);
 #endif
@@ -421,21 +451,26 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
   mad_stream_options (&madstream, MAD_OPTION_IGNORECRC);
 
   // Initialize audio packet retrieval (including Radiotext info)
+#if _AUD_PLUGIN_VERSION < 19
   if (g_thread_self () == NULL)
     {
       log_print (hlog, LOG_CRIT, "g_thread_self() failed for dvb_play().");
       dvb_stop (playback);
       return FALSE;
     }
-  feed_thread (playback);
-  return TRUE;
+#endif
+
+  return feed_thread (playback);
 }
 
+
+#if _AUD_PLUGIN_VERSION < 19
 static void
 dvb_play_file (InputPlayback * playback)
 {
   dvb_play (playback, playback->filename, NULL, 0, 0, FALSE);
 }
+#endif
 
 
 static void
@@ -443,7 +478,10 @@ dvb_stop (InputPlayback * playback)
 {
   if (playing)
     {
-      playback->playing = playing = paused = FALSE;
+      playing = paused = FALSE;
+#if _AUD_PLUGIN_VERSION > 15
+      playback->output->abort_write();
+#endif
 
       // Stop all threads
       if (dvb_status_timer_id != 0)
@@ -472,12 +510,6 @@ dvb_stop (InputPlayback * playback)
 	  g_thread_join (gt_epg);
 	  gt_epg = NULL;
 	}
-      if (playback->thread != NULL)
-	{
-	  log_print (hlog, LOG_INFO, "Waiting for feed_thread() to die...");
-          g_thread_join (playback->thread);
-          playback->thread = NULL;
-        }
       if (infobox_timer_id != 0)
 	{
 	  log_print (hlog, LOG_DEBUG, "Removing infobox_timer()...");
@@ -546,8 +578,13 @@ dvb_stop (InputPlayback * playback)
 }
 
 
+#if _AUD_PLUGIN_VERSION < 19
 static void
 dvb_pause (InputPlayback * playback, gshort i)
+#else
+static void
+dvb_pause (InputPlayback * playback, gboolean _paused)
+#endif
 {
   if (config->rec_onpause)
     {
@@ -585,8 +622,13 @@ dvb_pause (InputPlayback * playback, gshort i)
   else
     {
       // 'Real' pause
+#if _AUD_PLUGIN_VERSION < 19
       paused = (i == 0 ? FALSE : TRUE);
       playback->output->pause (i);
+#else
+      paused = _paused;
+      playback->output->pause (_paused);
+#endif
     }
 }
 
@@ -601,15 +643,14 @@ dvb_get_time (InputPlayback * playback)
 }
 
 
-static gpointer
-feed_thread (gpointer args)
+static gboolean
+feed_thread (InputPlayback * playback)
 {
   gint rc, ar;
+  gboolean error = FALSE;
   guint toctr = 0;
   guchar pkt[3840];
-  InputPlayback *playback;
 
-  playback = (InputPlayback *) args;
   log_print (hlog, LOG_INFO, "feed_thread() starting");
 
   // Prevent feed_thread from being called twice
@@ -621,7 +662,7 @@ feed_thread (gpointer args)
   dvb_payload (playback, NULL, 0, 1);
 
   // Main decoding loop
-  while (playing)
+  while (playing && !error)
     {
       // Try to fetch an audio packet from DVB card
       rc = dvb_apkt (hdvb, pkt, sizeof (pkt), 1000, &ar);
@@ -630,7 +671,11 @@ feed_thread (gpointer args)
         case RC_OK:
           toctr = 0;
           if (!paused && !dvb_pes_pkt (playback, pkt, ar, 0))
-            playing = FALSE;
+	    {
+	      log_print (hlog, LOG_ERR,
+			 "dvb_pes_pkt() failed in feed_thread()");
+	      error = TRUE;
+	    }
           break;
         case RC_DVB_TIMEOUT:
           log_print (hlog, LOG_DEBUG, "dvb_apkt() timeout");
@@ -638,17 +683,18 @@ feed_thread (gpointer args)
             {
               log_print (hlog, LOG_DEBUG,
                          "dvb_apkt() timed out too often, giving up");
-              playing = FALSE;
+	      error = TRUE;
             }
           break;
         default:
           log_print (hlog, LOG_ERR,
                      "dvb_apkt() returned rc = %d, giving up", rc);
-          playing = FALSE;
+	  error = TRUE;
         }
       }
 
   log_print (hlog, LOG_DEBUG, "play-loop terminated");
+  playing = FALSE;
 
   if (audio_opened)
     {
@@ -659,7 +705,7 @@ feed_thread (gpointer args)
   log_print (hlog, LOG_INFO, "feed_thread() stopping");
 
   g_static_mutex_unlock (&gmt_feed);
-  return NULL;
+  return !error;
 }
 
 static gboolean
@@ -765,7 +811,11 @@ dvb_pes_pkt (InputPlayback * playback, const guchar * buf, gint len,
           pp = p + 9 + p[8];
           pp_len = PES_packet_length - 3 - p[8];
           if (!dvb_payload (playback, pp, pp_len, 0))
-            return FALSE;
+	    {
+	      log_print (hlog, LOG_ERR,
+			 "dvb_payload() failed in dvb_pes_pkt()");
+	      return FALSE;
+	    }
 
           g_memmove (pesbuf,
                      &pesbuf[i + 6 + PES_packet_length],
@@ -883,7 +933,7 @@ dvb_payload (InputPlayback * playback, const guchar * buf, gint len,
 }
 
 
-#if __AUDACIOUS_PLUGIN_API__ < 12
+#if AUD_PLUGIN_API < 12
 static gchar *
 build_file_title (void)
 {
@@ -1179,21 +1229,25 @@ dvb_mpeg_frame (InputPlayback * playback, const guchar * frame, guint len)
 			      MAD_NCHANNELS (&madframe.header)))
 #endif
 	{
+#if AUD_PLUGIN_API < 18
 	  playback->error = TRUE;
+#endif
 	  log_print (hlog, LOG_WARN,
 		     "open_audio() failed in dvb_mpeg_frame()");
 	  return FALSE;
 	}
 
       // Tell Audacious how we're doing
+#if AUD_PLUGIN_API < 18
       playback->playing = TRUE;
       playback->error = FALSE;
+#endif
       playback->set_pb_ready(playback);
 
       audio_opened = TRUE;
     }
 
-#if __AUDACIOUS_PLUGIN_API__ < 12
+#if AUD_PLUGIN_API < 12
   // Look if file title has changed
   gchar *newtitle;
   newtitle = build_file_title ();
@@ -1216,9 +1270,15 @@ dvb_mpeg_frame (InputPlayback * playback, const guchar * frame, guint len)
     {
       mowgli_object_ref (tuple);
       playback->set_tuple (playback, tuple);
+#if AUD_PLUGIN_API < 19
       playback->set_params (playback, NULL, 0, madframe.header.bitrate,
 			    madframe.header.samplerate,
 			    MAD_NCHANNELS (&madframe.header));
+#else
+      playback->set_params (playback, madframe.header.bitrate,
+			    madframe.header.samplerate,
+			    MAD_NCHANNELS (&madframe.header));
+#endif
     }
 #endif
 
