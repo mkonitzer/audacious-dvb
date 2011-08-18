@@ -174,7 +174,7 @@ static InputPlugin dvb_ip = {
 #if AUD_PLUGIN_API >= 16
   .play = dvb_play,
 #endif
-#if _AUD_PLUGIN_VERSION < 18
+#if AUD_PLUGIN_API < 18
   .is_our_file = dvb_is_our_file,
   .play_file = dvb_play_file,
 #else
@@ -198,7 +198,7 @@ dvb_file_info_box (const gchar * s)
 }
 
 
-#if _AUD_PLUGIN_VERSION < 19
+#if AUD_PLUGIN_API < 19
 static void
 dvb_init (void)
 #else
@@ -261,7 +261,7 @@ dvb_exit (void)
 }
 
 
-#if _AUD_PLUGIN_VERSION < 19
+#if AUD_PLUGIN_API < 19
 static gint
 dvb_is_our_file (const gchar * filename)
 #else
@@ -459,7 +459,7 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
   mad_stream_options (&madstream, MAD_OPTION_IGNORECRC);
 
   // Initialize audio packet retrieval (including Radiotext info)
-#if _AUD_PLUGIN_VERSION < 19
+#if AUD_PLUGIN_API < 19
   if (g_thread_self () == NULL)
     {
       log_print (hlog, LOG_CRIT, "g_thread_self() failed for dvb_play().");
@@ -472,7 +472,7 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
 }
 
 
-#if _AUD_PLUGIN_VERSION < 19
+#if AUD_PLUGIN_API < 19
 static void
 dvb_play_file (InputPlayback * playback)
 {
@@ -487,7 +487,7 @@ dvb_stop (InputPlayback * playback)
   if (playing)
     {
       playing = paused = FALSE;
-#if _AUD_PLUGIN_VERSION > 15
+#if AUD_PLUGIN_API > 15
       playback->output->abort_write();
 #endif
 
@@ -592,7 +592,7 @@ dvb_stop (InputPlayback * playback)
 }
 
 
-#if _AUD_PLUGIN_VERSION < 19
+#if AUD_PLUGIN_API < 19
 static void
 dvb_pause (InputPlayback * playback, gshort i)
 #else
@@ -636,7 +636,7 @@ dvb_pause (InputPlayback * playback, gboolean _paused)
   else
     {
       // 'Real' pause
-#if _AUD_PLUGIN_VERSION < 19
+#if AUD_PLUGIN_API < 19
       paused = (i == 0 ? FALSE : TRUE);
       playback->output->pause (i);
 #else
