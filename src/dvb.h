@@ -103,7 +103,7 @@ gint dvb_dpkt (HDVB *, guchar *, gint, gint, gint *);
 gint dvb_get_pid (HDVB *, gint, guint *, guint *);
 
 tunestruct *dvb_tune_init (void);
-gint dvb_tune (HDVB *, tunestruct *);
+gint dvb_tune (const HDVB *, tunestruct *);
 gint dvb_tune_parse_url (const gchar *, tunestruct *);
 gchar *dvb_tune_to_text (const HDVB *, const tunestruct *);
 void dvb_tune_exit (tunestruct *);

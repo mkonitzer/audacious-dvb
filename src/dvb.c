@@ -864,7 +864,7 @@ dvb_get_status (const HDVB * h, dvbstatstruct * st)
 
 
 gint
-dvb_tune (HDVB * h, tunestruct * t)
+dvb_tune (const HDVB * h, tunestruct * t)
 {
   gint res, hi_lo = 0;
   guint base = 0;
