@@ -913,25 +913,10 @@ dvb_tune (const HDVB * h, tunestruct * t)
     case FE_QPSK:
       if (t->freq > 2200000)
 	{
-	  if (t->freq < t->slof)
-	    {
-	      feparams.frequency = (t->freq - t->lof1);
-	      hi_lo = 0;
-	      base = t->lof1;
-	    }
-	  else
-	    {
-	      feparams.frequency = (t->freq - t->lof2);
-	      hi_lo = 1;
-	      base = t->lof2;
-	    }
+	  base = (t->freq < t->slof ? t->lof1 : t->lof2);
+	  hi_lo = (t->freq < t->slof ? 0 : 1);
 	}
-      else
-	{
-	  feparams.frequency = t->freq;
-	  hi_lo = 0;
-	  base = 0;
-	}
+      feparams.frequency = (t->freq - base);
 
       log_print (hlog, LOG_INFO, "tuning DVB-S to %s", tunetext);
       g_free (tunetext);
