@@ -150,55 +150,6 @@ dvb_filter (HDVB * h, gint pid)
 
 
 gint
-dvb_packet (HDVB * h, guchar * pkt, gint t)
-{
-  gint r, sel;
-  fd_set rfd;
-  struct timeval tv;
-
-  if (h == NULL)
-    return RC_NPE;
-
-  memset (&tv, 0x00, sizeof (tv));
-  tv.tv_sec = t / 1000;
-  tv.tv_usec = 1000 * (t % 1000);
-
-  FD_ZERO (&rfd);
-  FD_SET (h->dvb_dmxdh, &rfd);
-
-  do
-    {
-      sel = select (h->dvb_dmxdh + 1, &rfd, NULL, NULL, &tv);
-    }
-  while (sel < 0 && errno == EINTR);
-
-  if (sel < 0)
-    {
-      log_print (hlog, LOG_WARN,
-		 "select() failed in dvb_packet(), errno = %d (%s)",
-		 errno, g_strerror (errno));
-      return RC_DVB_ERROR;
-    }
-
-  if (sel == 0)
-    {
-      log_print (hlog, LOG_DEBUG, "select() timed out in dvb_packet()");
-      return RC_DVB_TIMEOUT;
-    }
-
-  if ((r = read (h->dvb_dmxdh, pkt, 184)) <= 0)
-    {
-      log_print (hlog, LOG_WARN,
-		 "read() failed in dvb_packet(), errno = %d (%s)",
-		 errno, g_strerror (errno));
-      return RC_DVB_ERROR;
-    }
-
-  return RC_OK;
-}
-
-
-gint
 dvb_unfilter (HDVB * h)
 {
   if (h == NULL)

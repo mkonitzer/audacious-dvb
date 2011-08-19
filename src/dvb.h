@@ -94,7 +94,6 @@ typedef struct _HDVB
 HDVB *dvb_open (gint);
 gint dvb_close (HDVB *);
 gint dvb_filter (HDVB *, gint);
-gint dvb_packet (HDVB *, guchar *, gint);
 gint dvb_unfilter (HDVB *);
 gint dvb_section (HDVB *, gint, gint, gint, gint, guchar *, gint);
 gint dvb_apid (HDVB *, guint);
