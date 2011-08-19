@@ -60,7 +60,7 @@
 #endif
 #endif
 
-#if _AUD_PLUGIN_VERSION < 19
+#if AUD_PLUGIN_API < 19
 static void dvb_init (void);
 static gint dvb_is_our_file (const gchar *);
 static void dvb_play_file (InputPlayback *);
@@ -161,8 +161,19 @@ static gint sft[] = {
 static time_t isplit_last = 0;
 static time_t vsplit_last = 0;
 
+#if AUD_PLUGIN_API >= 31
+static const gchar *const schemes[] = {"dvb", NULL};
+
+AUD_INPUT_PLUGIN (
+#else
 static InputPlugin dvb_ip = {
+#endif
+#if AUD_PLUGIN_API < 31
   .description = "DVB Input Plugin",
+#else
+  .name = "DVB Input Plugin",
+  .schemes = schemes,
+#endif
   .init = dvb_init,
   .about = dvb_about,
   .configure = dvb_configure,
@@ -174,17 +185,21 @@ static InputPlugin dvb_ip = {
 #if AUD_PLUGIN_API >= 16
   .play = dvb_play,
 #endif
-#if AUD_PLUGIN_API < 18
+#if AUD_PLUGIN_API < 19
   .is_our_file = dvb_is_our_file,
   .play_file = dvb_play_file,
 #else
   .is_our_file_from_vfs  = dvb_is_our_file_from_vfs,
 #endif
+#if AUD_PLUGIN_API >= 31
+)
+#else
 };
 
 static InputPlugin *dvb_iplist[] = { &dvb_ip, NULL };
 
 SIMPLE_INPUT_PLUGIN (dvb, dvb_iplist);
+#endif
 
 
 static void
@@ -236,8 +251,11 @@ dvb_init (void)
 
   log_print (hlog, LOG_INFO, "logging started");
 
+#if AUD_PLUGIN_API < 31
   aud_uri_set_plugin ("dvb://", &dvb_ip);
-#if _AUD_PLUGIN_VERSION >= 19
+#endif
+
+#if AUD_PLUGIN_API >= 19
   return TRUE;
 #endif
 }
