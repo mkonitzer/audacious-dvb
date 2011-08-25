@@ -190,7 +190,7 @@ logToFileClicked (GtkWidget * w, gpointer user_data)
 				  (glade_xml_get_widget
 				   (widgets.configXml, "logToFileCheck")));
   gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "logFileEntry"), b);
+			    (widgets.configXml, "logFileChooser"), b);
   gtk_widget_set_sensitive (glade_xml_get_widget
 			    (widgets.configXml, "logAppendCheck"), b);
 }
@@ -208,7 +208,7 @@ recordClicked (GtkWidget * w, gpointer user_data)
 				  (glade_xml_get_widget
 				   (widgets.configXml, "reconpauseCheck")));
   gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "fnameEntry"), b);
+			    (widgets.configXml, "fnameChooser"), b);
   gtk_widget_set_sensitive (glade_xml_get_widget
 			    (widgets.configXml, "fnameLabel"), b);
   gtk_widget_set_sensitive (glade_xml_get_widget
@@ -305,9 +305,9 @@ config_to_gui (const cfgstruct * config)
 				(glade_xml_get_widget
 				 (widgets.configXml, "logToFileCheck")),
 				config->log_tofile);
-  gtk_entry_set_text (GTK_ENTRY
+  gtk_file_chooser_set_filename (GTK_FILE_CHOOSER
 		      (glade_xml_get_widget
-		       (widgets.configXml, "logFileEntry")),
+		       (widgets.configXml, "logFileChooser")),
 		      config->log_filename);
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
 				(glade_xml_get_widget
@@ -323,9 +323,9 @@ config_to_gui (const cfgstruct * config)
 				(glade_xml_get_widget
 				 (widgets.configXml, "reconplayCheck")),
 				config->rec_onplay);
-  gtk_entry_set_text_safe (GTK_ENTRY
+  gtk_file_chooser_set_filename (GTK_FILE_CHOOSER
 			   (glade_xml_get_widget
-			    (widgets.configXml, "fnameEntry")),
+			    (widgets.configXml, "fnameChooser")),
 			   config->rec_fname);
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
 				(glade_xml_get_widget
@@ -423,9 +423,9 @@ config_from_gui (cfgstruct * config)
   if (config->log_filename != NULL)
     g_free (config->log_filename);
   config->log_filename =
-    g_strdup (gtk_entry_get_text
-	      (GTK_ENTRY
-	       (glade_xml_get_widget (widgets.configXml, "logFileEntry"))));
+    g_strdup (gtk_file_chooser_get_filename
+	      (GTK_FILE_CHOOSER
+	       (glade_xml_get_widget (widgets.configXml, "logFileChooser"))));
   config->log_append =
     gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
 				  (glade_xml_get_widget
@@ -443,9 +443,9 @@ config_from_gui (cfgstruct * config)
   if (config->rec_fname != NULL)
     g_free (config->rec_fname);
   config->rec_fname =
-    g_strdup (gtk_entry_get_text
-	      (GTK_ENTRY
-	       (glade_xml_get_widget (widgets.configXml, "fnameEntry"))));
+    g_strdup (gtk_file_chooser_get_filename
+	      (GTK_FILE_CHOOSER
+	       (glade_xml_get_widget (widgets.configXml, "fnameChooser"))));
   config->rec_append =
     gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
 				  (glade_xml_get_widget
