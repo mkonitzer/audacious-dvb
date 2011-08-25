@@ -104,6 +104,14 @@ Runtime:
     to suit it to your needs. This can be done in Audacious' preferences
     window (Preferences -> Plugins -> Decoders).
 
+    If you would like to have channel logos (analogous to album art) in
+    Audacious, you need to set up the correct path via the preferences
+    window. Due to licensing issues no logos are shipped with
+    audacious-dvb. Basically all formats supported by your system's
+    GDK-PixBuf are supported by audacious-dvb. However GDK-PixBuf seems
+    to like PNG images best. The logo filename is generated from the
+    'channelname' part of the particular dvb://-URL. Activate logging
+    to verify which filenames are tried out.
 
 Bugs/Support:
 

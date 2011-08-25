@@ -63,6 +63,9 @@ static void dvb_pause (InputPlayback *, gboolean);
 static gboolean dvb_play (InputPlayback *, const gchar *, VFSFile *, gint, gint, gboolean);
 static void dvb_stop (InputPlayback *);
 static gint dvb_get_time (InputPlayback *);
+#if AUD_PLUGIN_API >= 16
+static gboolean dvb_get_song_image (const gchar *, VFSFile *, void **, gint *);
+#endif
 static void dvb_file_info_box (const gchar *);
 static void dvb_exit (void);
 
@@ -170,6 +173,9 @@ static InputPlugin dvb_ip = {
   .stop = dvb_stop,
   .pause = dvb_pause,
   .get_time = dvb_get_time,
+#if AUD_PLUGIN_API >= 16
+  .get_song_image = dvb_get_song_image,
+#endif
   .cleanup = dvb_exit,
   .file_info_box = dvb_file_info_box,
 #if AUD_PLUGIN_API >= 16
@@ -179,7 +185,7 @@ static InputPlugin dvb_ip = {
   .is_our_file = dvb_is_our_file,
   .play_file = dvb_play_file,
 #else
-  .is_our_file_from_vfs  = dvb_is_our_file_from_vfs,
+  .is_our_file_from_vfs = dvb_is_our_file_from_vfs,
 #endif
 #if AUD_PLUGIN_API >= 31
 )
@@ -668,6 +674,60 @@ dvb_get_time (InputPlayback * playback)
   return 0;
 }
 
+
+#if AUD_PLUGIN_API >= 16
+static gboolean
+dvb_get_song_image (const gchar * filename, VFSFile * file, void * * data, gint * size)
+{
+  if (!config->logos_use || config->logos_dir == NULL)
+    return FALSE;
+
+  // Generate channel logo filenames
+  int i = 0;
+  gchar * logoname[10];
+  logoname[0] = dvb_get_authority_from_url (filename);
+  if (logoname[0] == NULL)
+    return FALSE;
+  logoname[(logoname[i] != NULL ? ++i : i)] = get_alt_logoname (logoname[0], " ,", "");
+  logoname[(logoname[i] != NULL ? ++i : i)] = get_alt_logoname (logoname[0], " ", "_");
+  logoname[(logoname[i] != NULL ? ++i : i)] = NULL;
+
+  // Append all image extensions supported by GDK-PixBuf
+  gchar ** basename;
+  GSList * pbfmts;
+  for (pbfmts = gdk_pixbuf_get_formats (); pbfmts != NULL; pbfmts = g_slist_next (pbfmts))
+    {
+      gchar ** ext, ** exts;
+      exts = gdk_pixbuf_format_get_extensions ((GdkPixbufFormat*) pbfmts->data);
+      for (ext = exts; ext != NULL && *ext != NULL; ++ext)
+	{
+	  for (basename = logoname; *basename != NULL; ++basename)
+	    {
+	      gsize len;
+	      gchar *fullpath;
+	      fullpath = g_strconcat (config->logos_dir, "/", *basename, ".", *ext, NULL);
+	      log_print (hlog, LOG_DEBUG, "Trying song image: \"%s\"", fullpath);
+	      if (g_file_get_contents (fullpath, (gchar **) data, &len, NULL))
+		{
+		  *size = len;
+		  log_print (hlog, LOG_INFO, "Using song image: \"%s\"", fullpath);
+		  g_free (fullpath);
+		  for (basename = logoname; *basename != NULL; ++basename)
+		    g_free (*basename);
+		  return TRUE;
+		}
+	      g_free (fullpath);
+	    }
+	}
+      g_strfreev (exts);
+    }
+  g_slist_free (pbfmts);
+  for (basename = logoname; *basename != NULL; ++basename)
+    g_free (*basename);
+
+  return FALSE;
+}
+#endif
 
 static gboolean
 feed_thread (InputPlayback * playback)

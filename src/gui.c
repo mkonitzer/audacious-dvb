@@ -46,6 +46,7 @@ static Widgets widgets = { NULL };
 
 static void config_to_gui (const cfgstruct *);
 static void dvb_configure_ok (GtkWidget *, gpointer);
+static void channelLogosClicked (GtkWidget *, gpointer);
 static void logToFileClicked (GtkWidget *, gpointer);
 static void recordClicked (GtkWidget *, gpointer);
 static void isplitClicked (GtkWidget *, gpointer);
@@ -117,6 +118,10 @@ dvb_configure (void)
 
   gtk_signal_connect (GTK_OBJECT
 		      (glade_xml_get_widget
+		       (widgets.configXml, "channelLogosCheck")), "clicked",
+		      G_CALLBACK (channelLogosClicked), NULL);
+  gtk_signal_connect (GTK_OBJECT
+		      (glade_xml_get_widget
 		       (widgets.configXml, "logToFileCheck")), "clicked",
 		      G_CALLBACK (logToFileClicked), NULL);
   gtk_signal_connect (GTK_OBJECT
@@ -151,6 +156,28 @@ dvb_configure_ok (GtkWidget * w, gpointer data)
   log_set_level (hlog, config->log_level);
 
   gtk_widget_destroy (GTK_WIDGET (widgets.configBox));
+}
+
+
+static void
+channelLogosClicked (GtkWidget * w, gpointer user_data)
+{
+  gboolean b;
+#if AUD_PLUGIN_API >= 16
+  b =
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "channelLogosCheck")));
+#else
+  b = FALSE;
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "channelLogosCheck"), FALSE);
+
+#endif
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "channelLogosLabel"), b);
+  gtk_widget_set_sensitive (glade_xml_get_widget
+			    (widgets.configXml, "channelLogosChooser"), b);
 }
 
 
@@ -252,10 +279,22 @@ vsplitClicked (GtkWidget * w, gpointer user_data)
 static void
 config_to_gui (const cfgstruct * config)
 {
+  // DVB card
   gtk_spin_button_set_value (GTK_SPIN_BUTTON
 			     (glade_xml_get_widget
 			      (widgets.configXml, "devnoSpin")),
 			     config->devno);
+
+  // Channel logos
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
+				(glade_xml_get_widget
+				 (widgets.configXml, "channelLogosCheck")),
+				config->logos_use);
+  gtk_file_chooser_set_filename (GTK_FILE_CHOOSER
+		      (glade_xml_get_widget
+		       (widgets.configXml, "channelLogosChooser")),
+		      config->logos_dir);
+  
 
   // Logging
   gtk_combo_box_set_active (GTK_COMBO_BOX
@@ -342,6 +381,7 @@ config_to_gui (const cfgstruct * config)
 				config->info_mmusic);
 
   // Make dialog elements (in)active
+  channelLogosClicked (NULL, NULL);
   logToFileClicked (NULL, NULL);
   isplitClicked (NULL, NULL);
   vsplitClicked (NULL, NULL);
@@ -357,6 +397,19 @@ config_from_gui (cfgstruct * config)
     gtk_spin_button_get_value (GTK_SPIN_BUTTON
 			       (glade_xml_get_widget
 				(widgets.configXml, "devnoSpin")));
+
+  // Channel logos
+  config->logos_use =
+    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
+				  (glade_xml_get_widget
+				   (widgets.configXml, "channelLogosCheck")));
+  if (config->logos_dir != NULL)
+    g_free (config->logos_dir);
+  config->logos_dir =
+    g_strdup (gtk_file_chooser_get_filename
+	      (GTK_FILE_CHOOSER
+	       (glade_xml_get_widget (widgets.configXml, "channelLogosChooser"))));
+  
 
   // Logging
   config->log_level =

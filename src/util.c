@@ -267,6 +267,46 @@ str_beautify (const gchar * s, gint len, enum dvb_strtype type)
 }
 
 
+gchar *
+get_alt_logoname (const gchar *filename, const gchar *replstr, const gchar *withstr)
+{
+  if (filename == NULL)
+    return NULL;
+
+  // "Beautify" filename
+  gchar * beautified;
+  beautified = str_beautify (filename, 0, DVB_STRING_ASCII);
+  if (beautified == NULL)
+    return g_strdup (filename);
+
+  // Convert result to lowercase
+  gchar * lower;
+  lower = g_ascii_strdown (beautified, -1);
+  if (lower == NULL)
+    return beautified;
+  g_free (beautified);
+
+  // Replace all occurences of substring "replstr" ...
+  gchar ** split;
+  split = g_strsplit_set (lower, replstr, 0);
+  if (split == NULL)
+    return lower;
+  if (g_strv_length (split) < 1)
+    {
+      g_strfreev (split);
+      return lower;
+    }
+  // ... with "withstr"
+  gchar * ret;
+  ret = g_strjoinv (withstr, split);
+  g_strfreev (split);
+  if (ret == NULL)
+      return lower;
+  g_free (lower);
+  return ret;
+}
+
+
 gboolean
 is_updated (const gchar * newtext, gchar ** oldtextptr, enum dvb_strtype type)
 {

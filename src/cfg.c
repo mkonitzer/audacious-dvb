@@ -34,6 +34,9 @@ config_init (void)
   cfgstruct *config;
   config = g_malloc0 (sizeof (cfgstruct));
 
+  // Channel logos
+  config->logos_use = FALSE;
+  
   // Logging
   config->log_level = LOG_ERR;
   config->log_tofile = FALSE;
@@ -78,6 +81,17 @@ config_from_db (cfgstruct * config)
 
   // DVB device
   aud_cfg_db_get_int (db, "dvb", "devno", &config->devno);
+
+  // Channel logos
+  aud_cfg_db_get_bool (db, "dvb", "logos.use", &config->logos_use);
+  if (config->logos_dir != NULL)
+    {
+      g_free (config->logos_dir);
+      config->logos_dir = NULL;
+    }
+  aud_cfg_db_get_string (db, "dvb", "logos.dir", &config->logos_dir);
+  if (config->logos_dir == NULL)
+    config->logos_use = FALSE;
 
   // Logging
   aud_cfg_db_get_int (db, "dvb", "log.level", (gint *) & config->log_level);
@@ -140,6 +154,10 @@ config_to_db (const cfgstruct * config)
 
   // DVB device
   aud_cfg_db_set_int (db, "dvb", "devno", config->devno);
+
+  // Channel logos
+  aud_cfg_db_set_bool (db, "dvb", "logos.use", config->logos_use);
+  aud_cfg_db_set_string (db, "dvb", "logos.dir", config->logos_dir);
 
   // Logging
   aud_cfg_db_set_bool (db, "dvb", "log.tofile", config->log_tofile);

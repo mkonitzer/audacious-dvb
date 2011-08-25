@@ -31,6 +31,9 @@ typedef struct _cfgstruct
 {
   gint devno;			/* DVB device number */
 
+  gboolean logos_use;		/* Display channel logos? */
+  gchar *logos_dir;             /* Directory containing channel logos */
+
   enum lvltype log_level;	/* Log level */
   gboolean log_tofile;		/* Log to file (TRUE) xor to glib (FALSE) */
   gchar *log_filename;		/* Log filename */
