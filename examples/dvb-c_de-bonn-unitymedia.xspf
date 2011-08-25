@@ -1,0 +1,514 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<playlist xmlns="http://xspf.org/ns/0/" version="1">
+  <creator>conf2xspf</creator>
+  <extension application="audacious">
+    <options staticlist="true" />
+  </extension>
+  <trackList>
+    <track>
+      <location>dvb://1LIVE?sid=28475:freq=410000:srate=6900</location>
+      <title>1LIVE</title>
+    </track>
+    <track>
+      <location>dvb://WDR%202?sid=28476:freq=410000:srate=6900</location>
+      <title>WDR 2</title>
+    </track>
+    <track>
+      <location>dvb://WDR%203?sid=28477:freq=410000:srate=6900</location>
+      <title>WDR 3</title>
+    </track>
+    <track>
+      <location>dvb://WDR%204?sid=28478:freq=410000:srate=6900</location>
+      <title>WDR 4</title>
+    </track>
+    <track>
+      <location>dvb://WDR%205?sid=28479:freq=410000:srate=6900</location>
+      <title>WDR 5</title>
+    </track>
+    <track>
+      <location>dvb://WDR%20Funkhaus%20Europa?sid=28480:freq=410000:srate=6900</location>
+      <title>WDR Funkhaus Europa</title>
+    </track>
+    <track>
+      <location>dvb://1LIVE%20diggi?sid=28481:freq=410000:srate=6900</location>
+      <title>1LIVE diggi</title>
+    </track>
+    <track>
+      <location>dvb://KIRAKA?sid=28482:freq=410000:srate=6900</location>
+      <title>KIRAKA</title>
+    </track>
+    <track>
+      <location>dvb://WDR%20Event?sid=28483:freq=410000:srate=6900</location>
+      <title>WDR Event</title>
+    </track>
+    <track>
+      <location>dvb://hr1?sid=28419:freq=410000:srate=6900</location>
+      <title>hr1</title>
+    </track>
+    <track>
+      <location>dvb://hr2?sid=28420:freq=410000:srate=6900</location>
+      <title>hr2</title>
+    </track>
+    <track>
+      <location>dvb://hr3?sid=28421:freq=410000:srate=6900</location>
+      <title>hr3</title>
+    </track>
+    <track>
+      <location>dvb://hr4?sid=28422:freq=410000:srate=6900</location>
+      <title>hr4</title>
+    </track>
+    <track>
+      <location>dvb://YOU%20FM?sid=28423:freq=410000:srate=6900</location>
+      <title>YOU FM</title>
+    </track>
+    <track>
+      <location>dvb://hr%20iNFO?sid=28424:freq=410000:srate=6900</location>
+      <title>hr iNFO</title>
+    </track>
+    <track>
+      <location>dvb://hr%20iNFO%20%2B?sid=28425:freq=410000:srate=6900</location>
+      <title>hr iNFO +</title>
+    </track>
+    <track>
+      <location>dvb://NDR1WelleNord?sid=28442:freq=426000:srate=6900</location>
+      <title>NDR1WelleNord</title>
+    </track>
+    <track>
+      <location>dvb://NDR%201%20Radio%20MV?sid=28443:freq=426000:srate=6900</location>
+      <title>NDR 1 Radio MV</title>
+    </track>
+    <track>
+      <location>dvb://NDR%201%20Nieders.?sid=28444:freq=426000:srate=6900</location>
+      <title>NDR 1 Nieders.</title>
+    </track>
+    <track>
+      <location>dvb://NDR%202?sid=28437:freq=426000:srate=6900</location>
+      <title>NDR 2</title>
+    </track>
+    <track>
+      <location>dvb://NDR%20Kultur?sid=28438:freq=426000:srate=6900</location>
+      <title>NDR Kultur</title>
+    </track>
+    <track>
+      <location>dvb://NDR%20Info?sid=28439:freq=426000:srate=6900</location>
+      <title>NDR Info</title>
+    </track>
+    <track>
+      <location>dvb://N-JOY?sid=28440:freq=426000:srate=6900</location>
+      <title>N-JOY</title>
+    </track>
+    <track>
+      <location>dvb://NDR%2090%2C3?sid=28441:freq=426000:srate=6900</location>
+      <title>NDR 90,3</title>
+    </track>
+    <track>
+      <location>dvb://NDR%20Info%20Spez.?sid=28445:freq=426000:srate=6900</location>
+      <title>NDR Info Spez.</title>
+    </track>
+    <track>
+      <location>dvb://Inforadio?sid=28452:freq=426000:srate=6900</location>
+      <title>Inforadio</title>
+    </track>
+    <track>
+      <location>dvb://Kulturradio?sid=28453:freq=426000:srate=6900</location>
+      <title>Kulturradio</title>
+    </track>
+    <track>
+      <location>dvb://MDR1%20SACHSEN?sid=28428:freq=426000:srate=6900</location>
+      <title>MDR1 SACHSEN</title>
+    </track>
+    <track>
+      <location>dvb://MDR1%20SA-ANHALT?sid=28429:freq=426000:srate=6900</location>
+      <title>MDR1 SA-ANHALT</title>
+    </track>
+    <track>
+      <location>dvb://MDR1%20TH%C3%9CRINGEN?sid=28430:freq=426000:srate=6900</location>
+      <title>MDR1 THÜRINGEN</title>
+    </track>
+    <track>
+      <location>dvb://MDR%20FIGARO?sid=28431:freq=426000:srate=6900</location>
+      <title>MDR FIGARO</title>
+    </track>
+    <track>
+      <location>dvb://JUMP?sid=28432:freq=426000:srate=6900</location>
+      <title>JUMP</title>
+    </track>
+    <track>
+      <location>dvb://MDR%20SPUTNIK?sid=28433:freq=426000:srate=6900</location>
+      <title>MDR SPUTNIK</title>
+    </track>
+    <track>
+      <location>dvb://MDR%20Info?sid=28434:freq=426000:srate=6900</location>
+      <title>MDR Info</title>
+    </track>
+    <track>
+      <location>dvb://MDR%20KLASSIK?sid=28435:freq=426000:srate=6900</location>
+      <title>MDR KLASSIK</title>
+    </track>
+    <track>
+      <location>dvb://SWR%201%20BW?sid=28465:freq=426000:srate=6900</location>
+      <title>SWR 1 BW</title>
+    </track>
+    <track>
+      <location>dvb://SWR%201%20RP?sid=28466:freq=426000:srate=6900</location>
+      <title>SWR 1 RP</title>
+    </track>
+    <track>
+      <location>dvb://SWR%202?sid=28467:freq=426000:srate=6900</location>
+      <title>SWR 2</title>
+    </track>
+    <track>
+      <location>dvb://SWR%203?sid=28468:freq=426000:srate=6900</location>
+      <title>SWR 3</title>
+    </track>
+    <track>
+      <location>dvb://SWR%204%20BW?sid=28469:freq=426000:srate=6900</location>
+      <title>SWR 4 BW</title>
+    </track>
+    <track>
+      <location>dvb://SWR%204%20RP?sid=28470:freq=426000:srate=6900</location>
+      <title>SWR 4 RP</title>
+    </track>
+    <track>
+      <location>dvb://DASDING?sid=28471:freq=426000:srate=6900</location>
+      <title>DASDING</title>
+    </track>
+    <track>
+      <location>dvb://SWR%20cont.ra?sid=28472:freq=426000:srate=6900</location>
+      <title>SWR cont.ra</title>
+    </track>
+    <track>
+      <location>dvb://Bayern%201?sid=28400:freq=410000:srate=6900</location>
+      <title>Bayern 1</title>
+    </track>
+    <track>
+      <location>dvb://Bayern%202?sid=28401:freq=410000:srate=6900</location>
+      <title>Bayern 2</title>
+    </track>
+    <track>
+      <location>dvb://BAYERN%203?sid=28402:freq=410000:srate=6900</location>
+      <title>BAYERN 3</title>
+    </track>
+    <track>
+      <location>dvb://BAYERN%204%20KLASSIK?sid=28403:freq=410000:srate=6900</location>
+      <title>BAYERN 4 KLASSIK</title>
+    </track>
+    <track>
+      <location>dvb://B5%20aktuell?sid=28404:freq=410000:srate=6900</location>
+      <title>B5 aktuell</title>
+    </track>
+    <track>
+      <location>dvb://B5%20plus?sid=28408:freq=410000:srate=6900</location>
+      <title>B5 plus</title>
+    </track>
+    <track>
+      <location>dvb://BAYERN%20plus?sid=28405:freq=410000:srate=6900</location>
+      <title>BAYERN plus</title>
+    </track>
+    <track>
+      <location>dvb://on3radio?sid=28406:freq=410000:srate=6900</location>
+      <title>on3radio</title>
+    </track>
+    <track>
+      <location>dvb://BR%20Verkehr?sid=28407:freq=410000:srate=6900</location>
+      <title>BR Verkehr</title>
+    </track>
+    <track>
+      <location>dvb://Antenne%20Brandenburg?sid=28454:freq=426000:srate=6900</location>
+      <title>Antenne Brandenburg</title>
+    </track>
+    <track>
+      <location>dvb://radioBERLIN%2088%2C8?sid=28455:freq=426000:srate=6900</location>
+      <title>radioBERLIN 88,8</title>
+    </track>
+    <track>
+      <location>dvb://radioeins?sid=28456:freq=426000:srate=6900</location>
+      <title>radioeins</title>
+    </track>
+    <track>
+      <location>dvb://Fritz?sid=28457:freq=426000:srate=6900</location>
+      <title>Fritz</title>
+    </track>
+    <track>
+      <location>dvb://SR1%20Europawelle?sid=28461:freq=410000:srate=6900</location>
+      <title>SR1 Europawelle</title>
+    </track>
+    <track>
+      <location>dvb://SR2%20KulturRadio?sid=28462:freq=410000:srate=6900</location>
+      <title>SR2 KulturRadio</title>
+    </track>
+    <track>
+      <location>dvb://SR3%20Saarlandwelle?sid=28463:freq=410000:srate=6900</location>
+      <title>SR3 Saarlandwelle</title>
+    </track>
+    <track>
+      <location>dvb://Bremen%20Eins?sid=28448:freq=426000:srate=6900</location>
+      <title>Bremen Eins</title>
+    </track>
+    <track>
+      <location>dvb://Nordwestradio?sid=28449:freq=426000:srate=6900</location>
+      <title>Nordwestradio</title>
+    </track>
+    <track>
+      <location>dvb://Bremen%20Vier?sid=28450:freq=426000:srate=6900</location>
+      <title>Bremen Vier</title>
+    </track>
+    <track>
+      <location>dvb://DLF?sid=28013:freq=394000:srate=6900</location>
+      <title>DLF</title>
+    </track>
+    <track>
+      <location>dvb://DKULTUR?sid=28012:freq=394000:srate=6900</location>
+      <title>DKULTUR</title>
+    </track>
+    <track>
+      <location>dvb://Dok%26Deb?sid=28017:freq=394000:srate=6900</location>
+      <title>Dok&amp;Deb</title>
+    </track>
+    <track>
+      <location>dvb://BBC%20World%20Service%20%28Arab.%29%2CBBC%20World%28Arab.%29?sid=14122:freq=458000:srate=6900</location>
+      <title>BBC World Service (Arab.),BBC World(Arab.)</title>
+    </track>
+    <track>
+      <location>dvb://BBC%20World%20Service%20%28E%29%2CBBC%20World%28E%29?sid=14121:freq=458000:srate=6900</location>
+      <title>BBC World Service (E),BBC World(E)</title>
+    </track>
+    <track>
+      <location>dvb://RAI%20Radio%201?sid=22121:freq=402000:srate=6900</location>
+      <title>RAI Radio 1</title>
+    </track>
+    <track>
+      <location>dvb://Radio%20Italia?sid=28109:freq=650000:srate=6900</location>
+      <title>Radio Italia</title>
+    </track>
+    <track>
+      <location>dvb://HRT%20HR1?sid=26113:freq=562000:srate=6900</location>
+      <title>HRT HR1</title>
+    </track>
+    <track>
+      <location>dvb://Pink%20Radio?sid=26114:freq=562000:srate=6900</location>
+      <title>Pink Radio</title>
+    </track>
+    <track>
+      <location>dvb://Klassik?sid=11121:freq=450000:srate=6900</location>
+      <title>Klassik</title>
+    </track>
+    <track>
+      <location>dvb://Klassik%20Sinfonie?sid=11122:freq=450000:srate=6900</location>
+      <title>Klassik Sinfonie</title>
+    </track>
+    <track>
+      <location>dvb://Klassik%20Entspannt?sid=11123:freq=450000:srate=6900</location>
+      <title>Klassik Entspannt</title>
+    </track>
+    <track>
+      <location>dvb://World%20Music?sid=11143:freq=458000:srate=6900</location>
+      <title>World Music</title>
+    </track>
+    <track>
+      <location>dvb://Blues?sid=13131:freq=346000:srate=6900</location>
+      <title>Blues</title>
+    </track>
+    <track>
+      <location>dvb://Country?sid=11124:freq=450000:srate=6900</location>
+      <title>Country</title>
+    </track>
+    <track>
+      <location>dvb://Reggae?sid=13134:freq=346000:srate=6900</location>
+      <title>Reggae</title>
+    </track>
+    <track>
+      <location>dvb://Schlager?sid=11132:freq=450000:srate=6900</location>
+      <title>Schlager</title>
+    </track>
+    <track>
+      <location>dvb://Turk%20Muzigi?sid=11137:freq=458000:srate=6900</location>
+      <title>Turk Muzigi</title>
+    </track>
+    <track>
+      <location>dvb://Indian%20Classics?sid=11139:freq=458000:srate=6900</location>
+      <title>Indian Classics</title>
+    </track>
+    <track>
+      <location>dvb://Chansons?sid=11151:freq=458000:srate=6900</location>
+      <title>Chansons</title>
+    </track>
+    <track>
+      <location>dvb://Arabisch?sid=11144:freq=458000:srate=6900</location>
+      <title>Arabisch</title>
+    </track>
+    <track>
+      <location>dvb://Bollywood%20Hits?sid=11136:freq=450000:srate=6900</location>
+      <title>Bollywood Hits</title>
+    </track>
+    <track>
+      <location>dvb://New%20Age?sid=11127:freq=450000:srate=6900</location>
+      <title>New Age</title>
+    </track>
+    <track>
+      <location>dvb://Total%20Hits%20Deutschland?sid=11133:freq=450000:srate=6900</location>
+      <title>Total Hits Deutschland</title>
+    </track>
+    <track>
+      <location>dvb://Total%20Hits%20UK?sid=11135:freq=450000:srate=6900</location>
+      <title>Total Hits UK</title>
+    </track>
+    <track>
+      <location>dvb://Freedom?sid=13128:freq=346000:srate=6900</location>
+      <title>Freedom</title>
+    </track>
+    <track>
+      <location>dvb://Coffee%20%26%20Dinner?sid=11126:freq=450000:srate=6900</location>
+      <title>Coffee &amp; Dinner</title>
+    </track>
+    <track>
+      <location>dvb://Party%20All%20Day?sid=13127:freq=346000:srate=6900</location>
+      <title>Party All Day</title>
+    </track>
+    <track>
+      <location>dvb://Silk%20%28Love%20Songs%29?sid=13129:freq=346000:srate=6900</location>
+      <title>Silk (Love Songs)</title>
+    </track>
+    <track>
+      <location>dvb://Total%20Hits%20France?sid=11129:freq=450000:srate=6900</location>
+      <title>Total Hits France</title>
+    </track>
+    <track>
+      <location>dvb://Total%20Hits%20Italy?sid=11134:freq=450000:srate=6900</location>
+      <title>Total Hits Italy</title>
+    </track>
+    <track>
+      <location>dvb://Total%20Hits%20Nordic?sid=11138:freq=458000:srate=6900</location>
+      <title>Total Hits Nordic</title>
+    </track>
+    <track>
+      <location>dvb://Total%20Hits%20Espagna?sid=11146:freq=458000:srate=6900</location>
+      <title>Total Hits Espagna</title>
+    </track>
+    <track>
+      <location>dvb://Kinder?sid=11125:freq=450000:srate=6900</location>
+      <title>Kinder</title>
+    </track>
+    <track>
+      <location>dvb://Cool%20Jazz?sid=11140:freq=458000:srate=6900</location>
+      <title>Cool Jazz</title>
+    </track>
+    <track>
+      <location>dvb://Jazz%20Classics?sid=11141:freq=458000:srate=6900</location>
+      <title>Jazz Classics</title>
+    </track>
+    <track>
+      <location>dvb://Cocktail%20Lounge?sid=11142:freq=458000:srate=6900</location>
+      <title>Cocktail Lounge</title>
+    </track>
+    <track>
+      <location>dvb://R%27n%27B%20%26%20Soul%20Classic?sid=13132:freq=346000:srate=6900</location>
+      <title>R'n'B &amp; Soul Classic</title>
+    </track>
+    <track>
+      <location>dvb://Groove%20%28Disco%20%26%20Funk%29?sid=13130:freq=346000:srate=6900</location>
+      <title>Groove (Disco &amp; Funk)</title>
+    </track>
+    <track>
+      <location>dvb://Hip%20Hop?sid=13133:freq=346000:srate=6900</location>
+      <title>Hip Hop</title>
+    </track>
+    <track>
+      <location>dvb://Urban?sid=11131:freq=450000:srate=6900</location>
+      <title>Urban</title>
+    </track>
+    <track>
+      <location>dvb://The%20Alternative?sid=13123:freq=346000:srate=6900</location>
+      <title>The Alternative</title>
+    </track>
+    <track>
+      <location>dvb://Harder%20Than%20Hell?sid=13122:freq=346000:srate=6900</location>
+      <title>Harder Than Hell</title>
+    </track>
+    <track>
+      <location>dvb://Rock%20Hymnen?sid=13121:freq=346000:srate=6900</location>
+      <title>Rock Hymnen</title>
+    </track>
+    <track>
+      <location>dvb://Independent%20Classics?sid=13135:freq=346000:srate=6900</location>
+      <title>Independent Classics</title>
+    </track>
+    <track>
+      <location>dvb://Classic%20Rock?sid=11152:freq=458000:srate=6900</location>
+      <title>Classic Rock</title>
+    </track>
+    <track>
+      <location>dvb://Revival%20-%2060er%20%26%2070er?sid=11145:freq=458000:srate=6900</location>
+      <title>Revival - 60er &amp; 70er</title>
+    </track>
+    <track>
+      <location>dvb://Rewind%20-%2080er%20%26%2090er?sid=11128:freq=450000:srate=6900</location>
+      <title>Rewind - 80er &amp; 90er</title>
+    </track>
+    <track>
+      <location>dvb://90er?sid=11150:freq=458000:srate=6900</location>
+      <title>90er</title>
+    </track>
+    <track>
+      <location>dvb://80er?sid=11149:freq=458000:srate=6900</location>
+      <title>80er</title>
+    </track>
+    <track>
+      <location>dvb://70er?sid=11148:freq=458000:srate=6900</location>
+      <title>70er</title>
+    </track>
+    <track>
+      <location>dvb://60er?sid=11130:freq=450000:srate=6900</location>
+      <title>60er</title>
+    </track>
+    <track>
+      <location>dvb://Rock%20%27n%27%20Roll?sid=11147:freq=458000:srate=6900</location>
+      <title>Rock 'n' Roll</title>
+    </track>
+    <track>
+      <location>dvb://Dancefloor%20Fillers?sid=13124:freq=346000:srate=6900</location>
+      <title>Dancefloor Fillers</title>
+    </track>
+    <track>
+      <location>dvb://Bass%20Breaks%20%26%20Beats?sid=13125:freq=346000:srate=6900</location>
+      <title>Bass Breaks &amp; Beats</title>
+    </track>
+    <track>
+      <location>dvb://Chillout?sid=13126:freq=346000:srate=6900</location>
+      <title>Chillout</title>
+    </track>
+    <track>
+      <location>dvb://Showcase?sid=13136:freq=346000:srate=6900</location>
+      <title>Showcase</title>
+    </track>
+    <track>
+      <location>dvb://60er%2F70er%2C60er%2F70er?sid=153:freq=354000:srate=6900</location>
+      <title>60er/70er,60er/70er</title>
+    </track>
+    <track>
+      <location>dvb://80er%2F90er%2C80er%2F90er?sid=154:freq=354000:srate=6900</location>
+      <title>80er/90er,80er/90er</title>
+    </track>
+    <track>
+      <location>dvb://Country%2CCountry?sid=156:freq=354000:srate=6900</location>
+      <title>Country,Country</title>
+    </track>
+    <track>
+      <location>dvb://Deutsche%20Charts%2CDtCharts?sid=150:freq=354000:srate=6900</location>
+      <title>Deutsche Charts,DtCharts</title>
+    </track>
+    <track>
+      <location>dvb://LoveSongs%2CLoveSongs?sid=152:freq=354000:srate=6900</location>
+      <title>LoveSongs,LoveSongs</title>
+    </track>
+    <track>
+      <location>dvb://RnB%2FHip%20Hop%2CHipHop?sid=155:freq=354000:srate=6900</location>
+      <title>RnB/Hip Hop,HipHop</title>
+    </track>
+    <track>
+      <location>dvb://Rock%20Hymnen%2CRock?sid=151:freq=354000:srate=6900</location>
+      <title>Rock Hymnen,Rock</title>
+    </track>
+  </trackList>
+</playlist>

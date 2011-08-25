@@ -7,748 +7,784 @@
   </extension>
   <trackList>
     <track>
-      <location>dvb://audio?sid=13135:freq=12662:diseqc=0:pol=h:srate=22000</location>
-      <title>Ö1 International</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28475:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>1LIVE</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28481:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>1LIVE diggi</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8518:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>[2146]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8519:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>[2147]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8520:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>[2148]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8521:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>[2149]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8522:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>[214a]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8523:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>[214b]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8528:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>[2150]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8538:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>[215a]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8540:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>[215c]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8541:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>[215d]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8563:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>[2173]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=176:freq=12148:diseqc=0:pol=h:srate=27500</location>
-      <title>2255 Gewinnradio</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8814:freq=12012:diseqc=0:pol=v:srate=27500</location>
-      <title>[226e]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=9106:freq=12363:diseqc=0:pol=v:srate=27500</location>
-      <title>[2392]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=9122:freq=12363:diseqc=0:pol=v:srate=27500</location>
-      <title>[23a2]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=9124:freq=12363:diseqc=0:pol=v:srate=27500</location>
-      <title>[23a4]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=9126:freq=12363:diseqc=0:pol=v:srate=27500</location>
-      <title>[23a6]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30105:freq=10847:diseqc=0:pol=v:srate=22000</location>
-      <title>[7599]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30106:freq=10847:diseqc=0:pol=v:srate=22000</location>
-      <title>[759a]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30107:freq=10847:diseqc=0:pol=v:srate=22000</location>
-      <title>[759b]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30108:freq=10847:diseqc=0:pol=v:srate=22000</location>
-      <title>[759c]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30109:freq=10847:diseqc=0:pol=v:srate=22000</location>
-      <title>[759d]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30110:freq=10847:diseqc=0:pol=v:srate=22000</location>
-      <title>[759e]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30111:freq=10847:diseqc=0:pol=v:srate=22000</location>
-      <title>[759f]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30112:freq=10847:diseqc=0:pol=v:srate=22000</location>
-      <title>[75a0]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30113:freq=10847:diseqc=0:pol=v:srate=22000</location>
-      <title>[75a1]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30114:freq=10847:diseqc=0:pol=v:srate=22000</location>
-      <title>[75a2]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30115:freq=10847:diseqc=0:pol=v:srate=22000</location>
-      <title>[75a3]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30116:freq=10847:diseqc=0:pol=v:srate=22000</location>
-      <title>[75a4]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30117:freq=10847:diseqc=0:pol=v:srate=22000</location>
-      <title>[75a5]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30118:freq=10847:diseqc=0:pol=v:srate=22000</location>
-      <title>[75a6]</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30501:freq=11156:diseqc=0:pol=v:srate=22000</location>
+      <location>dvb://%5B7725%5D?sid=30501:freq=11156:diseqc=0:pol=v:srate=22000</location>
       <title>[7725]</title>
     </track>
     <track>
-      <location>dvb://audio?sid=9109:freq=12363:diseqc=0:pol=v:srate=27500</location>
-      <title>ADIBOU TV</title>
+      <location>dvb://RADIOS?sid=30204:freq=11685:diseqc=0:pol=v:srate=22000</location>
+      <title>RADIOS</title>
     </track>
     <track>
-      <location>dvb://audio?sid=8812:freq=12012:diseqc=0:pol=v:srate=27500</location>
-      <title>A LA CARTE</title>
+      <location>dvb://ETB%20Radio%201?sid=7022:freq=11508:diseqc=0:pol=v:srate=22000</location>
+      <title>ETB Radio 1</title>
     </track>
     <track>
-      <location>dvb://audio?sid=170:freq=12148:diseqc=0:pol=h:srate=27500</location>
-      <title>ANTENNE BAYERN</title>
+      <location>dvb://ETB%20Radio%202?sid=7023:freq=11508:diseqc=0:pol=v:srate=22000</location>
+      <title>ETB Radio 2</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28454:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>Antenne Brandenburg</title>
+      <location>dvb://%5B759b%5D?sid=30107:freq=10847:diseqc=0:pol=v:srate=22000</location>
+      <title>[759b]</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28218:freq=12109:diseqc=0:pol=h:srate=27500</location>
-      <title>ARD-Online-Kanal</title>
+      <location>dvb://%5B759a%5D?sid=30106:freq=10847:diseqc=0:pol=v:srate=22000</location>
+      <title>[759a]</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28404:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>B5 aktuell</title>
+      <location>dvb://%5B7599%5D?sid=30105:freq=10847:diseqc=0:pol=v:srate=22000</location>
+      <title>[7599]</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28408:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>B5 plus</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28400:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>Bayern 1</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28401:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>Bayern 2</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28402:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>Bayern 3</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28403:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>Bayern 4 Klassik</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28405:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>Bayern Mobil</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8559:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>BBC ARABIC</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8565:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>BBCW SERVICE</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28448:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>Bremen Eins</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28450:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>Bremen Vier</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28407:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>BR Verkehr</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=5050:freq=12574:diseqc=0:pol=h:srate=22000</location>
-      <title>CAZ!</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8616:freq=12324:diseqc=0:pol=v:srate=27500</location>
-      <title>CDN12</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=9120:freq=12363:diseqc=0:pol=v:srate=27500</location>
-      <title>CE SOIR</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=61994:freq=10832:diseqc=0:pol=h:srate=22000</location>
-      <title>CFN/RFC</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28523:freq=11778:diseqc=0:pol=v:srate=27500</location>
-      <title>CNN Radio</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28472:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>cont.ra</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28471:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>DASDING</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=12655:freq=12633:diseqc=0:pol=h:srate=22000</location>
-      <title>DefJay 100% R&amp;B</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=10141:freq=12246:diseqc=0:pol=v:srate=27500</location>
-      <title>DELUXE LOUNGE</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=10140:freq=12246:diseqc=0:pol=v:srate=27500</location>
-      <title>DELUXE RADIO</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28012:freq=11953:diseqc=0:pol=h:srate=27500</location>
-      <title>DKULTUR</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28013:freq=11953:diseqc=0:pol=h:srate=27500</location>
-      <title>DLF</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28017:freq=11953:diseqc=0:pol=h:srate=27500</location>
-      <title>Dok&amp;Deb</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=171:freq=12460:diseqc=0:pol=h:srate=27500</location>
-      <title>domradio</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=9162:freq=12363:diseqc=0:pol=v:srate=27500</location>
-      <title>DT13</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=9169:freq=12363:diseqc=0:pol=v:srate=27500</location>
-      <title>DT20</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=9151:freq=12363:diseqc=0:pol=v:srate=27500</location>
-      <title>DT2</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28416:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>DW 1</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28417:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>DW 4</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=161:freq=12148:diseqc=0:pol=h:srate=27500</location>
-      <title>ERF Radio</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=12658:freq=12633:diseqc=0:pol=h:srate=22000</location>
-      <title>ffn Comedy</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=12654:freq=12633:diseqc=0:pol=h:srate=22000</location>
-      <title>ffn digital</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=13134:freq=12662:diseqc=0:pol=h:srate=22000</location>
-      <title>FM4</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28457:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>Fritz</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=4035:freq=12515:diseqc=0:pol=h:srate=22000</location>
-      <title>FunX</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=12662:freq=12633:diseqc=0:pol=h:srate=22000</location>
-      <title>harmony.fm</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=12660:freq=12633:diseqc=0:pol=h:srate=22000</location>
-      <title>HIT RADIO FFH</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28419:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>hr1</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28420:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>hr2</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28421:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>hr3</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28422:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>hr4</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28424:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>hr iNFO</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28425:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>hr iNFO +</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28452:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>InfoRadio</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=12651:freq=12633:diseqc=0:pol=h:srate=22000</location>
-      <title>Inselradio</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=5071:freq=12574:diseqc=0:pol=h:srate=22000</location>
-      <title>Juize.FM</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=5055:freq=12574:diseqc=0:pol=h:srate=22000</location>
-      <title>KINK FM</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=173:freq=12460:diseqc=0:pol=h:srate=27500</location>
-      <title>Klassik Radio</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28453:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>kulturradio</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8531:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>MC DOUALIYA</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28428:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>MDR1 SACHSEN </title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28429:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>MDR1 S-ANHALT</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28430:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>MDR1 THÜRINGEN</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28431:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>MDR FIGARO</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28434:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>MDR INFO</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28432:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>MDR JUMP</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28433:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>MDR SPUTNIK</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28397:freq=12421:diseqc=0:pol=h:srate=27500</location>
-      <title>MEHRKANALTEST</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28444:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>NDR 1 Niedersachsen</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28443:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>NDR 1 Radio MV</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28442:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>NDR 1 Welle Nord</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28437:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>NDR 2</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28441:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>NDR 90,3</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28439:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>NDR Info</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28445:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>NDR Info Spezial</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28438:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>NDR Kultur</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28440:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>N-JOY</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=5031:freq=12574:diseqc=0:pol=h:srate=22000</location>
-      <title>NL-Radio 1</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=5035:freq=12574:diseqc=0:pol=h:srate=22000</location>
-      <title>NL-Radio 5</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=5080:freq=12574:diseqc=0:pol=h:srate=22000</location>
-      <title>NL-Radio 6</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28449:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>Nordwestradio</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=13121:freq=12662:diseqc=0:pol=h:srate=22000</location>
-      <title>OE1</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=13125:freq=12662:diseqc=0:pol=h:srate=22000</location>
-      <title>OE2 B</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=13131:freq=12662:diseqc=0:pol=h:srate=22000</location>
-      <title>OE2 K</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=13124:freq=12662:diseqc=0:pol=h:srate=22000</location>
-      <title>OE2 N</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=13126:freq=12662:diseqc=0:pol=h:srate=22000</location>
-      <title>OE2 O</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=13127:freq=12662:diseqc=0:pol=h:srate=22000</location>
-      <title>OE2 S</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=13130:freq=12662:diseqc=0:pol=h:srate=22000</location>
-      <title>OE2 St</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=13128:freq=12662:diseqc=0:pol=h:srate=22000</location>
-      <title>OE2 T</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=13129:freq=12662:diseqc=0:pol=h:srate=22000</location>
-      <title>OE2 V</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=13123:freq=12662:diseqc=0:pol=h:srate=22000</location>
-      <title>OE2 W</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=13133:freq=12662:diseqc=0:pol=h:srate=22000</location>
-      <title>OE3</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=174:freq=12460:diseqc=0:pol=h:srate=27500</location>
-      <title>oldiestar*</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28406:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>on3radio</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=12657:freq=12633:diseqc=0:pol=h:srate=22000</location>
-      <title>PEPPERMINT fm</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=12661:freq=12633:diseqc=0:pol=h:srate=22000</location>
-      <title>planet radio</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=6433:freq=11479:diseqc=0:pol=v:srate=22000</location>
-      <title>PLAYIN'TV</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=6431:freq=11479:diseqc=0:pol=v:srate=22000</location>
-      <title>PLAYIN'Tvi</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=4030:freq=12515:diseqc=0:pol=h:srate=22000</location>
-      <title>R538 Dance Department</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=5085:freq=12574:diseqc=0:pol=h:srate=22000</location>
-      <title>Radio10Gold</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8581:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>RADIO 1</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8582:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>RADIO 2</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8583:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>RADIO 3</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=5072:freq=12574:diseqc=0:pol=h:srate=22000</location>
-      <title>Radio538</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=6910:freq=11538:diseqc=0:pol=v:srate=22000</location>
-      <title>Radio Aragon</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28455:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>radioBERLIN 88,8</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8566:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>RADIO COURTOISIE</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28456:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>radioeins</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8584:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>RADIO FRANCE</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=12659:freq=12633:diseqc=0:pol=h:srate=22000</location>
-      <title>Radio Gloria</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=61960:freq=10832:diseqc=0:pol=h:srate=22000</location>
-      <title>Radio Horeb</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=13140:freq=12662:diseqc=0:pol=h:srate=22000</location>
-      <title>RADIO MARIA</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=17201:freq=10773:diseqc=0:pol=h:srate=22000</location>
-      <title>Radio Maryja test</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28458:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>radiomultikulti</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=61995:freq=10832:diseqc=0:pol=h:srate=22000</location>
-      <title>Radio neue Hoffnung</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=6015:freq=12603:diseqc=0:pol=h:srate=22000</location>
-      <title>RADIOROPA-BERLIN</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8510:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>RADIOS 2</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=8511:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>RADIOS 3</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=30104:freq=10847:diseqc=0:pol=v:srate=22000</location>
+      <location>dvb://RADIOS%20ESP?sid=30104:freq=10847:diseqc=0:pol=v:srate=22000</location>
       <title>RADIOS ESP</title>
     </track>
     <track>
-      <location>dvb://audio?sid=12653:freq=12633:diseqc=0:pol=h:srate=22000</location>
-      <title>radio top40</title>
+      <location>dvb://OE1?sid=13121:freq=12662:diseqc=0:pol=h:srate=22000</location>
+      <title>OE1</title>
     </track>
     <track>
-      <location>dvb://audio?sid=5095:freq=12574:diseqc=0:pol=h:srate=22000</location>
-      <title>Radio Veronica</title>
+      <location>dvb://OE2%20W?sid=13123:freq=12662:diseqc=0:pol=h:srate=22000</location>
+      <title>OE2 W</title>
     </track>
     <track>
-      <location>dvb://audio?sid=61962:freq=10832:diseqc=0:pol=h:srate=22000</location>
-      <title>RDC</title>
+      <location>dvb://OE2%20N?sid=13124:freq=12662:diseqc=0:pol=h:srate=22000</location>
+      <title>OE2 N</title>
     </track>
     <track>
-      <location>dvb://audio?sid=8560:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>RFI MULTILINGUE</title>
+      <location>dvb://OE2%20B?sid=13125:freq=12662:diseqc=0:pol=h:srate=22000</location>
+      <title>OE2 B</title>
     </track>
     <track>
-      <location>dvb://audio?sid=5060:freq=12574:diseqc=0:pol=h:srate=22000</location>
-      <title>RNW1</title>
+      <location>dvb://OE2%20O?sid=13126:freq=12662:diseqc=0:pol=h:srate=22000</location>
+      <title>OE2 O</title>
     </track>
     <track>
-      <location>dvb://audio?sid=5061:freq=12574:diseqc=0:pol=h:srate=22000</location>
-      <title>RNW2</title>
+      <location>dvb://OE2%20S?sid=13127:freq=12662:diseqc=0:pol=h:srate=22000</location>
+      <title>OE2 S</title>
     </track>
     <track>
-      <location>dvb://audio?sid=5062:freq=12574:diseqc=0:pol=h:srate=22000</location>
-      <title>RNW3</title>
+      <location>dvb://OE2%20T?sid=13128:freq=12662:diseqc=0:pol=h:srate=22000</location>
+      <title>OE2 T</title>
     </track>
     <track>
-      <location>dvb://audio?sid=160:freq=12148:diseqc=0:pol=h:srate=27500</location>
-      <title>ROCK ANTENNE</title>
+      <location>dvb://OE2%20V?sid=13129:freq=12662:diseqc=0:pol=h:srate=22000</location>
+      <title>OE2 V</title>
     </track>
     <track>
-      <location>dvb://audio?sid=61999:freq=10832:diseqc=0:pol=h:srate=22000</location>
-      <title>RTBF International</title>
+      <location>dvb://OE2%20St?sid=13130:freq=12662:diseqc=0:pol=h:srate=22000</location>
+      <title>OE2 St</title>
     </track>
     <track>
-      <location>dvb://audio?sid=2051:freq=12343:diseqc=0:pol=h:srate=27500</location>
-      <title>RTL RADIO</title>
+      <location>dvb://OE2%20K?sid=13131:freq=12662:diseqc=0:pol=h:srate=22000</location>
+      <title>OE2 K</title>
     </track>
     <track>
-      <location>dvb://audio?sid=2070:freq=12343:diseqc=0:pol=h:srate=27500</location>
-      <title>RVi1 (VRT)</title>
+      <location>dvb://OE3?sid=13133:freq=12662:diseqc=0:pol=h:srate=22000</location>
+      <title>OE3</title>
     </track>
     <track>
-      <location>dvb://audio?sid=2075:freq=12343:diseqc=0:pol=h:srate=27500</location>
-      <title>RVi2 (VRT)</title>
+      <location>dvb://FM4?sid=13134:freq=12662:diseqc=0:pol=h:srate=22000</location>
+      <title>FM4</title>
     </track>
     <track>
-      <location>dvb://audio?sid=5070:freq=12574:diseqc=0:pol=h:srate=22000</location>
-      <title>Sky Radio</title>
+      <location>dvb://U1%20Tirol?sid=13136:freq=12662:diseqc=0:pol=h:srate=22000</location>
+      <title>U1 Tirol</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28461:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>SR1</title>
+      <location>dvb://RADIO%20MARIA?sid=13140:freq=12662:diseqc=0:pol=h:srate=22000</location>
+      <title>RADIO MARIA</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28462:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>SR2</title>
+      <location>dvb://PLAYIN%27Tvi?sid=6431:freq=11479:diseqc=0:pol=v:srate=22000</location>
+      <title>PLAYIN'Tvi</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28463:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>SR3</title>
+      <location>dvb://Bayern%201?sid=28400:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>Bayern 1</title>
     </track>
     <track>
-      <location>dvb://audio?sid=8530:freq=12207:diseqc=0:pol=v:srate=27500</location>
-      <title>SUD RADIO</title>
+      <location>dvb://Bayern%202?sid=28401:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>Bayern 2</title>
     </track>
     <track>
-      <location>dvb://audio?sid=169:freq=12148:diseqc=0:pol=h:srate=27500</location>
-      <title>sunshine live</title>
+      <location>dvb://BAYERN%203?sid=28402:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>BAYERN 3</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28465:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>SWR1 BW</title>
+      <location>dvb://BR-KLASSIK?sid=28403:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>BR-KLASSIK</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28466:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>SWR1 RP</title>
+      <location>dvb://B5%20aktuell?sid=28404:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>B5 aktuell</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28467:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>SWR2</title>
+      <location>dvb://BAYERN%20plus?sid=28405:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>BAYERN plus</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28468:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>SWR3</title>
+      <location>dvb://on3-radio?sid=28406:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>on3-radio</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28469:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>SWR4 BW</title>
+      <location>dvb://BR%20Verkehr?sid=28407:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>BR Verkehr</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28470:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>SWR4 RP</title>
+      <location>dvb://B5%20plus?sid=28408:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>B5 plus</title>
     </track>
     <track>
-      <location>dvb://audio?sid=10142:freq=12246:diseqc=0:pol=v:srate=27500</location>
-      <title>TEDDY</title>
+      <location>dvb://hr1?sid=28419:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>hr1</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28476:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <location>dvb://hr2?sid=28420:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>hr2</title>
+    </track>
+    <track>
+      <location>dvb://hr3?sid=28421:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>hr3</title>
+    </track>
+    <track>
+      <location>dvb://hr4?sid=28422:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>hr4</title>
+    </track>
+    <track>
+      <location>dvb://YOU%20FM?sid=28423:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>YOU FM</title>
+    </track>
+    <track>
+      <location>dvb://hr-iNFO?sid=28424:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>hr-iNFO</title>
+    </track>
+    <track>
+      <location>dvb://MDR1%20SACHSEN?sid=28428:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>MDR1 SACHSEN</title>
+    </track>
+    <track>
+      <location>dvb://MDR1%20SA-ANHALT?sid=28429:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>MDR1 SA-ANHALT</title>
+    </track>
+    <track>
+      <location>dvb://MDR1%20TH%DCRINGEN?sid=28430:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>MDR1 THÜRINGEN</title>
+    </track>
+    <track>
+      <location>dvb://MDR%20FIGARO?sid=28431:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>MDR FIGARO</title>
+    </track>
+    <track>
+      <location>dvb://JUMP?sid=28432:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>JUMP</title>
+    </track>
+    <track>
+      <location>dvb://MDR%20SPUTNIK?sid=28433:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>MDR SPUTNIK</title>
+    </track>
+    <track>
+      <location>dvb://MDR%20INFO?sid=28434:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>MDR INFO</title>
+    </track>
+    <track>
+      <location>dvb://MDR%20KLASSIK?sid=28435:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>MDR KLASSIK</title>
+    </track>
+    <track>
+      <location>dvb://NDR%202?sid=28437:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>NDR 2</title>
+    </track>
+    <track>
+      <location>dvb://NDR%20Kultur?sid=28438:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>NDR Kultur</title>
+    </track>
+    <track>
+      <location>dvb://NDR%20Info?sid=28439:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>NDR Info</title>
+    </track>
+    <track>
+      <location>dvb://N-JOY?sid=28440:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>N-JOY</title>
+    </track>
+    <track>
+      <location>dvb://NDR%2090%2C3?sid=28441:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>NDR 90,3</title>
+    </track>
+    <track>
+      <location>dvb://NDR1WelleNord?sid=28442:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>NDR1WelleNord</title>
+    </track>
+    <track>
+      <location>dvb://NDR%201%20Radio%20MV?sid=28443:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>NDR 1 Radio MV</title>
+    </track>
+    <track>
+      <location>dvb://NDR%201%20Nieders.?sid=28444:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>NDR 1 Nieders.</title>
+    </track>
+    <track>
+      <location>dvb://NDR%20Info%20Spez.?sid=28445:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>NDR Info Spez.</title>
+    </track>
+    <track>
+      <location>dvb://Bremen%20Eins?sid=28448:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>Bremen Eins</title>
+    </track>
+    <track>
+      <location>dvb://Nordwestradio?sid=28449:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>Nordwestradio</title>
+    </track>
+    <track>
+      <location>dvb://Bremen%20Vier?sid=28450:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>Bremen Vier</title>
+    </track>
+    <track>
+      <location>dvb://Inforadio?sid=28452:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>Inforadio</title>
+    </track>
+    <track>
+      <location>dvb://Kulturradio?sid=28453:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>Kulturradio</title>
+    </track>
+    <track>
+      <location>dvb://Antenne%20Brandenburg?sid=28454:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>Antenne Brandenburg</title>
+    </track>
+    <track>
+      <location>dvb://radioBERLIN%2088%2C8?sid=28455:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>radioBERLIN 88,8</title>
+    </track>
+    <track>
+      <location>dvb://radioeins?sid=28456:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>radioeins</title>
+    </track>
+    <track>
+      <location>dvb://Fritz?sid=28457:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>Fritz</title>
+    </track>
+    <track>
+      <location>dvb://SR1%20Europawelle?sid=28461:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>SR1 Europawelle</title>
+    </track>
+    <track>
+      <location>dvb://SR2%20KulturRadio?sid=28462:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>SR2 KulturRadio</title>
+    </track>
+    <track>
+      <location>dvb://SR3%20Saarlandwelle?sid=28463:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>SR3 Saarlandwelle</title>
+    </track>
+    <track>
+      <location>dvb://SWR%201%20BW?sid=28465:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>SWR 1 BW</title>
+    </track>
+    <track>
+      <location>dvb://SWR%201%20RP?sid=28466:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>SWR 1 RP</title>
+    </track>
+    <track>
+      <location>dvb://SWR%202?sid=28467:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>SWR 2</title>
+    </track>
+    <track>
+      <location>dvb://SWR%203?sid=28468:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>SWR 3</title>
+    </track>
+    <track>
+      <location>dvb://SWR%204%20BW?sid=28469:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>SWR 4 BW</title>
+    </track>
+    <track>
+      <location>dvb://SWR%204%20RP?sid=28470:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>SWR 4 RP</title>
+    </track>
+    <track>
+      <location>dvb://DASDING?sid=28471:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>DASDING</title>
+    </track>
+    <track>
+      <location>dvb://SWR%20cont.ra?sid=28472:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>SWR cont.ra</title>
+    </track>
+    <track>
+      <location>dvb://1LIVE?sid=28475:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>1LIVE</title>
+    </track>
+    <track>
+      <location>dvb://WDR%202?sid=28476:freq=12265:diseqc=0:pol=h:srate=27500</location>
       <title>WDR 2</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28482:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>WDR 2 Klassik</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28477:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <location>dvb://WDR%203?sid=28477:freq=12265:diseqc=0:pol=h:srate=27500</location>
       <title>WDR 3</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28478:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <location>dvb://WDR%204?sid=28478:freq=12265:diseqc=0:pol=h:srate=27500</location>
       <title>WDR 4</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28479:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <location>dvb://WDR%205?sid=28479:freq=12265:diseqc=0:pol=h:srate=27500</location>
       <title>WDR 5</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28483:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>WDR Event</title>
-    </track>
-    <track>
-      <location>dvb://audio?sid=28480:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <location>dvb://WDR%20Funkhaus%20Europa?sid=28480:freq=12265:diseqc=0:pol=h:srate=27500</location>
       <title>WDR Funkhaus Europa</title>
     </track>
     <track>
-      <location>dvb://audio?sid=8564:freq=12207:diseqc=0:pol=v:srate=27500</location>
+      <location>dvb://1LIVE%20diggi?sid=28481:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>1LIVE diggi</title>
+    </track>
+    <track>
+      <location>dvb://KIRAKA?sid=28482:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>KIRAKA</title>
+    </track>
+    <track>
+      <location>dvb://WDR%20Event?sid=28483:freq=12265:diseqc=0:pol=h:srate=27500</location>
+      <title>WDR Event</title>
+    </track>
+    <track>
+      <location>dvb://A%20LA%20CARTE?sid=9224:freq=12522:diseqc=0:pol=v:srate=22000</location>
+      <title>A LA CARTE</title>
+    </track>
+    <track>
+      <location>dvb://Radio%20Beograd?sid=5231:freq=11023:diseqc=0:pol=h:srate=22000</location>
+      <title>Radio Beograd</title>
+    </track>
+    <track>
+      <location>dvb://ROCK%20ANTENNE?sid=160:freq=12148:diseqc=0:pol=h:srate=27500</location>
+      <title>ROCK ANTENNE</title>
+    </track>
+    <track>
+      <location>dvb://ERF%20Radio?sid=161:freq=12148:diseqc=0:pol=h:srate=27500</location>
+      <title>ERF Radio</title>
+    </track>
+    <track>
+      <location>dvb://sunshine%20live?sid=169:freq=12148:diseqc=0:pol=h:srate=27500</location>
+      <title>sunshine live</title>
+    </track>
+    <track>
+      <location>dvb://ANTENNE%20BAYERN?sid=170:freq=12148:diseqc=0:pol=h:srate=27500</location>
+      <title>ANTENNE BAYERN</title>
+    </track>
+    <track>
+      <location>dvb://domradio?sid=171:freq=12460:diseqc=0:pol=h:srate=27500</location>
+      <title>domradio</title>
+    </track>
+    <track>
+      <location>dvb://egoFM?sid=172:freq=12460:diseqc=0:pol=h:srate=27500</location>
+      <title>egoFM</title>
+    </track>
+    <track>
+      <location>dvb://Klassik%20Radio?sid=173:freq=12460:diseqc=0:pol=h:srate=27500</location>
+      <title>Klassik Radio</title>
+    </track>
+    <track>
+      <location>dvb://HOPE%20Channel%20Radio?sid=175:freq=12460:diseqc=0:pol=h:srate=27500</location>
+      <title>HOPE Channel Radio</title>
+    </track>
+    <track>
+      <location>dvb://JAM%20FM?sid=177:freq=12460:diseqc=0:pol=h:srate=27500</location>
+      <title>JAM FM</title>
+    </track>
+    <track>
+      <location>dvb://TEDDY?sid=10142:freq=12246:diseqc=0:pol=v:srate=27500</location>
+      <title>TEDDY</title>
+    </track>
+    <track>
+      <location>dvb://RADIOS%202?sid=8510:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RADIOS 2</title>
+    </track>
+    <track>
+      <location>dvb://RADIOS%203?sid=8511:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RADIOS 3</title>
+    </track>
+    <track>
+      <location>dvb://FRANCE%20MUSIQUE?sid=8519:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>FRANCE MUSIQUE</title>
+    </track>
+    <track>
+      <location>dvb://FIP?sid=8520:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>FIP</title>
+    </track>
+    <track>
+      <location>dvb://FRANCE%20INFO?sid=8521:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>FRANCE INFO</title>
+    </track>
+    <track>
+      <location>dvb://FRANCE%20INTER?sid=8522:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>FRANCE INTER</title>
+    </track>
+    <track>
+      <location>dvb://FRANCE%20BLEU?sid=8523:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>FRANCE BLEU</title>
+    </track>
+    <track>
+      <location>dvb://RFI%20INTERNAT?sid=8524:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RFI INTERNAT</title>
+    </track>
+    <track>
+      <location>dvb://RADIO%20CLASSIQUE?sid=8525:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RADIO CLASSIQUE</title>
+    </track>
+    <track>
+      <location>dvb://EUROPE%201?sid=8526:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>EUROPE 1</title>
+    </track>
+    <track>
+      <location>dvb://RMC%20INFO?sid=8527:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RMC INFO</title>
+    </track>
+    <track>
+      <location>dvb://RTL?sid=8528:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RTL</title>
+    </track>
+    <track>
+      <location>dvb://RIRE%20%26%20CHANSONS?sid=8529:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RIRE &amp; CHANSONS</title>
+    </track>
+    <track>
+      <location>dvb://SUD%20RADIO?sid=8530:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>SUD RADIO</title>
+    </track>
+    <track>
+      <location>dvb://MC%20DOUALIYA?sid=8531:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>MC DOUALIYA</title>
+    </track>
+    <track>
+      <location>dvb://TSF%20JAZZ?sid=8532:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>TSF JAZZ</title>
+    </track>
+    <track>
+      <location>dvb://NOSTALGIE?sid=8533:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>NOSTALGIE</title>
+    </track>
+    <track>
+      <location>dvb://BFM%20BUSINESS?sid=8534:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>BFM BUSINESS</title>
+    </track>
+    <track>
+      <location>dvb://JAZZ%20RADIO?sid=8535:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>JAZZ RADIO</title>
+    </track>
+    <track>
+      <location>dvb://NRJ?sid=8536:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>NRJ</title>
+    </track>
+    <track>
+      <location>dvb://VIRGIN%20RADIO?sid=8537:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>VIRGIN RADIO</title>
+    </track>
+    <track>
+      <location>dvb://RTL2?sid=8538:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RTL2</title>
+    </track>
+    <track>
+      <location>dvb://SKYROCK?sid=8539:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>SKYROCK</title>
+    </track>
+    <track>
+      <location>dvb://FUN%20RADIO?sid=8540:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>FUN RADIO</title>
+    </track>
+    <track>
+      <location>dvb://LE%20MOUV%27?sid=8541:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>LE MOUV'</title>
+    </track>
+    <track>
+      <location>dvb://NOVA?sid=8542:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>NOVA</title>
+    </track>
+    <track>
+      <location>dvb://RADIO%20DJ%20FG?sid=8543:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RADIO DJ FG</title>
+    </track>
+    <track>
+      <location>dvb://VIBRATION?sid=8544:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>VIBRATION</title>
+    </track>
+    <track>
+      <location>dvb://CONTACT%20FM?sid=8545:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>CONTACT FM</title>
+    </track>
+    <track>
+      <location>dvb://RADIO%20LATINA?sid=8546:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RADIO LATINA</title>
+    </track>
+    <track>
+      <location>dvb://RFM?sid=8547:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RFM</title>
+    </track>
+    <track>
+      <location>dvb://CHERIE%20FM?sid=8548:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>CHERIE FM</title>
+    </track>
+    <track>
+      <location>dvb://%5B2165%5D?sid=8549:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>[2165]</title>
+    </track>
+    <track>
+      <location>dvb://VOLTAGE?sid=8550:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>VOLTAGE</title>
+    </track>
+    <track>
+      <location>dvb://OUI%20FM?sid=8551:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>OUI FM</title>
+    </track>
+    <track>
+      <location>dvb://ADO?sid=8552:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>ADO</title>
+    </track>
+    <track>
+      <location>dvb://%5B2169%5D?sid=8553:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>[2169]</title>
+    </track>
+    <track>
+      <location>dvb://%5B216a%5D?sid=8554:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>[216a]</title>
+    </track>
+    <track>
+      <location>dvb://RADIO%20NOTRE%20DAME?sid=8555:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RADIO NOTRE DAME</title>
+    </track>
+    <track>
+      <location>dvb://RADIO%20ALFA?sid=8556:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RADIO ALFA</title>
+    </track>
+    <track>
+      <location>dvb://RCJ%20%2F%20SHALOM?sid=8557:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RCJ / SHALOM</title>
+    </track>
+    <track>
+      <location>dvb://BEUR%20FM?sid=8558:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>BEUR FM</title>
+    </track>
+    <track>
+      <location>dvb://BBC%20ARABIC?sid=8559:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>BBC ARABIC</title>
+    </track>
+    <track>
+      <location>dvb://RFI%20MULTILINGUE?sid=8560:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RFI MULTILINGUE</title>
+    </track>
+    <track>
+      <location>dvb://MEDI%201?sid=8562:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>MEDI 1</title>
+    </track>
+    <track>
+      <location>dvb://FRANCE%20CULTURE?sid=8563:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>FRANCE CULTURE</title>
+    </track>
+    <track>
+      <location>dvb://WRN?sid=8564:freq=11567:diseqc=0:pol=v:srate=22000</location>
       <title>WRN</title>
     </track>
     <track>
-      <location>dvb://audio?sid=12656:freq=12633:diseqc=0:pol=h:srate=22000</location>
+      <location>dvb://BBCW%20SERVICE?sid=8565:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>BBCW SERVICE</title>
+    </track>
+    <track>
+      <location>dvb://RADIO%20COURTOISIE?sid=8566:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RADIO COURTOISIE</title>
+    </track>
+    <track>
+      <location>dvb://RADIO%201?sid=8581:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RADIO 1</title>
+    </track>
+    <track>
+      <location>dvb://RADIO%202?sid=8582:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RADIO 2</title>
+    </track>
+    <track>
+      <location>dvb://RADIO%203?sid=8583:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RADIO 3</title>
+    </track>
+    <track>
+      <location>dvb://RADIO%20FRANCE?sid=8584:freq=11567:diseqc=0:pol=v:srate=22000</location>
+      <title>RADIO FRANCE</title>
+    </track>
+    <track>
+      <location>dvb://Inselradio?sid=12651:freq=12633:diseqc=0:pol=h:srate=22000</location>
+      <title>Inselradio</title>
+    </track>
+    <track>
+      <location>dvb://radio%20top40?sid=12653:freq=12633:diseqc=0:pol=h:srate=22000</location>
+      <title>radio top40</title>
+    </track>
+    <track>
+      <location>dvb://ffn%20digital?sid=12654:freq=12633:diseqc=0:pol=h:srate=22000</location>
+      <title>ffn digital</title>
+    </track>
+    <track>
+      <location>dvb://Radio%20Paloma?sid=12655:freq=12633:diseqc=0:pol=h:srate=22000</location>
+      <title>Radio Paloma</title>
+    </track>
+    <track>
+      <location>dvb://WRN%20Deutsch?sid=12656:freq=12633:diseqc=0:pol=h:srate=22000</location>
       <title>WRN Deutsch</title>
     </track>
     <track>
-      <location>dvb://audio?sid=28423:freq=12265:diseqc=0:pol=h:srate=27500</location>
-      <title>YOU FM</title>
+      <location>dvb://Radio%20Gloria?sid=12659:freq=12633:diseqc=0:pol=h:srate=22000</location>
+      <title>Radio Gloria</title>
+    </track>
+    <track>
+      <location>dvb://HIT%20RADIO%20FFH?sid=12660:freq=12633:diseqc=0:pol=h:srate=22000</location>
+      <title>HIT RADIO FFH</title>
+    </track>
+    <track>
+      <location>dvb://planet%20radio?sid=12661:freq=12633:diseqc=0:pol=h:srate=22000</location>
+      <title>planet radio</title>
+    </track>
+    <track>
+      <location>dvb://harmony.fm?sid=12662:freq=12633:diseqc=0:pol=h:srate=22000</location>
+      <title>harmony.fm</title>
+    </track>
+    <track>
+      <location>dvb://Radio%20Regenbogen?sid=12663:freq=12633:diseqc=0:pol=h:srate=22000</location>
+      <title>Radio Regenbogen</title>
+    </track>
+    <track>
+      <location>dvb://DRadio%20Wissen?sid=28017:freq=11953:diseqc=0:pol=h:srate=27500</location>
+      <title>DRadio Wissen</title>
+    </track>
+    <track>
+      <location>dvb://DKULTUR?sid=28012:freq=11953:diseqc=0:pol=h:srate=27500</location>
+      <title>DKULTUR</title>
+    </track>
+    <track>
+      <location>dvb://DLF?sid=28013:freq=11953:diseqc=0:pol=h:srate=27500</location>
+      <title>DLF</title>
+    </track>
+    <track>
+      <location>dvb://CDN12?sid=8616:freq=12324:diseqc=0:pol=v:srate=27500</location>
+      <title>CDN12</title>
+    </track>
+    <track>
+      <location>dvb://RTL%20RADIO?sid=2051:freq=12343:diseqc=0:pol=h:srate=27500</location>
+      <title>RTL RADIO</title>
+    </track>
+    <track>
+      <location>dvb://RTL%201440?sid=2052:freq=12343:diseqc=0:pol=h:srate=27500</location>
+      <title>RTL 1440</title>
+    </track>
+    <track>
+      <location>dvb://RV%20info?sid=2070:freq=12343:diseqc=0:pol=h:srate=27500</location>
+      <title>RV info</title>
+    </track>
+    <track>
+      <location>dvb://Radio%20Vlaanderen?sid=2075:freq=12343:diseqc=0:pol=h:srate=27500</location>
+      <title>Radio Vlaanderen</title>
+    </track>
+    <track>
+      <location>dvb://NL-Radio%201?sid=2055:freq=12343:diseqc=0:pol=h:srate=27500</location>
+      <title>NL-Radio 1</title>
+    </track>
+    <track>
+      <location>dvb://NL-Radio%205?sid=2059:freq=12343:diseqc=0:pol=h:srate=27500</location>
+      <title>NL-Radio 5</title>
+    </track>
+    <track>
+      <location>dvb://NL-Radio%206?sid=2060:freq=12343:diseqc=0:pol=h:srate=27500</location>
+      <title>NL-Radio 6</title>
+    </track>
+    <track>
+      <location>dvb://Arrow%20Classic%20Rock?sid=2061:freq=12343:diseqc=0:pol=h:srate=27500</location>
+      <title>Arrow Classic Rock</title>
+    </track>
+    <track>
+      <location>dvb://Arrow%20Jazz?sid=2062:freq=12343:diseqc=0:pol=h:srate=27500</location>
+      <title>Arrow Jazz</title>
+    </track>
+    <track>
+      <location>dvb://Kink%20FM?sid=2063:freq=12343:diseqc=0:pol=h:srate=27500</location>
+      <title>Kink FM</title>
+    </track>
+    <track>
+      <location>dvb://Sky%20Radio?sid=2064:freq=12343:diseqc=0:pol=h:srate=27500</location>
+      <title>Sky Radio</title>
+    </track>
+    <track>
+      <location>dvb://538%20Juize?sid=2065:freq=12343:diseqc=0:pol=h:srate=27500</location>
+      <title>538 Juize</title>
+    </track>
+    <track>
+      <location>dvb://Radio538?sid=2066:freq=12343:diseqc=0:pol=h:srate=27500</location>
+      <title>Radio538</title>
+    </track>
+    <track>
+      <location>dvb://Radio10Gold?sid=2067:freq=12343:diseqc=0:pol=h:srate=27500</location>
+      <title>Radio10Gold</title>
+    </track>
+    <track>
+      <location>dvb://Radio%20Veronica?sid=2068:freq=12343:diseqc=0:pol=h:srate=27500</location>
+      <title>Radio Veronica</title>
+    </track>
+    <track>
+      <location>dvb://%5B23a5%5D?sid=9125:freq=12363:diseqc=0:pol=v:srate=27500</location>
+      <title>[23a5]</title>
+    </track>
+    <track>
+      <location>dvb://%5B23a4%5D?sid=9124:freq=12363:diseqc=0:pol=v:srate=27500</location>
+      <title>[23a4]</title>
+    </track>
+    <track>
+      <location>dvb://%5B23a2%5D?sid=9122:freq=12363:diseqc=0:pol=v:srate=27500</location>
+      <title>[23a2]</title>
+    </track>
+    <track>
+      <location>dvb://DT13?sid=9162:freq=12363:diseqc=0:pol=v:srate=27500</location>
+      <title>DT13</title>
+    </track>
+    <track>
+      <location>dvb://MEHRKANALTEST?sid=28397:freq=12421:diseqc=0:pol=h:srate=27500</location>
+      <title>MEHRKANALTEST</title>
+    </track>
+    <track>
+      <location>dvb://FunX?sid=4035:freq=12515:diseqc=0:pol=h:srate=22000</location>
+      <title>FunX</title>
+    </track>
+    <track>
+      <location>dvb://Classic%20FM?sid=4040:freq=12515:diseqc=0:pol=h:srate=22000</location>
+      <title>Classic FM</title>
+    </track>
+    <track>
+      <location>dvb://Slam%20FM?sid=4044:freq=12515:diseqc=0:pol=h:srate=22000</location>
+      <title>Slam FM</title>
+    </track>
+    <track>
+      <location>dvb://RNW1?sid=4050:freq=12515:diseqc=0:pol=h:srate=22000</location>
+      <title>RNW1</title>
+    </track>
+    <track>
+      <location>dvb://RNW2?sid=4055:freq=12515:diseqc=0:pol=h:srate=22000</location>
+      <title>RNW2</title>
+    </track>
+    <track>
+      <location>dvb://RNW3?sid=4060:freq=12515:diseqc=0:pol=h:srate=22000</location>
+      <title>RNW3</title>
+    </track>
+    <track>
+      <location>dvb://Radio%20Horeb?sid=7289:freq=12603:diseqc=0:pol=h:srate=22000</location>
+      <title>Radio Horeb</title>
+    </track>
+    <track>
+      <location>dvb://Radio%20neue%20Hoffnung?sid=7292:freq=12603:diseqc=0:pol=h:srate=22000</location>
+      <title>Radio neue Hoffnung</title>
+    </track>
+    <track>
+      <location>dvb://Radio%20Maryja?sid=7298:freq=12603:diseqc=0:pol=h:srate=22000</location>
+      <title>Radio Maryja</title>
+    </track>
+    <track>
+      <location>dvb://CATALUNYA%20RADIO?sid=10072:freq=11597:diseqc=0:pol=v:srate=22000</location>
+      <title>CATALUNYA RADIO</title>
+    </track>
+    <track>
+      <location>dvb://CATALUNYA%20INFORMACIO?sid=10073:freq=11597:diseqc=0:pol=v:srate=22000</location>
+      <title>CATALUNYA INFORMACIO</title>
+    </track>
+    <track>
+      <location>dvb://CANAL%20SUR%20RADIO?sid=10074:freq=11597:diseqc=0:pol=v:srate=22000</location>
+      <title>CANAL SUR RADIO</title>
     </track>
   </trackList>
 </playlist>

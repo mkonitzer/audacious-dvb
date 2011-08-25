@@ -39,9 +39,10 @@ Runtime:
     To make it work, install the plugin and open a location in Audacious
     with an URL of the following syntax:
 
-	dvb://audio?par1=val1:par2=val2:...:parN=valN
+	dvb://channelname?par1=val1:par2=val2:...:parN=valN
 
-    while the following 'parameter=value'-pairs may be used:
+    where channelname a RFC 3986 encoded name of the radio channel.
+    The following 'parameter=value'-pairs may be used:
 
     sid	    Service ID
 	    Values: <num> (no default, mandatory)

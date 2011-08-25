@@ -277,12 +277,11 @@ static gint
 dvb_is_our_file_from_vfs (const gchar * filename, VFSFile * file)
 #endif
 {
-  gint rc;
-
-  if ((rc = dvb_tune_parse_url (filename, NULL)) == RC_OK)
+  log_print (hlog, LOG_DEBUG, "dvb_tune_check_url() for '%s'", filename);
+  if (!dvb_tune_check_url (filename))
     return 1;
 
-  log_print (hlog, LOG_DEBUG, "dvb_parse_url() returned rc = %d", rc);
+  log_print (hlog, LOG_DEBUG, "dvb_tune_check_url(\"%s\") failed.", filename);
   return 0;
 }
 
@@ -292,6 +291,7 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
 	gint start_time, gint stop_time, gboolean pause)
 {
   gint rc;
+  gchar *auth;
 
   if (playing)
     return FALSE;
@@ -327,11 +327,13 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
 
   // Initialize tuning information
   tune = dvb_tune_init ();
-  if ((rc = dvb_tune_parse_url (filename, tune)) != RC_OK)
+  if ((rc = dvb_tune_parse_url (filename, &auth, tune)) != RC_OK)
     {
       log_print (hlog, LOG_ERR, "dvb_parse_url() returned %d.", rc);
       playing = FALSE;
       dvb_tune_exit (tune);
+      if (auth != NULL)
+	g_free (auth);
       tune = NULL;
       dvb_close (hdvb);
       hdvb = NULL;
@@ -344,6 +346,8 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
       log_print (hlog, LOG_ERR, "dvb_tune() returned %d.", rc);
       playing = FALSE;
       dvb_tune_exit (tune);
+      if (auth != NULL)
+	g_free (auth);
       tune = NULL;
       dvb_close (hdvb);
       hdvb = NULL;
@@ -352,7 +356,7 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
 
   // Initialize service info
   station = g_malloc0 (sizeof (statstruct));
-  station->svc_name = g_strdup (filename);
+  station->svc_name = auth;
 
   // Get audio PIDs from SID
   if ((rc =
@@ -457,7 +461,7 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
 
 #if AUD_PLUGIN_API >= 12
   // Initialize tuple info
-  tuple = tuple_new_from_filename (filename);
+  tuple = tuple_new_from_filename (auth);
 #endif
 
   // Initialize MPEG decoder

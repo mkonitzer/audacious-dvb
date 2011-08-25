@@ -104,7 +104,9 @@ gint dvb_get_pid (HDVB *, gint, guint *, guint *);
 
 tunestruct *dvb_tune_init (void);
 gint dvb_tune (HDVB *, tunestruct *);
-gint dvb_tune_parse_url (const gchar *, tunestruct *);
+gchar *dvb_get_authority_from_url (const gchar *);
+gboolean dvb_tune_check_url (const gchar *);
+gint dvb_tune_parse_url (const gchar *, gchar **, tunestruct *);
 gchar *dvb_tune_to_text (const HDVB *, const tunestruct *);
 void dvb_tune_exit (tunestruct *);
 

@@ -996,26 +996,71 @@ dvb_tune_to_text (const HDVB * h, const tunestruct * t)
   return text;
 }
 
+gchar *
+dvb_get_authority_from_url (const gchar * url)
+{
+  // Our URLs always have syntax "dvb://..."
+  if (url == NULL || !g_str_has_prefix (url, "dvb://"))
+    return NULL;
+
+  // Extract authority-part (substring between dvb:// and ?)
+  const gchar *substr_start, *substr_end;
+  substr_start = g_strstr_len (url, 50, "//");
+  if (substr_start == NULL)
+    return NULL;
+  substr_start += 2;
+  substr_end = g_strstr_len (substr_start, 50, "?");
+  if (substr_end == NULL)
+    return NULL;
+  if (substr_end-substr_start == 0)
+    return NULL;
+
+  return g_uri_unescape_segment (substr_start, substr_end, "");
+}
+
+gboolean
+dvb_tune_check_url (const gchar * url)
+{
+  gchar *auth;
+
+  if (url == NULL)
+    return FALSE;
+
+  auth = dvb_get_authority_from_url (url);
+  if (auth == NULL)
+    return FALSE;
+
+  g_free (auth);
+  return TRUE;
+}
+
 gint
-dvb_tune_parse_url (const gchar * url, tunestruct * tune)
+dvb_tune_parse_url (const gchar * url, gchar ** authptr, tunestruct * tune)
 {
   gint i;
   tunestruct *t = NULL;
+  gchar *auth;
   gchar **args, **pair;
   gchar *par, *val, ch;
 
   if (url == NULL || &tune == NULL)
     return RC_NPE;
 
-  // Our URLs always have syntax "dvb://audio?..."
-  if (!g_str_has_prefix (url, "dvb://audio?"))
+  // Get authority-part of URL
+  auth = dvb_get_authority_from_url (url);
+  if (auth == NULL)
     return RC_DVB_ERROR;
+  if (authptr != NULL)
+    *authptr = auth;
+  else
+    g_free (auth);
 
   // Initialize temporary tuning structure
   t = dvb_tune_init ();
 
   // Parse each (parameter=value)-pair
-  args = g_strsplit (&url[12], ":", 0);
+  gchar *substr = g_strstr_len (url, 50, "?");
+  args = g_strsplit (substr+1, ":", 0);
   for (i = 0; args[i]; ++i)
     {
       pair = g_strsplit (args[i], "=", 2);

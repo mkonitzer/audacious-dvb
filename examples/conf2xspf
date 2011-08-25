@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 use XML::Writer;
+use URI::Escape;
 
 #
 # conf2xspf
@@ -10,6 +11,7 @@ use XML::Writer;
 #
 # Dependencies:
 #   XML::Writer (see http://search.cpan.org/dist/XML-Writer/ for details)
+#   URI::Escape (see http://search.cpan.org/dist/URI/ for details)
 #
 # Usage:
 #   For DVB-S (using 2 LNBs via DiSEqC) you could type:
@@ -78,9 +80,9 @@ while ( <> ) {
 	my $url;
 	while ((my $par, my $val) = each(%output))
 	{
-	    $url .= ($url ? ":" : "" ) . "$par=$val"; 
+	    $url .= ($url ? ":" : "" ) . "$par=$val";
 	}
-	$writer->dataElement('location', "dvb://audio?$url");
+	$writer->dataElement('location', "dvb://" . uri_escape($sname) ."?$url");
 	$writer->dataElement('title', "$sname");
 	$writer->endTag('track');
     } elsif ($input[1]) {

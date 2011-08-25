@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<playlist xmlns="http://xspf.org/ns/0/" version="1">
+  <creator>conf2xspf</creator>
+  <extension application="audacious">
+    <options staticlist="true" />
+  </extension>
+  <trackList>
+    <track>
+      <location>dvb://sunshine%20live?sid=24593:freq=618000:srate=27500</location>
+      <title>sunshine live</title>
+    </track>
+    <track>
+      <location>dvb://ERF%20Radio?sid=24594:freq=618000:srate=27500</location>
+      <title>ERF Radio</title>
+    </track>
+    <track>
+      <location>dvb://Radio%20Horeb?sid=24595:freq=618000:srate=27500</location>
+      <title>Radio Horeb</title>
+    </track>
+    <track>
+      <location>dvb://104.6RTL%20Best%20of%20Rock%20and%20Pop?sid=24614:freq=618000:srate=27500</location>
+      <title>104.6RTL Best of Rock and Pop</title>
+    </track>
+    <track>
+      <location>dvb://104.6%20RTL?sid=26498:freq=618000:srate=27500</location>
+      <title>104.6 RTL</title>
+    </track>
+    <track>
+      <location>dvb://Radio%20Paloma?sid=26503:freq=618000:srate=27500</location>
+      <title>Radio Paloma</title>
+    </track>
+    <track>
+      <location>dvb://Spreeradio?sid=26506:freq=618000:srate=27500</location>
+      <title>Spreeradio</title>
+    </track>
+  </trackList>
+</playlist>
