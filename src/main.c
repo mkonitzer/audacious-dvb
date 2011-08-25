@@ -50,16 +50,6 @@
 
 #define MAX_DVB_TIMEOUT     9
 
-#ifdef __AUDACIOUS_PLUGIN_API__
-#define AUD_PLUGIN_API	__AUDACIOUS_PLUGIN_API__
-#else
-#ifdef _AUD_PLUGIN_VERSION
-#define AUD_PLUGIN_API	_AUD_PLUGIN_VERSION
-#else
-#error "Unable to detect version of plugin API. Aborting."
-#endif
-#endif
-
 #if AUD_PLUGIN_API < 19
 static void dvb_init (void);
 static gint dvb_is_our_file (const gchar *);

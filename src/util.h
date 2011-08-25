@@ -26,6 +26,17 @@
 
 #include <glib.h>
 #include <gtk/gtk.h>
+#include <audacious/plugin.h>
+
+#ifdef __AUDACIOUS_PLUGIN_API__
+#define AUD_PLUGIN_API	__AUDACIOUS_PLUGIN_API__
+#else
+#ifdef _AUD_PLUGIN_VERSION
+#define AUD_PLUGIN_API	_AUD_PLUGIN_VERSION
+#else
+#error "Unable to detect version of plugin API. Aborting."
+#endif
+#endif
 
 #ifndef RC_OK
 #define RC_OK                   1000
