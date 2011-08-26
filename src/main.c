@@ -64,6 +64,7 @@ static gboolean dvb_play (InputPlayback *, const gchar *, VFSFile *, gint, gint,
 static void dvb_stop (InputPlayback *);
 static gint dvb_get_time (InputPlayback *);
 #if AUD_PLUGIN_API >= 16
+static gchar * dvb_get_song_image_fn (const gchar *);
 static gboolean dvb_get_song_image (const gchar *, VFSFile *, void **, gint *);
 #endif
 static void dvb_file_info_box (const gchar *);
@@ -363,6 +364,9 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
   // Initialize service info
   station = station_init ();
   station->svc_name = auth;
+#if AUD_PLUGIN_API >= 16
+  station->svc_imagefn = dvb_get_song_image_fn (filename);
+#endif
 
   // Get audio PIDs from SID
   if ((rc =
@@ -676,18 +680,18 @@ dvb_get_time (InputPlayback * playback)
 
 
 #if AUD_PLUGIN_API >= 16
-static gboolean
-dvb_get_song_image (const gchar * filename, VFSFile * file, void * * data, gint * size)
+static gchar *
+dvb_get_song_image_fn (const gchar * url)
 {
   if (!config->logos_use || config->logos_dir == NULL)
-    return FALSE;
+    return NULL;
 
   // Generate channel logo filenames
   int i = 0;
   gchar * logoname[10];
-  logoname[0] = dvb_get_authority_from_url (filename);
+  logoname[0] = dvb_get_authority_from_url (url);
   if (logoname[0] == NULL)
-    return FALSE;
+    return NULL;
   logoname[(logoname[i] != NULL ? ++i : i)] = get_alt_logoname (logoname[0], " ,", "");
   logoname[(logoname[i] != NULL ? ++i : i)] = get_alt_logoname (logoname[0], " ", "_");
   logoname[(logoname[i] != NULL ? ++i : i)] = NULL;
@@ -703,18 +707,14 @@ dvb_get_song_image (const gchar * filename, VFSFile * file, void * * data, gint 
 	{
 	  for (basename = logoname; *basename != NULL; ++basename)
 	    {
-	      gsize len;
 	      gchar *fullpath;
 	      fullpath = g_strconcat (config->logos_dir, "/", *basename, ".", *ext, NULL);
 	      log_print (hlog, LOG_DEBUG, "Trying song image: \"%s\"", fullpath);
-	      if (g_file_get_contents (fullpath, (gchar **) data, &len, NULL))
+	      if (g_file_test (fullpath, G_FILE_TEST_IS_REGULAR))
 		{
-		  *size = len;
-		  log_print (hlog, LOG_INFO, "Using song image: \"%s\"", fullpath);
-		  g_free (fullpath);
 		  for (basename = logoname; *basename != NULL; ++basename)
 		    g_free (*basename);
-		  return TRUE;
+		  return fullpath;
 		}
 	      g_free (fullpath);
 	    }
@@ -725,7 +725,27 @@ dvb_get_song_image (const gchar * filename, VFSFile * file, void * * data, gint 
   for (basename = logoname; *basename != NULL; ++basename)
     g_free (*basename);
 
-  return FALSE;
+  return NULL;
+}
+
+static gboolean
+dvb_get_song_image (const gchar * filename, VFSFile * file, void * * data, gint * size)
+{
+  gsize len;
+  gchar * imagepath;
+
+  imagepath = dvb_get_song_image_fn (filename);
+  if (imagepath == NULL)
+    return FALSE;
+
+  if (!g_file_get_contents (imagepath, (gchar **) data, &len, NULL))
+    return FALSE;
+
+  *size = len;
+  log_print (hlog, LOG_INFO, "Using song image: \"%s\"", imagepath);
+  g_free (imagepath);
+
+  return TRUE;
 }
 #endif
 

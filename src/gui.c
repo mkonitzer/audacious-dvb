@@ -570,20 +570,42 @@ void
 infobox_update_service (const statstruct * st)
 {
   GtkWidget *provEntry, *statEntry;
+#if AUD_PLUGIN_API >= 16
+  GtkWidget *statImage;
+#endif
   if (widgets.infoBox == NULL)
     return;
 
   provEntry = glade_xml_get_widget (widgets.infoXml, "providerEntry");
   statEntry = glade_xml_get_widget (widgets.infoXml, "stationEntry");
+#if AUD_PLUGIN_API >= 16
+  statImage = glade_xml_get_widget (widgets.infoXml, "stationImage");
+#endif
   if (st != NULL)
     {
+      GdkPixbuf * pb;
+      GtkRequisition req;
       gtk_entry_set_text_safe (GTK_ENTRY (provEntry), st->prov_name);
       gtk_entry_set_text_safe (GTK_ENTRY (statEntry), st->svc_name);
+#if AUD_PLUGIN_API >= 16
+      if (st->svc_imagefn != NULL)
+	{
+	  gtk_widget_size_request (statImage, &req);
+	  pb = gdk_pixbuf_new_from_file_at_scale (st->svc_imagefn, req.width, req.height, TRUE, NULL);
+	  gtk_image_set_from_pixbuf (GTK_IMAGE (statImage), pb);
+	  g_object_unref (pb);
+	}
+      else
+	gtk_image_set_from_stock (GTK_IMAGE (statImage), "gtk-info", GTK_ICON_SIZE_BUTTON);
+#endif
     }
   else
     {
       gtk_entry_set_text_safe (GTK_ENTRY (provEntry), "");
       gtk_entry_set_text_safe (GTK_ENTRY (statEntry), "");
+#if AUD_PLUGIN_API >= 16
+      gtk_image_set_from_stock (GTK_IMAGE (statImage), "gtk-info", GTK_ICON_SIZE_BUTTON);
+#endif
     }
 }
 

@@ -48,6 +48,7 @@
 typedef struct _statstruct
 {
   gchar *svc_name;
+  gchar *svc_imagefn;
   gchar *prov_name;
   gboolean refresh;
 } statstruct;
