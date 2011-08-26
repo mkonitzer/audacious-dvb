@@ -361,7 +361,7 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
     }
 
   // Initialize service info
-  station = g_malloc0 (sizeof (statstruct));
+  station = station_init ();
   station->svc_name = auth;
 
   // Get audio PIDs from SID
@@ -565,7 +565,7 @@ dvb_stop (InputPlayback * playback)
       // Free station info
       if (station != NULL)
 	{
-	  g_free (station);
+	  station_exit (station);
 	  station = NULL;
 	}
       // Free DVB stuff

@@ -59,6 +59,9 @@ enum dvb_strtype
   DVB_STRING_DVBSI
 };
 
+statstruct *station_init (void);
+void station_exit (statstruct *);
+
 gchar *str_beautify (const gchar *, gint, enum dvb_strtype);
 gchar *get_alt_logoname (const gchar *, const gchar *, const gchar *);
 gboolean is_updated (const gchar *, gchar **, enum dvb_strtype);

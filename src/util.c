@@ -30,6 +30,28 @@
 extern gpointer hlog;
 
 
+statstruct *
+station_init (void)
+{
+  return g_malloc0 (sizeof (statstruct));
+}
+
+
+void
+station_exit (statstruct * station)
+{
+  if (station == NULL)
+    return;
+  if (station->prov_name)
+    g_free (station->prov_name);
+  if (station->svc_name)
+    g_free (station->svc_name);
+  if (station->svc_imagefn)
+    g_free (station->svc_imagefn);
+  g_free (station);
+}
+
+
 static void
 str_remove_non_ascii (gchar * s)
 {
