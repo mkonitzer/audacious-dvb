@@ -26,7 +26,6 @@
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
-#include <glade/glade.h>
 
 #include "gui.h"
 #include "log.h"
@@ -42,7 +41,7 @@
 extern gpointer hlog;
 extern cfgstruct *config;
 
-static Widgets widgets = { NULL };
+static prefWidgets *pref = NULL;
 
 static void config_to_gui (const cfgstruct *);
 static void dvb_configure_ok (GtkWidget *, gpointer);
@@ -52,6 +51,108 @@ static void recordClicked (GtkWidget *, gpointer);
 static void isplitClicked (GtkWidget *, gpointer);
 static void vsplitClicked (GtkWidget *, gpointer);
 static void config_from_gui (cfgstruct *);
+
+#define GTK_BUILDER_GET_OBJECT( builder, name, type, data ) \
+    data->name = type( gtk_builder_get_object( builder, #name ) )
+
+// Information window
+struct _infoboxWidgets
+{
+  GtkWidget *mainwin;
+  GtkButton *closeButton;
+
+  // Service information
+  GtkEntry *stationEntry;
+  GtkEntry *providerEntry;
+#if AUD_PLUGIN_API >= 16
+  GtkImage *stationImage;
+#endif
+
+  // Radiotext
+  GtkEntry *rttitleEntry;
+  GtkEntry *rtartistEntry;
+  GtkEntry *rtptyEntry;
+  GtkTextView *rtevTextView;
+
+  // EPG
+  GtkEntry *epgevnameEntry;
+  GtkEntry *epgevdescEntry;
+  GtkEntry *epglangEntry;
+  GtkEntry *epgatypeEntry;
+  GtkTextView *epgevddescTextView;
+
+  // MadMusic
+  GtkEntry *mmtitleEntry;
+  GtkEntry *mmartistEntry;
+  GtkEntry *mmtrnumEntry;
+  GtkEntry *mmalbumEntry;
+
+  GtkEntry *dvbtuneEntry;
+  GtkEntry *dvbpidEntry;
+  GtkEntry *dvbuncEntry;
+  GtkEntry *dvbberEntry;
+
+  // DVB
+  GtkProgressBar *dvbstrProgressBar;
+  GtkProgressBar *dvbsnrProgressBar;
+  GtkToggleButton *dvbsignalCheckButton;
+  GtkToggleButton *dvbcarrierCheckButton;
+  GtkToggleButton *dvbviterbiCheckButton;
+  GtkToggleButton *dvbsyncCheckButton;
+  GtkToggleButton *dvblockCheckButton;
+  GtkToggleButton *dvbtimedoutCheckButton;
+};
+
+// Preferences window
+struct _prefWidgets
+{
+  GtkWidget *mainwin;
+  GtkButton *cancelButton;
+  GtkButton *okButton;
+
+  // DVB card
+  GtkSpinButton *devnoSpin;
+
+  // Channel logos
+  GtkToggleButton *channelLogosCheck;
+  GtkWidget *channelLogosLabel;
+  GtkFileChooser *channelLogosChooser;
+
+  // Logging
+  GtkComboBox *logLevelCombo;
+  GtkToggleButton *logToFileCheck;
+  GtkFileChooser *logFileChooser;
+  GtkToggleButton *logAppendCheck;
+
+  // Recording
+  GtkToggleButton *reconplayCheck;
+  GtkToggleButton *reconpauseCheck;
+  GtkFileChooser *fnameChooser;
+  GtkWidget *fnameLabel;
+  GtkToggleButton *appendCheck;
+  GtkToggleButton *overwriteCheck;
+  GtkWidget *splitFrame;
+
+  // Splitting
+  GtkToggleButton *isplitCheck;
+  GtkSpinButton *isplitSpin;
+  GtkWidget *isplitLabel;
+  GtkToggleButton *vsplitCheck;
+  GtkSpinButton *vsplitvolSpin;
+  GtkWidget *vsplit1Label;
+  GtkWidget *vsplit2Label;
+  GtkSpinButton *vsplitdurSpin;
+  GtkWidget *vsplit3Label;
+  GtkWidget *vsplit4Label;
+  GtkSpinButton *vsplitminlenSpin;
+  GtkWidget *vsplit5Label;
+
+  // Information retrieval
+  GtkToggleButton *dvbCheck;
+  GtkToggleButton *rtCheck;
+  GtkToggleButton *epgCheck;
+  GtkToggleButton *madCheck;
+};
 
 
 void
@@ -92,58 +193,100 @@ dvb_about (void)
 void
 dvb_configure (void)
 {
-  if (widgets.configBox)
+  if (pref == NULL)
+    pref = g_malloc0 (sizeof (prefWidgets));
+
+  if (pref->mainwin != NULL)
     {
-      gtk_window_present (GTK_WINDOW (widgets.configBox));
+      gtk_window_present (GTK_WINDOW (pref->mainwin));
       return;
     }
 
-  // Create configuration box
-  widgets.configXml =
-    glade_xml_new_from_buffer (glwidgets, strlen (glwidgets), "config", NULL);
-  glade_xml_signal_autoconnect (widgets.configXml);
-  widgets.configBox = glade_xml_get_widget (widgets.configXml, "config");
+  // Create GtkBuilder interface
+  GError* error = NULL;
+  GtkBuilder *builder = gtk_builder_new ();
+  if (!gtk_builder_add_from_string (builder, glwidgets, strlen (glwidgets), &error))
+    {
+      g_warning ("Couldn't load builder file: %s", error->message);
+      g_error_free (error);
+    }
+
+  pref->mainwin = GTK_WIDGET (gtk_builder_get_object (builder, "config"));
+#define GET_OBJECT( name, type ) GTK_BUILDER_GET_OBJECT( builder, name, type, pref )
+  GET_OBJECT( cancelButton, GTK_BUTTON );
+  GET_OBJECT( okButton, GTK_BUTTON );
+  
+  // DVB card
+  GET_OBJECT( devnoSpin, GTK_SPIN_BUTTON );
+
+  // Channel logos
+  GET_OBJECT( channelLogosCheck, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( channelLogosLabel, GTK_WIDGET );
+  GET_OBJECT( channelLogosChooser, GTK_FILE_CHOOSER );
+  
+  // Logging
+  GET_OBJECT( logLevelCombo, GTK_COMBO_BOX );
+  GET_OBJECT( logToFileCheck, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( logFileChooser, GTK_FILE_CHOOSER );
+  GET_OBJECT( logAppendCheck, GTK_TOGGLE_BUTTON );
+  
+  // Recording
+  GET_OBJECT( reconplayCheck, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( reconpauseCheck, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( fnameChooser, GTK_FILE_CHOOSER );
+  GET_OBJECT( fnameLabel, GTK_WIDGET );
+  GET_OBJECT( appendCheck, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( overwriteCheck, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( splitFrame, GTK_WIDGET );
+
+  // Splitting
+  GET_OBJECT( isplitCheck, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( isplitSpin, GTK_SPIN_BUTTON );
+  GET_OBJECT( isplitLabel, GTK_WIDGET );
+  GET_OBJECT( vsplitCheck, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( vsplitvolSpin, GTK_SPIN_BUTTON );
+  GET_OBJECT( vsplit1Label, GTK_WIDGET );
+  GET_OBJECT( vsplit2Label, GTK_WIDGET );
+  GET_OBJECT( vsplitdurSpin, GTK_SPIN_BUTTON );
+  GET_OBJECT( vsplit3Label, GTK_WIDGET );
+  GET_OBJECT( vsplit4Label, GTK_WIDGET );
+  GET_OBJECT( vsplitminlenSpin, GTK_SPIN_BUTTON );
+  GET_OBJECT( vsplit5Label, GTK_WIDGET );
+  
+  // Information retrieval
+  GET_OBJECT( dvbCheck, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( rtCheck, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( epgCheck, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( madCheck, GTK_TOGGLE_BUTTON );
+#undef GET_OBJECT
+
+  g_object_unref (G_OBJECT (builder));
 
   // Register signal handlers
-  g_signal_connect (G_OBJECT (widgets.configBox), "destroy",
-		    G_CALLBACK (gtk_widget_destroyed), &widgets.configBox);
-  g_signal_connect_swapped (G_OBJECT
-			    (glade_xml_get_widget
-			     (widgets.configXml, "cancelButton")), "clicked",
+  g_signal_connect (G_OBJECT (pref->mainwin), "destroy",
+		    G_CALLBACK (gtk_widget_destroyed), &pref->mainwin);
+  g_signal_connect_swapped (G_OBJECT (pref->cancelButton), "clicked",
 			    G_CALLBACK (gtk_widget_destroy),
-			    GTK_OBJECT (widgets.configBox));
-  g_signal_connect (G_OBJECT (glade_xml_get_widget
-			      (widgets.configXml, "okButton")), "clicked",
+			    GTK_OBJECT (pref->mainwin));
+  g_signal_connect (G_OBJECT (pref->okButton), "clicked",
 		    G_CALLBACK (dvb_configure_ok), NULL);
 
-  gtk_signal_connect (GTK_OBJECT
-		      (glade_xml_get_widget
-		       (widgets.configXml, "channelLogosCheck")), "clicked",
+  gtk_signal_connect (GTK_OBJECT (pref->channelLogosCheck), "clicked",
 		      G_CALLBACK (channelLogosClicked), NULL);
-  gtk_signal_connect (GTK_OBJECT
-		      (glade_xml_get_widget
-		       (widgets.configXml, "logToFileCheck")), "clicked",
+  gtk_signal_connect (GTK_OBJECT (pref->logToFileCheck), "clicked",
 		      G_CALLBACK (logToFileClicked), NULL);
-  gtk_signal_connect (GTK_OBJECT
-		      (glade_xml_get_widget
-		       (widgets.configXml, "reconplayCheck")), "clicked",
+  gtk_signal_connect (GTK_OBJECT (pref->reconplayCheck), "clicked",
 		      G_CALLBACK (recordClicked), NULL);
-  gtk_signal_connect (GTK_OBJECT
-		      (glade_xml_get_widget
-		       (widgets.configXml, "reconpauseCheck")), "clicked",
+  gtk_signal_connect (GTK_OBJECT (pref->reconpauseCheck), "clicked",
 		      G_CALLBACK (recordClicked), NULL);
-  gtk_signal_connect (GTK_OBJECT
-		      (glade_xml_get_widget
-		       (widgets.configXml, "isplitCheck")), "clicked",
+  gtk_signal_connect (GTK_OBJECT (pref->isplitCheck), "clicked",
 		      G_CALLBACK (isplitClicked), NULL);
-  gtk_signal_connect (GTK_OBJECT
-		      (glade_xml_get_widget
-		       (widgets.configXml, "vsplitCheck")), "clicked",
+  gtk_signal_connect (GTK_OBJECT (pref->vsplitCheck), "clicked",
 		      G_CALLBACK (vsplitClicked), NULL);
 
   config_to_gui (config);
 
-  gtk_widget_show_all (widgets.configBox);
+  gtk_widget_show_all (pref->mainwin);
 }
 
 
@@ -155,7 +298,7 @@ dvb_configure_ok (GtkWidget * w, gpointer data)
 
   log_set_level (hlog, config->log_level);
 
-  gtk_widget_destroy (GTK_WIDGET (widgets.configBox));
+  gtk_widget_destroy (pref->mainwin);
 }
 
 
@@ -164,221 +307,106 @@ channelLogosClicked (GtkWidget * w, gpointer user_data)
 {
   gboolean b;
 #if AUD_PLUGIN_API >= 16
-  b =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "channelLogosCheck")));
+  b = gtk_toggle_button_get_active (pref->channelLogosCheck);
 #else
   b = FALSE;
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "channelLogosCheck"), FALSE);
-
+  gtk_widget_set_sensitive (GTK_WIDGET (pref->channelLogosCheck), FALSE);
 #endif
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "channelLogosLabel"), b);
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "channelLogosChooser"), b);
+  gtk_widget_set_sensitive (pref->channelLogosLabel, b);
+  gtk_widget_set_sensitive (GTK_WIDGET (pref->channelLogosChooser), b);
 }
 
 
 static void
 logToFileClicked (GtkWidget * w, gpointer user_data)
 {
-  gboolean b;
-  b =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "logToFileCheck")));
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "logFileChooser"), b);
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "logAppendCheck"), b);
+  gboolean b = gtk_toggle_button_get_active (pref->logToFileCheck);
+  gtk_widget_set_sensitive (GTK_WIDGET (pref->logFileChooser), b);
+  gtk_widget_set_sensitive (GTK_WIDGET (pref->logAppendCheck), b);
 }
 
 
 static void
 recordClicked (GtkWidget * w, gpointer user_data)
 {
-  gboolean b;
-  b =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "reconplayCheck"))) ||
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "reconpauseCheck")));
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "fnameChooser"), b);
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "fnameLabel"), b);
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "appendCheck"), b);
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "overwriteCheck"), b);
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "splitFrame"), b);
+  gboolean b = gtk_toggle_button_get_active (pref->reconplayCheck) ||
+	  gtk_toggle_button_get_active (pref->reconpauseCheck);
+  gtk_widget_set_sensitive (GTK_WIDGET (pref->fnameChooser), b);
+  gtk_widget_set_sensitive (pref->fnameLabel, b);
+  gtk_widget_set_sensitive (GTK_WIDGET (pref->appendCheck), b);
+  gtk_widget_set_sensitive (GTK_WIDGET (pref->overwriteCheck), b);
+  gtk_widget_set_sensitive (pref->splitFrame, b);
 }
 
 
 static void
 isplitClicked (GtkWidget * w, gpointer user_data)
 {
-  gboolean b;
-  if ((b =
-       gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				     (glade_xml_get_widget
-				      (widgets.configXml, "isplitCheck")))))
-    {
-      // Volume and interval splitting are mutually exclusive
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				    (glade_xml_get_widget
-				     (widgets.configXml, "vsplitCheck")),
-				    FALSE);
-    }
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "isplitSpin"), b);
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "isplitLabel"), b);
+  gboolean b = gtk_toggle_button_get_active (pref->isplitCheck);
+  if (b)
+    // Volume and interval splitting are mutually exclusive
+    gtk_toggle_button_set_active (pref->vsplitCheck, FALSE);
+  gtk_widget_set_sensitive (GTK_WIDGET (pref->isplitSpin), b);
+  gtk_widget_set_sensitive (pref->isplitLabel, b);
 }
 
 
 static void
 vsplitClicked (GtkWidget * w, gpointer user_data)
 {
-  gboolean b;
-  if ((b =
-       gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				     (glade_xml_get_widget
-				      (widgets.configXml, "vsplitCheck")))))
-    {
-      // Volume and interval splitting are mutually exclusive
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				    (glade_xml_get_widget
-				     (widgets.configXml, "isplitCheck")),
-				    FALSE);
-    }
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "vsplitvolSpin"), b);
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "vsplit1Label"), b);
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "vsplit2Label"), b);
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "vsplitdurSpin"), b);
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "vsplit3Label"), b);
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "vsplit4Label"), b);
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "vsplitminlenSpin"), b);
-  gtk_widget_set_sensitive (glade_xml_get_widget
-			    (widgets.configXml, "vsplit5Label"), b);
+  gboolean b = gtk_toggle_button_get_active (pref->vsplitCheck);
+  if (b)
+    // Volume and interval splitting are mutually exclusive
+    gtk_toggle_button_set_active (pref->isplitCheck, FALSE);
+  gtk_widget_set_sensitive (GTK_WIDGET (pref->vsplitvolSpin), b);
+  gtk_widget_set_sensitive (pref->vsplit1Label, b);
+  gtk_widget_set_sensitive (pref->vsplit2Label, b);
+  gtk_widget_set_sensitive (GTK_WIDGET (pref->vsplitdurSpin), b);
+  gtk_widget_set_sensitive (pref->vsplit3Label, b);
+  gtk_widget_set_sensitive (pref->vsplit4Label, b);
+  gtk_widget_set_sensitive (GTK_WIDGET (pref->vsplitminlenSpin), b);
+  gtk_widget_set_sensitive (pref->vsplit5Label, b);
 }
 
 
 static void
 config_to_gui (const cfgstruct * config)
 {
+  g_assert (pref != NULL);
+
   // DVB card
-  gtk_spin_button_set_value (GTK_SPIN_BUTTON
-			     (glade_xml_get_widget
-			      (widgets.configXml, "devnoSpin")),
-			     config->devno);
+  gtk_spin_button_set_value (pref->devnoSpin, config->devno);
 
   // Channel logos
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				(glade_xml_get_widget
-				 (widgets.configXml, "channelLogosCheck")),
-				config->logos_use);
-  gtk_file_chooser_set_filename (GTK_FILE_CHOOSER
-		      (glade_xml_get_widget
-		       (widgets.configXml, "channelLogosChooser")),
-		      config->logos_dir);
+  gtk_toggle_button_set_active (pref->channelLogosCheck, config->logos_use);
+  gtk_file_chooser_set_filename (pref->channelLogosChooser, config->logos_dir);
   
-
   // Logging
-  gtk_combo_box_set_active (GTK_COMBO_BOX
-			    (glade_xml_get_widget
-			     (widgets.configXml, "logLevelCombo")),
-			    config->log_level);
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				(glade_xml_get_widget
-				 (widgets.configXml, "logToFileCheck")),
-				config->log_tofile);
-  gtk_file_chooser_set_filename (GTK_FILE_CHOOSER
-		      (glade_xml_get_widget
-		       (widgets.configXml, "logFileChooser")),
-		      config->log_filename);
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				(glade_xml_get_widget
-				 (widgets.configXml, "logAppendCheck")),
-				config->log_append);
+  gtk_combo_box_set_active (pref->logLevelCombo, config->log_level);
+  gtk_toggle_button_set_active (pref->logToFileCheck, config->log_tofile);
+  gtk_file_chooser_set_filename (pref->logFileChooser, config->log_filename);
+  gtk_toggle_button_set_active (pref->logAppendCheck, config->log_append);
 
   // Recording
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				(glade_xml_get_widget
-				 (widgets.configXml, "reconpauseCheck")),
-				config->rec_onpause);
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				(glade_xml_get_widget
-				 (widgets.configXml, "reconplayCheck")),
-				config->rec_onplay);
-  gtk_file_chooser_set_filename (GTK_FILE_CHOOSER
-			   (glade_xml_get_widget
-			    (widgets.configXml, "fnameChooser")),
-			   config->rec_fname);
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				(glade_xml_get_widget
-				 (widgets.configXml, "appendCheck")),
-				config->rec_append);
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				(glade_xml_get_widget
-				 (widgets.configXml, "overwriteCheck")),
-				config->rec_overwrite);
+  gtk_toggle_button_set_active (pref->reconpauseCheck, config->rec_onpause);
+  gtk_toggle_button_set_active (pref->reconplayCheck, config->rec_onplay);
+  gtk_file_chooser_set_filename (pref->fnameChooser, config->rec_fname);
+  gtk_toggle_button_set_active (pref->appendCheck, config->rec_append);
+  gtk_toggle_button_set_active (pref->overwriteCheck, config->rec_overwrite);
 
   // Splitting
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				(glade_xml_get_widget
-				 (widgets.configXml, "isplitCheck")),
-				config->isplit);
-  gtk_spin_button_set_value (GTK_SPIN_BUTTON
-			     (glade_xml_get_widget
-			      (widgets.configXml, "isplitSpin")),
-			     config->isplit_ival);
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				(glade_xml_get_widget
-				 (widgets.configXml, "vsplitCheck")),
-				config->vsplit);
-  gtk_spin_button_set_value (GTK_SPIN_BUTTON
-			     (glade_xml_get_widget
-			      (widgets.configXml, "vsplitvolSpin")),
-			     config->vsplit_vol);
-  gtk_spin_button_set_value (GTK_SPIN_BUTTON
-			     (glade_xml_get_widget
-			      (widgets.configXml, "vsplitdurSpin")),
-			     config->vsplit_dur);
-  gtk_spin_button_set_value (GTK_SPIN_BUTTON
-			     (glade_xml_get_widget
-			      (widgets.configXml, "vsplitminlenSpin")),
-			     config->vsplit_minlen);
+  gtk_toggle_button_set_active (pref->isplitCheck, config->isplit);
+  gtk_spin_button_set_value (pref->isplitSpin, config->isplit_ival);
+  gtk_toggle_button_set_active (pref->vsplitCheck, config->vsplit);
+  gtk_spin_button_set_value (pref->vsplitvolSpin, config->vsplit_vol);
+  gtk_spin_button_set_value (pref->vsplitdurSpin, config->vsplit_dur);
+  gtk_spin_button_set_value (pref->vsplitminlenSpin, config->vsplit_minlen);
 
   // Information retrieval
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				(glade_xml_get_widget
-				 (widgets.configXml, "dvbCheck")),
-				config->info_dvbstat);
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				(glade_xml_get_widget
-				 (widgets.configXml, "rtCheck")),
-				config->info_rt);
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				(glade_xml_get_widget
-				 (widgets.configXml, "epgCheck")),
-				config->info_epg);
-  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				(glade_xml_get_widget
-				 (widgets.configXml, "madCheck")),
-				config->info_mmusic);
+  gtk_toggle_button_set_active (pref->dvbCheck, config->info_dvbstat);
+  gtk_toggle_button_set_active (pref->rtCheck, config->info_rt);
+  gtk_toggle_button_set_active (pref->epgCheck, config->info_epg);
+  gtk_toggle_button_set_active (pref->madCheck, config->info_mmusic);
 
   // Make dialog elements (in)active
   channelLogosClicked (NULL, NULL);
@@ -392,244 +420,208 @@ config_to_gui (const cfgstruct * config)
 static void
 config_from_gui (cfgstruct * config)
 {
+  g_assert (pref != NULL);
+
   // DVB card
-  config->devno =
-    gtk_spin_button_get_value (GTK_SPIN_BUTTON
-			       (glade_xml_get_widget
-				(widgets.configXml, "devnoSpin")));
+  config->devno = gtk_spin_button_get_value (pref->devnoSpin);
 
   // Channel logos
-  config->logos_use =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "channelLogosCheck")));
+  config->logos_use = gtk_toggle_button_get_active (pref->channelLogosCheck);
   if (config->logos_dir != NULL)
     g_free (config->logos_dir);
   config->logos_dir =
-    g_strdup (gtk_file_chooser_get_filename
-	      (GTK_FILE_CHOOSER
-	       (glade_xml_get_widget (widgets.configXml, "channelLogosChooser"))));
-  
+    g_strdup (gtk_file_chooser_get_filename (pref->channelLogosChooser));
 
   // Logging
-  config->log_level =
-    gtk_combo_box_get_active (GTK_COMBO_BOX
-			      (glade_xml_get_widget
-			       (widgets.configXml, "logLevelCombo")));
-  config->log_tofile =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "logToFileCheck")));
+  config->log_level = gtk_combo_box_get_active (pref->logLevelCombo);
+  config->log_tofile = gtk_toggle_button_get_active (pref->logToFileCheck);
   if (config->log_filename != NULL)
     g_free (config->log_filename);
   config->log_filename =
-    g_strdup (gtk_file_chooser_get_filename
-	      (GTK_FILE_CHOOSER
-	       (glade_xml_get_widget (widgets.configXml, "logFileChooser"))));
-  config->log_append =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "logAppendCheck")));
+	  g_strdup (gtk_file_chooser_get_filename (pref->logFileChooser));
+  config->log_append = gtk_toggle_button_get_active (pref->logAppendCheck);
 
   // Recording
-  config->rec_onplay =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "reconplayCheck")));
-  config->rec_onpause =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "reconpauseCheck")));
+  config->rec_onplay = gtk_toggle_button_get_active (pref->reconplayCheck);
+  config->rec_onpause = gtk_toggle_button_get_active (pref->reconpauseCheck);
   if (config->rec_fname != NULL)
     g_free (config->rec_fname);
   config->rec_fname =
-    g_strdup (gtk_file_chooser_get_filename
-	      (GTK_FILE_CHOOSER
-	       (glade_xml_get_widget (widgets.configXml, "fnameChooser"))));
-  config->rec_append =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "appendCheck")));
-  config->rec_overwrite =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "overwriteCheck")));
+    g_strdup (gtk_file_chooser_get_filename (pref->fnameChooser));
+  config->rec_append = gtk_toggle_button_get_active (pref->appendCheck);
+  config->rec_overwrite = gtk_toggle_button_get_active (pref->overwriteCheck);
 
   // Splitting
-  config->isplit =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "isplitCheck")));
-  config->isplit_ival =
-    gtk_spin_button_get_value (GTK_SPIN_BUTTON
-			       (glade_xml_get_widget
-				(widgets.configXml, "isplitSpin")));
-  config->vsplit =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "vsplitCheck")));
-  config->vsplit_vol =
-    gtk_spin_button_get_value (GTK_SPIN_BUTTON
-			       (glade_xml_get_widget
-				(widgets.configXml, "vsplitvolSpin")));
-  config->vsplit_dur =
-    gtk_spin_button_get_value (GTK_SPIN_BUTTON
-			       (glade_xml_get_widget
-				(widgets.configXml, "vsplitdurSpin")));
-  config->vsplit_minlen =
-    gtk_spin_button_get_value (GTK_SPIN_BUTTON
-			       (glade_xml_get_widget
-				(widgets.configXml, "vsplitminlenSpin")));
+  config->isplit = gtk_toggle_button_get_active (pref->isplitCheck);
+  config->isplit_ival = gtk_spin_button_get_value (pref->isplitSpin);
+  config->vsplit = gtk_toggle_button_get_active (pref->vsplitCheck);
+  config->vsplit_vol = gtk_spin_button_get_value (pref->vsplitvolSpin);
+  config->vsplit_dur = gtk_spin_button_get_value (pref->vsplitdurSpin);
+  config->vsplit_minlen = gtk_spin_button_get_value (pref->vsplitminlenSpin);
 
   // Information retrieval
-  config->info_dvbstat =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "dvbCheck")));
-  config->info_rt =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "rtCheck")));
-  config->info_epg =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "epgCheck")));
-  config->info_mmusic =
-    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON
-				  (glade_xml_get_widget
-				   (widgets.configXml, "madCheck")));
+  config->info_dvbstat = gtk_toggle_button_get_active (pref->dvbCheck);
+  config->info_rt = gtk_toggle_button_get_active (pref->rtCheck);
+  config->info_epg = gtk_toggle_button_get_active (pref->epgCheck);
+  config->info_mmusic = gtk_toggle_button_get_active (pref->madCheck);
 }
 
 
 void
-infobox_show (const statstruct * station, const rtstruct * rt,
-	      const epgstruct * epg, const mmstruct * mmusic)
+infobox_show (infoboxWidgets * infobox, const statstruct * station,
+	      const rtstruct * rt, const epgstruct * epg,
+	      const mmstruct * mmusic)
 {
-  if (widgets.infoBox)
+  if (infobox == NULL)
+    return;
+
+  if (infobox->mainwin != NULL)
     {
-      gtk_window_present (GTK_WINDOW (widgets.infoBox));
+      gtk_window_present (GTK_WINDOW (infobox->mainwin));
       return;
     }
 
-  // Create info box
-  widgets.infoXml =
-    glade_xml_new_from_buffer (glwidgets, strlen (glwidgets), "fileinfo",
-			       NULL);
-  glade_xml_signal_autoconnect (widgets.infoXml);
-  widgets.infoBox = glade_xml_get_widget (widgets.infoXml, "fileinfo");
+  // Create GtkBuilder interface
+  GError* error = NULL;
+  GtkBuilder * builder = gtk_builder_new ();
+  if (!gtk_builder_add_from_string (builder, glwidgets, strlen (glwidgets), &error))
+    {
+      g_warning ("Couldn't load builder file: %s", error->message);
+      g_error_free (error);
+      g_free (infobox);
+      return;
+    }
+
+  infobox->mainwin = GTK_WIDGET (gtk_builder_get_object (builder, "fileinfo"));
+#define GET_OBJECT( name, type ) GTK_BUILDER_GET_OBJECT( builder, name, type, infobox )
+  GET_OBJECT( closeButton, GTK_BUTTON );
+
+  // Service information
+  GET_OBJECT( providerEntry, GTK_ENTRY );
+  GET_OBJECT( stationEntry, GTK_ENTRY );
+#if AUD_PLUGIN_API >= 16
+  GET_OBJECT( stationImage, GTK_IMAGE );
+#endif
+
+  // Radiotext
+  GET_OBJECT( rttitleEntry, GTK_ENTRY );
+  GET_OBJECT( rtartistEntry, GTK_ENTRY );
+  GET_OBJECT( rtptyEntry, GTK_ENTRY );
+  GET_OBJECT( rtevTextView, GTK_TEXT_VIEW );
+  
+  // EPG
+  GET_OBJECT( epglangEntry, GTK_ENTRY );
+  GET_OBJECT( epgatypeEntry, GTK_ENTRY );
+  GET_OBJECT( epgevnameEntry, GTK_ENTRY );
+  GET_OBJECT( epgevdescEntry, GTK_ENTRY );
+  GET_OBJECT( epgevddescTextView, GTK_TEXT_VIEW );
+
+  // MadMusic
+  GET_OBJECT( mmtitleEntry, GTK_ENTRY );
+  GET_OBJECT( mmartistEntry, GTK_ENTRY );
+  GET_OBJECT( mmalbumEntry, GTK_ENTRY );
+  GET_OBJECT( mmtrnumEntry, GTK_ENTRY );
+
+  // DVB
+  GET_OBJECT( dvbtuneEntry, GTK_ENTRY );
+  GET_OBJECT( dvbpidEntry, GTK_ENTRY );
+  GET_OBJECT( dvbstrProgressBar, GTK_PROGRESS_BAR );
+  GET_OBJECT( dvbsnrProgressBar, GTK_PROGRESS_BAR );
+  GET_OBJECT( dvbuncEntry, GTK_ENTRY );
+  GET_OBJECT( dvbberEntry, GTK_ENTRY );
+  GET_OBJECT( dvbsignalCheckButton, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( dvbcarrierCheckButton, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( dvbviterbiCheckButton, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( dvbsyncCheckButton, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( dvblockCheckButton, GTK_TOGGLE_BUTTON );
+  GET_OBJECT( dvbtimedoutCheckButton, GTK_TOGGLE_BUTTON );
+#undef GET_OBJECT
+
+  g_object_unref (G_OBJECT (builder));
 
   // Register signal handlers
-  g_signal_connect (G_OBJECT (widgets.infoBox), "destroy",
-		    G_CALLBACK (gtk_widget_destroyed), &widgets.infoBox);
-  g_signal_connect_swapped (G_OBJECT
-			    (glade_xml_get_widget
-			     (widgets.infoXml, "closeButton")), "clicked",
+  g_signal_connect (G_OBJECT (infobox->mainwin), "destroy",
+		    G_CALLBACK (gtk_widget_destroyed), &infobox->mainwin);
+  g_signal_connect_swapped (G_OBJECT (infobox->closeButton), "clicked",
 			    G_CALLBACK (gtk_widget_destroy),
-			    GTK_OBJECT (widgets.infoBox));
+			    GTK_OBJECT (infobox->mainwin));
 
   // Fill in stream information
-  infobox_update_service (station);
-  infobox_update_radiotext (rt);
-  infobox_update_epg (epg);
-  infobox_update_mmusic (mmusic);
+  infobox_update_service (infobox, station);
+  infobox_update_radiotext (infobox, rt);
+  infobox_update_epg (infobox, epg);
+  infobox_update_mmusic (infobox, mmusic);
 
-  gtk_widget_show_all (widgets.infoBox);
+  gtk_widget_show_all (infobox->mainwin);
 }
 
 
 void
-infobox_hide (void)
+infobox_redraw (infoboxWidgets * infobox)
 {
-  if (widgets.infoBox == NULL)
+  if (infobox == NULL)
     return;
-
-  gtk_widget_destroy (widgets.infoBox);
-  widgets.infoBox = NULL;
-  widgets.infoXml = NULL;
-}
-
-
-void
-infobox_redraw (void)
-{
-  if (widgets.infoBox == NULL)
-    return;
-
-  gtk_widget_queue_draw (widgets.infoBox);
+  gtk_widget_queue_draw (infobox->mainwin);
 }
 
 
 gboolean
-infobox_is_visible (void)
+infobox_is_visible (infoboxWidgets * infobox)
 {
-  return (widgets.infoBox != NULL);
+  return (infobox != NULL && infobox->mainwin != NULL);
 }
 
 
 void
-infobox_update_service (const statstruct * st)
+infobox_update_service (infoboxWidgets * infobox, const statstruct * st)
 {
-  GtkWidget *provEntry, *statEntry;
-#if AUD_PLUGIN_API >= 16
-  GtkWidget *statImage;
-#endif
-  if (widgets.infoBox == NULL)
+  if (infobox == NULL || infobox->mainwin == NULL)
     return;
-
-  provEntry = glade_xml_get_widget (widgets.infoXml, "providerEntry");
-  statEntry = glade_xml_get_widget (widgets.infoXml, "stationEntry");
-#if AUD_PLUGIN_API >= 16
-  statImage = glade_xml_get_widget (widgets.infoXml, "stationImage");
-#endif
-  if (st != NULL)
+  
+  if (st == NULL)
     {
-      GdkPixbuf * pb;
-      GtkRequisition req;
-      gtk_entry_set_text_safe (GTK_ENTRY (provEntry), st->prov_name);
-      gtk_entry_set_text_safe (GTK_ENTRY (statEntry), st->svc_name);
+      gtk_entry_set_text_safe (infobox->providerEntry, "");
+      gtk_entry_set_text_safe (infobox->stationEntry, "");
 #if AUD_PLUGIN_API >= 16
-      if (st->svc_imagefn != NULL)
-	{
-	  gtk_widget_size_request (statImage, &req);
-	  pb = gdk_pixbuf_new_from_file_at_scale (st->svc_imagefn, req.width, req.height, TRUE, NULL);
-	  gtk_image_set_from_pixbuf (GTK_IMAGE (statImage), pb);
-	  g_object_unref (pb);
-	}
-      else
-	gtk_image_set_from_stock (GTK_IMAGE (statImage), "gtk-info", GTK_ICON_SIZE_BUTTON);
+      gtk_image_set_from_stock (infobox->stationImage, "gtk-info",
+				GTK_ICON_SIZE_BUTTON);
 #endif
+      return;
+    }
+
+  gtk_entry_set_text_safe (infobox->providerEntry, st->prov_name);
+  gtk_entry_set_text_safe (infobox->stationEntry, st->svc_name);
+#if AUD_PLUGIN_API >= 16
+  if (st->svc_imagefn != NULL)
+    {
+      GtkRequisition req;
+      gtk_widget_size_request (GTK_WIDGET (infobox->stationImage), &req);
+      GdkPixbuf * pb = gdk_pixbuf_new_from_file_at_scale (st->svc_imagefn,
+				req.width, req.height, TRUE, NULL);
+      gtk_image_set_from_pixbuf (infobox->stationImage, pb);
+      g_object_unref (pb);
     }
   else
-    {
-      gtk_entry_set_text_safe (GTK_ENTRY (provEntry), "");
-      gtk_entry_set_text_safe (GTK_ENTRY (statEntry), "");
-#if AUD_PLUGIN_API >= 16
-      gtk_image_set_from_stock (GTK_IMAGE (statImage), "gtk-info", GTK_ICON_SIZE_BUTTON);
+    gtk_image_set_from_stock (infobox->stationImage, "gtk-info",
+			      GTK_ICON_SIZE_BUTTON);
 #endif
-    }
 }
 
 
 void
-infobox_update_radiotext (const rtstruct * rt)
+infobox_update_radiotext (infoboxWidgets * infobox, const rtstruct * rt)
 {
-  gchar *events = NULL;
-  GtkTextBuffer *rtevTextBuffer;
-  GtkWidget *rtptitleEntry, *rtpartistEntry, *rtpptyEntry, *rtevTextView;
-  if (widgets.infoBox == NULL)
+  if (infobox == NULL || infobox->mainwin == NULL)
     return;
 
-  rtptitleEntry = glade_xml_get_widget (widgets.infoXml, "rttitleEntry");
-  rtpartistEntry = glade_xml_get_widget (widgets.infoXml, "rtartistEntry");
-  rtpptyEntry = glade_xml_get_widget (widgets.infoXml, "rtptyEntry");
-  rtevTextView = glade_xml_get_widget (widgets.infoXml, "rtevTextView");
-  rtevTextBuffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtevTextView));
+  GtkTextBuffer *rtevTextBuffer =
+	  gtk_text_view_get_buffer (infobox->rtevTextView);
   if (rt != NULL)
     {
-      gtk_entry_set_text_safe (GTK_ENTRY (rtptitleEntry), rt->title);
-      gtk_entry_set_text_safe (GTK_ENTRY (rtpartistEntry), rt->artist);
-      gtk_entry_set_text_safe (GTK_ENTRY (rtpptyEntry), rt->pty);
-      events = radiotext_events_to_text (rt);
+      gtk_entry_set_text_safe (infobox->rttitleEntry, rt->title);
+      gtk_entry_set_text_safe (infobox->rtartistEntry, rt->artist);
+      gtk_entry_set_text_safe (infobox->rtptyEntry, rt->pty);
+      gchar *events = radiotext_events_to_text (rt);
       if (events != NULL)
 	{
 	  gtk_text_buffer_set_text (rtevTextBuffer, events, -1);
@@ -640,179 +632,143 @@ infobox_update_radiotext (const rtstruct * rt)
     }
   else
     {
-      gtk_entry_set_text_safe (GTK_ENTRY (rtptitleEntry), "");
-      gtk_entry_set_text_safe (GTK_ENTRY (rtpartistEntry), "");
-      gtk_entry_set_text_safe (GTK_ENTRY (rtpptyEntry), "");
+      gtk_entry_set_text_safe (infobox->rttitleEntry, "");
+      gtk_entry_set_text_safe (infobox->rtartistEntry, "");
+      gtk_entry_set_text_safe (infobox->rtptyEntry, "");
       gtk_text_buffer_set_text (rtevTextBuffer, "", -1);
     }
 }
 
 
 void
-infobox_update_epg (const epgstruct * epg)
+infobox_update_epg (infoboxWidgets * infobox, const epgstruct * epg)
 {
-  GtkTextBuffer *epgevddescTextBuffer;
-  GtkWidget *epglangEntry, *epgatypeEntry,
-    *epgevnameEntry, *epgevdescEntry, *epgevddescTextView;
-  if (widgets.infoBox == NULL)
+  if (infobox == NULL || infobox->mainwin == NULL)
     return;
 
-  epglangEntry = glade_xml_get_widget (widgets.infoXml, "epglangEntry");
-  epgatypeEntry = glade_xml_get_widget (widgets.infoXml, "epgatypeEntry");
-  epgevnameEntry = glade_xml_get_widget (widgets.infoXml, "epgevnameEntry");
-  epgevdescEntry = glade_xml_get_widget (widgets.infoXml, "epgevdescEntry");
-  epgevddescTextView =
-    glade_xml_get_widget (widgets.infoXml, "epgevddescTextView");
-  epgevddescTextBuffer =
-    gtk_text_view_get_buffer (GTK_TEXT_VIEW (epgevddescTextView));
+  GtkTextBuffer *epgevddescTextBuffer =
+	  gtk_text_view_get_buffer (infobox->epgevddescTextView);
   if (epg != NULL)
     {
       gchar *tmp;
-      gtk_entry_set_text_safe (GTK_ENTRY (epglangEntry), epg->lang);
-      gtk_entry_set_text_safe (GTK_ENTRY (epgatypeEntry), epg->stream_type);
+      gtk_entry_set_text_safe (infobox->epglangEntry, epg->lang);
+      gtk_entry_set_text_safe (infobox->epgatypeEntry, epg->stream_type);
       if (epg->pil_mday != 0)
 	tmp = g_strdup_printf ("%s (Start: %02u:%02u)", epg->short_ev_name,
 			       epg->pil_hour, epg->pil_min);
       else
 	tmp = g_strdup (epg->short_ev_name);
-      gtk_entry_set_text_safe (GTK_ENTRY (epgevnameEntry), tmp);
+      gtk_entry_set_text_safe (infobox->epgevnameEntry, tmp);
       g_free (tmp);
-      gtk_entry_set_text_safe (GTK_ENTRY (epgevdescEntry),
-			       epg->short_ev_text);
+      gtk_entry_set_text_safe (infobox->epgevdescEntry, epg->short_ev_text);
       if (epg->ext_ev_text != NULL)
 	gtk_text_buffer_set_text (epgevddescTextBuffer, epg->ext_ev_text, -1);
     }
   else
     {
-      gtk_entry_set_text_safe (GTK_ENTRY (epglangEntry), "");
-      gtk_entry_set_text_safe (GTK_ENTRY (epgatypeEntry), "");
-      gtk_entry_set_text_safe (GTK_ENTRY (epgevnameEntry), "");
-      gtk_entry_set_text_safe (GTK_ENTRY (epgevdescEntry), "");
+      gtk_entry_set_text_safe (infobox->epglangEntry, "");
+      gtk_entry_set_text_safe (infobox->epgatypeEntry, "");
+      gtk_entry_set_text_safe (infobox->epgevnameEntry, "");
+      gtk_entry_set_text_safe (infobox->epgevdescEntry, "");
       gtk_text_buffer_set_text (epgevddescTextBuffer, "", -1);
     }
 }
 
 
 void
-infobox_update_mmusic (const mmstruct * mmusic)
+infobox_update_mmusic (infoboxWidgets * infobox, const mmstruct * mmusic)
 {
-  GtkWidget *mmtitleEntry, *mmartistEntry, *mmalbumEntry, *mmtrnumEntry;
-  if (widgets.infoBox == NULL)
+  if (infobox == NULL || infobox->mainwin == NULL)
     return;
 
-  mmtitleEntry = glade_xml_get_widget (widgets.infoXml, "mmtitleEntry");
-  mmartistEntry = glade_xml_get_widget (widgets.infoXml, "mmartistEntry");
-  mmalbumEntry = glade_xml_get_widget (widgets.infoXml, "mmalbumEntry");
-  mmtrnumEntry = glade_xml_get_widget (widgets.infoXml, "mmtrnumEntry");
   if (mmusic != NULL)
     {
-      gtk_entry_set_text_safe (GTK_ENTRY (mmtitleEntry), mmusic->title);
-      gtk_entry_set_text_safe (GTK_ENTRY (mmartistEntry), mmusic->artist);
-      gtk_entry_set_text_safe (GTK_ENTRY (mmalbumEntry), mmusic->album);
-      gtk_entry_printf (mmtrnumEntry, "%d", mmusic->trnum);
+      gtk_entry_set_text_safe (infobox->mmtitleEntry, mmusic->title);
+      gtk_entry_set_text_safe (infobox->mmartistEntry, mmusic->artist);
+      gtk_entry_set_text_safe (infobox->mmalbumEntry, mmusic->album);
+      gtk_entry_printf (infobox->mmtrnumEntry, "%d", mmusic->trnum);
     }
   else
     {
-      gtk_entry_set_text_safe (GTK_ENTRY (mmtitleEntry), "");
-      gtk_entry_set_text_safe (GTK_ENTRY (mmartistEntry), "");
-      gtk_entry_set_text_safe (GTK_ENTRY (mmalbumEntry), "");
-      gtk_entry_set_text_safe (GTK_ENTRY (mmtrnumEntry), "");
+      gtk_entry_set_text_safe (infobox->mmtitleEntry, "");
+      gtk_entry_set_text_safe (infobox->mmartistEntry, "");
+      gtk_entry_set_text_safe (infobox->mmalbumEntry, "");
+      gtk_entry_set_text_safe (infobox->mmtrnumEntry, "");
     }
 }
 
 void
-infobox_update_dvb (HDVB * hdvb, const dvbstatstruct * dvb,
-		    const tunestruct * tune)
+infobox_update_dvb (infoboxWidgets * infobox, HDVB * hdvb,
+		    const dvbstatstruct * dvb, const tunestruct * tune)
 {
-  GtkWidget *dvbtuneEntry, *dvbpidEntry, *dvbstrProgressBar,
-    *dvbsnrProgressBar, *dvbuncEntry, *dvbberEntry, *dvbsignalCheckButton,
-    *dvbcarrierCheckButton, *dvbviterbiCheckButton, *dvbsyncCheckButton,
-    *dvblockCheckButton, *dvbtimedoutCheckButton;
-  if (widgets.infoBox == NULL)
+  if (infobox == NULL || infobox->mainwin == NULL)
     return;
 
-  dvbtuneEntry = glade_xml_get_widget (widgets.infoXml, "dvbtuneEntry");
-  dvbpidEntry = glade_xml_get_widget (widgets.infoXml, "dvbpidEntry");
-  dvbstrProgressBar =
-    glade_xml_get_widget (widgets.infoXml, "dvbstrProgressBar");
-  dvbsnrProgressBar =
-    glade_xml_get_widget (widgets.infoXml, "dvbsnrProgressBar");
-  dvbuncEntry = glade_xml_get_widget (widgets.infoXml, "dvbuncEntry");
-  dvbberEntry = glade_xml_get_widget (widgets.infoXml, "dvbberEntry");
-  dvbsignalCheckButton =
-    glade_xml_get_widget (widgets.infoXml, "dvbsignalCheckButton");
-  dvbcarrierCheckButton =
-    glade_xml_get_widget (widgets.infoXml, "dvbcarrierCheckButton");
-  dvbviterbiCheckButton =
-    glade_xml_get_widget (widgets.infoXml, "dvbviterbiCheckButton");
-  dvbsyncCheckButton =
-    glade_xml_get_widget (widgets.infoXml, "dvbsyncCheckButton");
-  dvblockCheckButton =
-    glade_xml_get_widget (widgets.infoXml, "dvblockCheckButton");
-  dvbtimedoutCheckButton =
-    glade_xml_get_widget (widgets.infoXml, "dvbtimedoutCheckButton");
   if (hdvb != NULL && tune != NULL)
     {
       gchar *text;
       text = dvb_tune_to_text (hdvb, tune);
-      gtk_entry_set_text_safe (GTK_ENTRY (dvbtuneEntry), text);
+      gtk_entry_set_text_safe (infobox->dvbtuneEntry, text);
       if (text)
 	g_free (text);
-      gtk_entry_printf (dvbpidEntry, "%d (%d, %d)", tune->sid, tune->apid,
-			tune->dpid);
+      gtk_entry_printf (infobox->dvbpidEntry, "%d (%d, %d)", tune->sid,
+			tune->apid, tune->dpid);
     }
   else
     {
-      gtk_entry_set_text_safe (GTK_ENTRY (dvbtuneEntry), "");
-      gtk_entry_set_text_safe (GTK_ENTRY (dvbpidEntry), "");
+      gtk_entry_set_text_safe (infobox->dvbtuneEntry, "");
+      gtk_entry_set_text_safe (infobox->dvbpidEntry, "");
     }
   if (dvb != NULL)
     {
       gchar *text;
-      gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbstrProgressBar),
+      gtk_progress_bar_set_fraction (infobox->dvbstrProgressBar,
 				     ((double) dvb->str) / 0xffff);
       text = g_strdup_printf ("%.1lf%%", ((double) dvb->str) * 100 / 0xffff);
-      gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbstrProgressBar), text);
+      gtk_progress_bar_set_text (infobox->dvbstrProgressBar, text);
       g_free (text);
       text = g_strdup_printf ("%.1lf%%", ((double) dvb->snr) * 100 / 0xffff);
-      gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbsnrProgressBar),
+      gtk_progress_bar_set_fraction (infobox->dvbsnrProgressBar,
 				     ((double) dvb->snr) / 0xffff);
-      gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbsnrProgressBar), text);
+      gtk_progress_bar_set_text (infobox->dvbsnrProgressBar, text);
       g_free (text);
-      gtk_entry_printf (dvbuncEntry, "%08x", dvb->unc);
-      gtk_entry_printf (dvbberEntry, "%08x", dvb->ber);
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				    (dvbsignalCheckButton), dvb->signal);
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				    (dvbcarrierCheckButton), dvb->carrier);
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				    (dvbviterbiCheckButton), dvb->viterbi);
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				    (dvbsyncCheckButton), dvb->sync);
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				    (dvblockCheckButton), dvb->lock);
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				    (dvbtimedoutCheckButton), dvb->timedout);
+      gtk_entry_printf (infobox->dvbuncEntry, "%08x", dvb->unc);
+      gtk_entry_printf (infobox->dvbberEntry, "%08x", dvb->ber);
+      gtk_toggle_button_set_active (infobox->dvbsignalCheckButton, dvb->signal);
+      gtk_toggle_button_set_active (infobox->dvbcarrierCheckButton, dvb->carrier);
+      gtk_toggle_button_set_active (infobox->dvbviterbiCheckButton, dvb->viterbi);
+      gtk_toggle_button_set_active (infobox->dvbsyncCheckButton, dvb->sync);
+      gtk_toggle_button_set_active (infobox->dvblockCheckButton, dvb->lock);
+      gtk_toggle_button_set_active (infobox->dvbtimedoutCheckButton, dvb->timedout);
     }
   else
     {
-      gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbstrProgressBar), 0);
-      gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbstrProgressBar), "");
-      gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (dvbsnrProgressBar), 0);
-      gtk_progress_bar_set_text (GTK_PROGRESS_BAR (dvbsnrProgressBar), "");
-      gtk_entry_set_text_safe (GTK_ENTRY (dvbuncEntry), "");
-      gtk_entry_set_text_safe (GTK_ENTRY (dvbberEntry), "");
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				    (dvbsignalCheckButton), FALSE);
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				    (dvbcarrierCheckButton), FALSE);
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				    (dvbviterbiCheckButton), FALSE);
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				    (dvbsyncCheckButton), FALSE);
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				    (dvblockCheckButton), FALSE);
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON
-				    (dvbtimedoutCheckButton), FALSE);
+      gtk_progress_bar_set_fraction (infobox->dvbstrProgressBar, 0);
+      gtk_progress_bar_set_text (infobox->dvbstrProgressBar, "");
+      gtk_progress_bar_set_fraction (infobox->dvbsnrProgressBar, 0);
+      gtk_progress_bar_set_text (infobox->dvbsnrProgressBar, "");
+      gtk_entry_set_text_safe (infobox->dvbuncEntry, "");
+      gtk_entry_set_text_safe (infobox->dvbberEntry, "");
+      gtk_toggle_button_set_active (infobox->dvbsignalCheckButton, FALSE);
+      gtk_toggle_button_set_active (infobox->dvbcarrierCheckButton, FALSE);
+      gtk_toggle_button_set_active (infobox->dvbviterbiCheckButton, FALSE);
+      gtk_toggle_button_set_active (infobox->dvbsyncCheckButton, FALSE);
+      gtk_toggle_button_set_active (infobox->dvblockCheckButton, FALSE);
+      gtk_toggle_button_set_active (infobox->dvbtimedoutCheckButton, FALSE);
     }
+}
+
+
+infoboxWidgets *
+infobox_init (void)
+{
+  return g_malloc0 (sizeof (infoboxWidgets));
+}
+
+
+void
+infobox_exit (infoboxWidgets * infobox)
+{
+  if (infobox != NULL)
+    g_free (infobox);
 }

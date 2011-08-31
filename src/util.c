@@ -352,7 +352,7 @@ is_updated (const gchar * newtext, gchar ** oldtextptr, enum dvb_strtype type)
 
 
 void
-gtk_entry_printf (GtkWidget * w, const gchar * fmt, ...)
+gtk_entry_printf (GtkEntry * w, const gchar * fmt, ...)
 {
   gchar *msg;
   va_list args;
@@ -360,7 +360,7 @@ gtk_entry_printf (GtkWidget * w, const gchar * fmt, ...)
   va_start (args, fmt);
   msg = g_strdup_vprintf (fmt, args);
   va_end (args);
-  gtk_entry_set_text (GTK_ENTRY (w), msg);
+  gtk_entry_set_text (w, msg);
   g_free (msg);
 }
 

@@ -119,6 +119,7 @@ static tunestruct *tune = NULL;
 static dvbstatstruct *dvbstat = NULL;
 static recstruct *record = NULL;
 static Tuple *tuple = NULL;
+static infoboxWidgets *infobox = NULL;
 
 // Threads
 static GThread *gt_get_name = NULL;
@@ -203,9 +204,9 @@ static void
 dvb_file_info_box (const gchar * s)
 {
   // Show infobox
-  infobox_show (station, rt, epg, mmusic);
+  infobox_show (infobox, station, rt, epg, mmusic);
   // Register infobox timer
-  if (infobox_is_visible () && playing && infobox_timer_id == 0)
+  if (infobox_is_visible (infobox) && playing && infobox_timer_id == 0)
     infobox_timer_id = g_timeout_add (1000, infobox_timer, NULL);
 }
 
@@ -218,6 +219,7 @@ static gboolean
 dvb_init (void)
 #endif
 {
+  // Read config
   config = config_init ();
   config_from_db (config);
 
@@ -251,6 +253,9 @@ dvb_init (void)
 #if AUD_PLUGIN_API < 31
   aud_uri_set_plugin ("dvb://", &dvb_ip);
 #endif
+  
+  // Initialize infobox widget structure
+  infobox = infobox_init ();
 
 #if AUD_PLUGIN_API >= 19
   return TRUE;
@@ -262,6 +267,11 @@ static void
 dvb_exit (void)
 {
   log_print (hlog, LOG_INFO, "shutting down");
+  if (infobox != NULL)
+    {
+      infobox_exit (infobox);
+      infobox = NULL;
+    }
   if (config != NULL)
     {
       config_exit (config);
@@ -306,14 +316,14 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
   log_print (hlog, LOG_INFO, "dvb_play(\"%s\");", filename);
 
   // Update info box
-  if (infobox_is_visible ())
+  if (infobox_is_visible (infobox))
     {
-      infobox_update_service (NULL);
-      infobox_update_radiotext (NULL);
-      infobox_update_epg (NULL);
-      infobox_update_mmusic (NULL);
-      infobox_update_dvb (NULL, NULL, NULL);
-      infobox_redraw ();
+      infobox_update_service (infobox, NULL);
+      infobox_update_radiotext (infobox, NULL);
+      infobox_update_epg (infobox, NULL);
+      infobox_update_mmusic (infobox, NULL);
+      infobox_update_dvb (infobox, NULL, NULL, NULL);
+      infobox_redraw (infobox);
       // Register infobox timer
       if (infobox_timer_id == 0)
 	infobox_timer_id = g_timeout_add (1000, infobox_timer, NULL);
@@ -1644,7 +1654,7 @@ mmusic_thread (gpointer arg)
 static gboolean
 infobox_timer (gpointer data)
 {
-  if (!infobox_is_visible ())
+  if (!infobox_is_visible (infobox))
     {
       log_print (hlog, LOG_DEBUG, "removing infobox_timer()");
       infobox_timer_id = 0;
@@ -1656,40 +1666,40 @@ infobox_timer (gpointer data)
   if (station != NULL && station->refresh)
     {
       log_print (hlog, LOG_DEBUG, "Station info changed!");
-      infobox_update_service (station);
+      infobox_update_service (infobox, station);
       station->refresh = FALSE;
       refreshed = TRUE;
     }
   if (rt != NULL && rt->refresh)
     {
       log_print (hlog, LOG_DEBUG, "Radiotext info changed!");
-      infobox_update_radiotext (rt);
+      infobox_update_radiotext (infobox, rt);
       rt->refresh = FALSE;
       refreshed = TRUE;
     }
   if (epg != NULL && epg->refresh)
     {
       log_print (hlog, LOG_DEBUG, "EPG info changed!");
-      infobox_update_epg (epg);
+      infobox_update_epg (infobox, epg);
       epg->refresh = FALSE;
       refreshed = TRUE;
     }
   if (mmusic != NULL && mmusic->refresh)
     {
       log_print (hlog, LOG_DEBUG, "MadMusic info changed!");
-      infobox_update_mmusic (mmusic);
+      infobox_update_mmusic (infobox, mmusic);
       mmusic->refresh = FALSE;
       refreshed = TRUE;
     }
   if (dvbstat != NULL && dvbstat->refresh)
     {
-      infobox_update_dvb (hdvb, dvbstat, tune);
+      infobox_update_dvb (infobox, hdvb, dvbstat, tune);
       dvbstat->refresh = FALSE;
       refreshed = TRUE;
     }
 
   if (refreshed)
-    infobox_redraw ();
+    infobox_redraw (infobox);
 
   return TRUE;
 }

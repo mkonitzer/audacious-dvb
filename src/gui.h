@@ -27,7 +27,6 @@
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
-#include <glade/glade.h>
 
 #include "cfg.h"
 #include "dvb.h"
@@ -36,29 +35,23 @@
 #include "util.h"
 #include "mmusic.h"
 
-typedef struct _Widgets
-{
-  // Configuration Window
-  GladeXML *configXml;
-  GtkWidget *configBox;
+typedef struct _infoboxWidgets infoboxWidgets;
+typedef struct _prefWidgets prefWidgets;
 
-  // Information Window
-  GladeXML *infoXml;
-  GtkWidget *infoBox;
-} Widgets;
 
 void dvb_about (void);
 void dvb_configure (void);
 
-void infobox_show (const statstruct *, const rtstruct *, const epgstruct *,
-		   const mmstruct *);
-void infobox_hide (void);
-void infobox_redraw (void);
-gboolean infobox_is_visible (void);
-void infobox_update_service (const statstruct *);
-void infobox_update_radiotext (const rtstruct *);
-void infobox_update_epg (const epgstruct *);
-void infobox_update_mmusic (const mmstruct *);
-void infobox_update_dvb (HDVB *, const dvbstatstruct *, const tunestruct *);
+infoboxWidgets * infobox_init (void);
+void infobox_show (infoboxWidgets *, const statstruct *, const rtstruct *,
+        const epgstruct *, const mmstruct *);
+void infobox_redraw (infoboxWidgets *);
+gboolean infobox_is_visible (infoboxWidgets *);
+void infobox_update_service (infoboxWidgets *, const statstruct *);
+void infobox_update_radiotext (infoboxWidgets *, const rtstruct *);
+void infobox_update_epg (infoboxWidgets *, const epgstruct *);
+void infobox_update_mmusic (infoboxWidgets *, const mmstruct *);
+void infobox_update_dvb (infoboxWidgets *, HDVB *, const dvbstatstruct *, const tunestruct *);
+void infobox_exit (infoboxWidgets *);
 
 #endif // __AUDACIOUS_DVB_GUI_H__

@@ -66,7 +66,7 @@ void station_exit (statstruct *);
 gchar *str_beautify (const gchar *, gint, enum dvb_strtype);
 gchar *get_alt_logoname (const gchar *, const gchar *, const gchar *);
 gboolean is_updated (const gchar *, gchar **, enum dvb_strtype);
-void gtk_entry_printf (GtkWidget *, const gchar *, ...);
+void gtk_entry_printf (GtkEntry *, const gchar *, ...);
 void gtk_entry_set_text_safe (GtkEntry *, const gchar *);
 
 #endif // __AUDACIOUS_DVB_UTIL_H__

@@ -1,8 +1,8 @@
 AUTOMAKE_OPTIONS = gnu
 lib_LTLIBRARIES = libdvb.la
 
-AM_CFLAGS = @AUDACIOUS_CFLAGS@ @LIBGLADE_CFLAGS@ @GTK_CFLAGS@ @GLIB_CFLAGS@ @LIBMAD_CFLAGS@
-LIBS = @AUDACIOUS_LIBS@ @LIBGLADE_LIBS@ @GTK_LIBS@ @GLIB_LIBS@ @LIBMAD_LIBS@
+AM_CFLAGS = @AUDACIOUS_CFLAGS@ @GTK_CFLAGS@ @GLIB_CFLAGS@ @LIBMAD_CFLAGS@
+LIBS = @AUDACIOUS_LIBS@ @GTK_LIBS@ @GLIB_LIBS@ @LIBMAD_LIBS@
 
 libdir = @PLUGIN_DIR@
 
@@ -12,11 +12,11 @@ libdvb_la_SOURCES = main.c gui.c gui.h epg.c epg.h dvb.c dvb.h log.c log.h cfg.c
 BUILT_SOURCES = glwidgets.h
 MAINTAINERCLEANFILES = glwidgets.h
 
-glwidgets.h: ../audacious-dvb.glade
+glwidgets.h: ../audacious-dvb.ui
 	sed -e 's/\"/\\"/g' \
 	    -e 's/^/\"/' \
 	    -e 's/$$/\"/' \
-	    -e 's/<\/glade-interface>\"/<\/glade-interface>\";/' \
+	    -e 's/<\/interface>\"/<\/interface>\";/' \
 	    -e '1 s/^/#include <glib.h>\n\nstatic const gchar * glwidgets = /' \
-	    ../audacious-dvb.glade > glwidgets.h
+	    ../audacious-dvb.ui > glwidgets.h
 
