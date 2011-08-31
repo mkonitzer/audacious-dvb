@@ -308,7 +308,7 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
 	gint start_time, gint stop_time, gboolean pause)
 {
   gint rc;
-  gchar *auth;
+  gchar *auth = NULL;
 
   if (playing)
     return FALSE;
