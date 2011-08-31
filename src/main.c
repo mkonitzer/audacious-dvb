@@ -348,9 +348,9 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
     {
       log_print (hlog, LOG_ERR, "dvb_parse_url() returned %d.", rc);
       playing = FALSE;
-      dvb_tune_exit (tune);
       if (auth != NULL)
 	g_free (auth);
+      dvb_tune_exit (tune);
       tune = NULL;
       dvb_close (hdvb);
       hdvb = NULL;
@@ -362,9 +362,9 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
     {
       log_print (hlog, LOG_ERR, "dvb_tune() returned %d.", rc);
       playing = FALSE;
-      dvb_tune_exit (tune);
       if (auth != NULL)
 	g_free (auth);
+      dvb_tune_exit (tune);
       tune = NULL;
       dvb_close (hdvb);
       hdvb = NULL;

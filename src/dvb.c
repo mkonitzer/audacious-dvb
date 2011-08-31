@@ -1039,15 +1039,13 @@ dvb_tune_parse_url (const gchar * url, gchar ** authptr, tunestruct * tune)
 {
   gint i;
   tunestruct *t = NULL;
-  gchar *auth;
-  gchar **args, **pair;
-  gchar *par, *val, ch;
+  gchar ch;
 
   if (url == NULL || &tune == NULL)
     return RC_NPE;
 
   // Get authority-part of URL
-  auth = dvb_get_authority_from_url (url);
+  gchar *auth = dvb_get_authority_from_url (url);
   if (auth == NULL)
     return RC_DVB_ERROR;
   if (authptr != NULL)
@@ -1060,12 +1058,12 @@ dvb_tune_parse_url (const gchar * url, gchar ** authptr, tunestruct * tune)
 
   // Parse each (parameter=value)-pair
   gchar *substr = g_strstr_len (url, 50, "?");
-  args = g_strsplit (substr+1, ":", 0);
+  gchar **args = g_strsplit (substr+1, ":", 0);
   for (i = 0; args[i]; ++i)
     {
-      pair = g_strsplit (args[i], "=", 2);
-      par = pair[0];
-      val = pair[1];
+      gchar **pair = g_strsplit (args[i], "=", 2);
+      gchar *par = pair[0];
+      gchar *val = pair[1];
 
       if (par == NULL || val == NULL)
 	{

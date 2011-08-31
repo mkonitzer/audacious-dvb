@@ -772,3 +772,4 @@ infobox_exit (infoboxWidgets * infobox)
   if (infobox != NULL)
     g_free (infobox);
 }
+
