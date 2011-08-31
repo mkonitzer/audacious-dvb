@@ -267,21 +267,21 @@ dvb_configure (void)
 		    G_CALLBACK (gtk_widget_destroyed), &pref->mainwin);
   g_signal_connect_swapped (G_OBJECT (pref->cancelButton), "clicked",
 			    G_CALLBACK (gtk_widget_destroy),
-			    GTK_OBJECT (pref->mainwin));
+			    G_OBJECT (pref->mainwin));
   g_signal_connect (G_OBJECT (pref->okButton), "clicked",
 		    G_CALLBACK (dvb_configure_ok), NULL);
 
-  gtk_signal_connect (GTK_OBJECT (pref->channelLogosCheck), "clicked",
+  g_signal_connect (G_OBJECT (pref->channelLogosCheck), "clicked",
 		      G_CALLBACK (channelLogosClicked), NULL);
-  gtk_signal_connect (GTK_OBJECT (pref->logToFileCheck), "clicked",
+  g_signal_connect (G_OBJECT (pref->logToFileCheck), "clicked",
 		      G_CALLBACK (logToFileClicked), NULL);
-  gtk_signal_connect (GTK_OBJECT (pref->reconplayCheck), "clicked",
+  g_signal_connect (G_OBJECT (pref->reconplayCheck), "clicked",
 		      G_CALLBACK (recordClicked), NULL);
-  gtk_signal_connect (GTK_OBJECT (pref->reconpauseCheck), "clicked",
+  g_signal_connect (G_OBJECT (pref->reconpauseCheck), "clicked",
 		      G_CALLBACK (recordClicked), NULL);
-  gtk_signal_connect (GTK_OBJECT (pref->isplitCheck), "clicked",
+  g_signal_connect (G_OBJECT (pref->isplitCheck), "clicked",
 		      G_CALLBACK (isplitClicked), NULL);
-  gtk_signal_connect (GTK_OBJECT (pref->vsplitCheck), "clicked",
+  g_signal_connect (G_OBJECT (pref->vsplitCheck), "clicked",
 		      G_CALLBACK (vsplitClicked), NULL);
 
   config_to_gui (config);
@@ -544,7 +544,7 @@ infobox_show (infoboxWidgets * infobox, const statstruct * station,
 		    G_CALLBACK (gtk_widget_destroyed), &infobox->mainwin);
   g_signal_connect_swapped (G_OBJECT (infobox->closeButton), "clicked",
 			    G_CALLBACK (gtk_widget_destroy),
-			    GTK_OBJECT (infobox->mainwin));
+			    G_OBJECT (infobox->mainwin));
 
   // Fill in stream information
   infobox_update_service (infobox, station);
