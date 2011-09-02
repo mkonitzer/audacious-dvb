@@ -52,7 +52,6 @@
 
 #if AUD_PLUGIN_API < 19
 static void dvb_init (void);
-static gint dvb_is_our_file (const gchar *);
 static void dvb_play_file (InputPlayback *);
 static void dvb_pause (InputPlayback *, gshort);
 #else
@@ -60,14 +59,21 @@ static gboolean dvb_init (void);
 static gint dvb_is_our_file_from_vfs (const gchar *, VFSFile *);
 static void dvb_pause (InputPlayback *, gboolean);
 #endif
+#if AUD_PLUGIN_API < 12
+static gint dvb_is_our_file (gchar *);
+static Tuple * dvb_probe_for_tuple(gchar *, VFSFile *);
+static void dvb_file_info_box (gchar *);
+#else
+static gint dvb_is_our_file (const gchar *);
+static Tuple * dvb_probe_for_tuple(const gchar *, VFSFile *);
+static void dvb_file_info_box (const gchar *);
+#endif
 static gboolean dvb_play (InputPlayback *, const gchar *, VFSFile *, gint, gint, gboolean);
 static void dvb_stop (InputPlayback *);
-static gint dvb_get_time (InputPlayback *);
 static gchar * dvb_get_song_image_fn (const gchar *);
 #if AUD_PLUGIN_API >= 16
 static gboolean dvb_get_song_image (const gchar *, VFSFile *, void **, gint *);
 #endif
-static void dvb_file_info_box (const gchar *);
 static void dvb_exit (void);
 
 static gboolean dvb_pes_pkt (InputPlayback *, const guchar *, gint, gint);
@@ -174,15 +180,13 @@ static InputPlugin dvb_ip = {
   .configure = dvb_configure,
   .stop = dvb_stop,
   .pause = dvb_pause,
-  .get_time = dvb_get_time,
+  .probe_for_tuple = dvb_probe_for_tuple,
 #if AUD_PLUGIN_API >= 16
   .get_song_image = dvb_get_song_image,
+  .play = dvb_play,
 #endif
   .cleanup = dvb_exit,
   .file_info_box = dvb_file_info_box,
-#if AUD_PLUGIN_API >= 16
-  .play = dvb_play,
-#endif
 #if AUD_PLUGIN_API < 19
   .is_our_file = dvb_is_our_file,
   .play_file = dvb_play_file,
@@ -201,7 +205,11 @@ SIMPLE_INPUT_PLUGIN (dvb, dvb_iplist);
 
 
 static void
+#if AUD_PLUGIN_API < 12
+dvb_file_info_box (gchar * s)
+#else
 dvb_file_info_box (const gchar * s)
+#endif
 {
   // Show infobox
   infobox_show (infobox, station, rt, epg, mmusic);
@@ -286,11 +294,12 @@ dvb_exit (void)
 }
 
 
-#if AUD_PLUGIN_API < 19
 static gint
+#if AUD_PLUGIN_API < 12
+dvb_is_our_file (gchar * filename)
+#elif AUD_PLUGIN_API < 19
 dvb_is_our_file (const gchar * filename)
 #else
-static gint
 dvb_is_our_file_from_vfs (const gchar * filename, VFSFile * file)
 #endif
 {
@@ -300,6 +309,38 @@ dvb_is_our_file_from_vfs (const gchar * filename, VFSFile * file)
 
   log_print (hlog, LOG_DEBUG, "dvb_tune_check_url(\"%s\") failed.", filename);
   return 0;
+}
+
+
+static Tuple *
+#if AUD_PLUGIN_API < 12
+dvb_probe_for_tuple(gchar *filename, VFSFile *fd)
+#else
+dvb_probe_for_tuple(const gchar *filename, VFSFile *fd)
+#endif
+{
+    if (filename == NULL)
+	return NULL;
+
+    // Try to get channel name (authority part) from URL
+    gchar *auth = dvb_get_authority_from_url (filename);
+    if (auth == NULL)
+	return NULL;
+
+    // Create new tuple with channel name inside
+#if AUD_PLUGIN_API < 12
+    Tuple *tuple = aud_tuple_new_from_filename (filename);
+    if (tuple != NULL)
+	aud_tuple_associate_string (tuple, FIELD_TITLE, NULL, auth);
+#else
+    Tuple *tuple = tuple_new_from_filename (filename);
+    if (tuple != NULL)
+	tuple_associate_string (tuple, FIELD_TITLE, NULL, auth);
+#endif
+
+    g_free(auth);
+
+    return tuple;
 }
 
 
@@ -674,16 +715,6 @@ dvb_pause (InputPlayback * playback, gboolean _paused)
       playback->output->pause (_paused);
 #endif
     }
-}
-
-
-static gint
-dvb_get_time (InputPlayback * playback)
-{
-  if (playing)
-    return playback->output->written_time ();
-
-  return 0;
 }
 
 
