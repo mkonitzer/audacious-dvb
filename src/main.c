@@ -98,7 +98,6 @@ static GStaticMutex gmt_mmusic = G_STATIC_MUTEX_INIT;
 static gboolean infobox_timer (gpointer);
 static gboolean dvb_status_timer (gpointer);
 
-
 // Title/Tuple functions
 #if AUD_PLUGIN_API < 12
 static gchar * build_file_title (void);
@@ -166,14 +165,11 @@ static time_t vsplit_last = 0;
 static const gchar *const schemes[] = {"dvb", NULL};
 
 AUD_INPUT_PLUGIN (
-#else
-static InputPlugin dvb_ip = {
-#endif
-#if AUD_PLUGIN_API < 31
-  .description = "DVB Input Plugin",
-#else
   .name = "DVB Input Plugin",
   .schemes = schemes,
+#else
+static InputPlugin dvb_ip = {
+  .description = "DVB Input Plugin",
 #endif
   .init = dvb_init,
   .about = dvb_about,
@@ -303,7 +299,6 @@ dvb_is_our_file (const gchar * filename)
 dvb_is_our_file_from_vfs (const gchar * filename, VFSFile * file)
 #endif
 {
-  log_print (hlog, LOG_DEBUG, "dvb_tune_check_url() for '%s'", filename);
   if (!dvb_tune_check_url (filename))
     return 1;
 

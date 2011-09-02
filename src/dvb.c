@@ -1021,12 +1021,10 @@ dvb_get_authority_from_url (const gchar * url)
 gboolean
 dvb_tune_check_url (const gchar * url)
 {
-  gchar *auth;
-
   if (url == NULL)
     return FALSE;
 
-  auth = dvb_get_authority_from_url (url);
+  gchar *auth = dvb_get_authority_from_url (url);
   if (auth == NULL)
     return FALSE;
 

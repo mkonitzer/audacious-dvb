@@ -186,6 +186,8 @@ radiotext_events_insert (rtstruct * rt, gchar * newtext)
 gchar *
 radiotext_events_to_text (const rtstruct * rt)
 {
+  // GLib API should allow (const gchar * const *) here
+  // (see http://bugzilla.gnome.org/show_bug.cgi?id=547199)
   return (rt != NULL ? g_strjoinv ("\n", rt->event) : NULL);
 }
 
