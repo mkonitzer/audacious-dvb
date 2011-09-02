@@ -64,9 +64,7 @@ struct _infoboxWidgets
   // Service information
   GtkEntry *stationEntry;
   GtkEntry *providerEntry;
-#if AUD_PLUGIN_API >= 16
   GtkImage *stationImage;
-#endif
 
   // Radiotext
   GtkEntry *rttitleEntry;
@@ -305,13 +303,7 @@ dvb_configure_ok (GtkWidget * w, gpointer data)
 static void
 channelLogosClicked (GtkWidget * w, gpointer user_data)
 {
-  gboolean b;
-#if AUD_PLUGIN_API >= 16
-  b = gtk_toggle_button_get_active (pref->channelLogosCheck);
-#else
-  b = FALSE;
-  gtk_widget_set_sensitive (GTK_WIDGET (pref->channelLogosCheck), FALSE);
-#endif
+  gboolean b = gtk_toggle_button_get_active (pref->channelLogosCheck);
   gtk_widget_set_sensitive (pref->channelLogosLabel, b);
   gtk_widget_set_sensitive (GTK_WIDGET (pref->channelLogosChooser), b);
 }
@@ -499,9 +491,7 @@ infobox_show (infoboxWidgets * infobox, const statstruct * station,
   // Service information
   GET_OBJECT( providerEntry, GTK_ENTRY );
   GET_OBJECT( stationEntry, GTK_ENTRY );
-#if AUD_PLUGIN_API >= 16
   GET_OBJECT( stationImage, GTK_IMAGE );
-#endif
 
   // Radiotext
   GET_OBJECT( rttitleEntry, GTK_ENTRY );
@@ -582,16 +572,13 @@ infobox_update_service (infoboxWidgets * infobox, const statstruct * st)
     {
       gtk_entry_set_text_safe (infobox->providerEntry, "");
       gtk_entry_set_text_safe (infobox->stationEntry, "");
-#if AUD_PLUGIN_API >= 16
       gtk_image_set_from_stock (infobox->stationImage, "gtk-info",
 				GTK_ICON_SIZE_BUTTON);
-#endif
       return;
     }
 
   gtk_entry_set_text_safe (infobox->providerEntry, st->prov_name);
   gtk_entry_set_text_safe (infobox->stationEntry, st->svc_name);
-#if AUD_PLUGIN_API >= 16
   if (st->svc_imagefn != NULL)
     {
       GtkRequisition req;
@@ -604,7 +591,6 @@ infobox_update_service (infoboxWidgets * infobox, const statstruct * st)
   else
     gtk_image_set_from_stock (infobox->stationImage, "gtk-info",
 			      GTK_ICON_SIZE_BUTTON);
-#endif
 }
 
 

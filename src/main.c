@@ -63,8 +63,8 @@ static void dvb_pause (InputPlayback *, gboolean);
 static gboolean dvb_play (InputPlayback *, const gchar *, VFSFile *, gint, gint, gboolean);
 static void dvb_stop (InputPlayback *);
 static gint dvb_get_time (InputPlayback *);
-#if AUD_PLUGIN_API >= 16
 static gchar * dvb_get_song_image_fn (const gchar *);
+#if AUD_PLUGIN_API >= 16
 static gboolean dvb_get_song_image (const gchar *, VFSFile *, void **, gint *);
 #endif
 static void dvb_file_info_box (const gchar *);
@@ -374,9 +374,7 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
   // Initialize service info
   station = station_init ();
   station->svc_name = auth;
-#if AUD_PLUGIN_API >= 16
   station->svc_imagefn = dvb_get_song_image_fn (filename);
-#endif
 
   // Get audio PIDs from SID
   if ((rc =
@@ -689,7 +687,6 @@ dvb_get_time (InputPlayback * playback)
 }
 
 
-#if AUD_PLUGIN_API >= 16
 static gchar *
 dvb_get_song_image_fn (const gchar * url)
 {
@@ -738,6 +735,8 @@ dvb_get_song_image_fn (const gchar * url)
   return NULL;
 }
 
+
+#if AUD_PLUGIN_API >= 16
 static gboolean
 dvb_get_song_image (const gchar * filename, VFSFile * file, void * * data, gint * size)
 {

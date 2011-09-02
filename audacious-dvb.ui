@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <interface>
   <!-- interface-requires gtk+ 2.12 -->
-  <!-- interface-naming-policy toplevel-contextual -->
+  <!-- interface-naming-policy project-wide -->
   <object class="GtkWindow" id="fileinfo">
     <property name="title" translatable="yes">DVB Stream Information</property>
     <property name="window_position">center</property>
@@ -1305,7 +1305,7 @@
                                 <property name="bottom_padding">6</property>
                                 <child>
                                   <object class="GtkCheckButton" id="channelLogosCheck">
-                                    <property name="label" translatable="yes">Display channel logos (requires Audacious 2.4.0 or newer)</property>
+                                    <property name="label" translatable="yes">Display channel logos</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">False</property>
