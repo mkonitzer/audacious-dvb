@@ -299,7 +299,7 @@ dvb_is_our_file (const gchar * filename)
 dvb_is_our_file_from_vfs (const gchar * filename, VFSFile * file)
 #endif
 {
-  if (!dvb_tune_check_url (filename))
+  if (dvb_tune_check_url (filename))
     return 1;
 
   log_print (hlog, LOG_DEBUG, "dvb_tune_check_url(\"%s\") failed.", filename);
