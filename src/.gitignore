@@ -1,0 +1,10 @@
+/.libs
+/.deps
+/*.lo
+/*.o
+/config.h*
+/libdvb.la
+/Makefile
+/Makefile.in
+/stamp-h1
+/glwidgets.h
