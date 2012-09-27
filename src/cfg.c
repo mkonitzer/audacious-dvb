@@ -21,12 +21,36 @@
    along with audacious-dvb; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA  */
 
+#include "config.h"
+
 #include <glib.h>
+#ifdef HAVE_AUDACIOUS_CONFIGDB_H
 #include <audacious/configdb.h>
+#endif
+#include <audacious/misc.h>
 #include <audacious/plugin.h>
 
 #include "cfg.h"
-#include "config.h"
+
+#ifdef HAVE_AUDACIOUS_CONFIGDB_H
+#define cfg_get_int(sect,val,cfg,var)		(aud_cfg_db_get_int (db, sect, val, & cfg->var))
+#define cfg_get_bool(sect,val,cfg,var)		(aud_cfg_db_get_bool (db, sect, val, & cfg->var))
+#define cfg_get_string(sect,val,cfg,var)	(aud_cfg_db_get_string (db, sect, val, & cfg->var))
+#define cfg_get_double(sect,val,cfg,var)	(aud_cfg_db_get_double (db, sect, val, & cfg->var))
+#define cfg_set_int(sect,val,cfg,var)		(aud_cfg_db_set_int (db, sect, val, cfg->var))
+#define cfg_set_bool(sect,val,cfg,var)		(aud_cfg_db_set_bool (db, sect, val, cfg->var))
+#define cfg_set_string(sect,val,cfg,var)	(aud_cfg_db_set_string (db, sect, val, cfg->var))
+#define cfg_set_double(sect,val,cfg,var)	(aud_cfg_db_set_double (db, sect, val, cfg->var))
+#else
+#define cfg_get_int(sect,val,cfg,var)		(cfg->var = aud_get_int (sect, val))
+#define cfg_get_bool(sect,val,cfg,var)		(cfg->var = aud_get_bool (sect, val))
+#define cfg_get_string(sect,val,cfg,var)	(cfg->var = aud_get_string (sect, val))
+#define cfg_get_double(sect,val,cfg,var)	(cfg->var = aud_get_double (sect, val))
+#define cfg_set_int(sect,val,cfg,var)		(aud_set_int (sect, val, cfg->var))
+#define cfg_set_bool(sect,val,cfg,var)		(aud_set_bool (sect, val, cfg->var))
+#define cfg_set_string(sect,val,cfg,var)	(aud_set_string (sect, val, cfg->var))
+#define cfg_set_double(sect,val,cfg,var)	(aud_set_double (sect, val, cfg->var))
+#endif
 
 cfgstruct *
 config_init (void)
@@ -70,72 +94,75 @@ config_init (void)
 gboolean
 config_from_db (cfgstruct * config)
 {
-#ifdef HAVE_MCS_HANDLE_T
+#ifdef HAVE_AUDACIOUS_CONFIGDB_H
   mcs_handle_t *db;
-#else
-  ConfigDb *db;
-#endif
-
   if ((db = aud_cfg_db_open ()) == NULL)
     return FALSE;
+#endif
 
   // DVB device
-  aud_cfg_db_get_int (db, "dvb", "devno", &config->devno);
+  cfg_get_int ("dvb", "devno", config, devno);
 
   // Channel logos
-  aud_cfg_db_get_bool (db, "dvb", "logos.use", &config->logos_use);
+  cfg_get_bool ("dvb", "logos.use", config, logos_use);
   if (config->logos_dir != NULL)
     {
       g_free (config->logos_dir);
       config->logos_dir = NULL;
     }
-  aud_cfg_db_get_string (db, "dvb", "logos.dir", &config->logos_dir);
+  cfg_get_string ("dvb", "logos.dir", config, logos_dir);
   if (config->logos_dir == NULL)
     config->logos_use = FALSE;
 
   // Logging
+#ifdef HAVE_AUDACIOUS_CONFIGDB_H
   aud_cfg_db_get_int (db, "dvb", "log.level", (gint *) & config->log_level);
-  aud_cfg_db_get_bool (db, "dvb", "log.tofile", &config->log_tofile);
+#else
+  config->log_level = aud_get_int ("dvb", "log.level");
+#endif
+  cfg_get_bool ("dvb", "log.tofile", config, log_tofile);
   if (config->log_filename != NULL)
     {
       g_free (config->log_filename);
       config->log_filename = NULL;
     }
-  aud_cfg_db_get_string (db, "dvb", "log.fname", &config->log_filename);
+  cfg_get_string ("dvb", "log.fname", config, log_filename);
   if (config->log_filename == NULL)
     config->log_filename = g_strdup ("/tmp/audacious-dvb.log");
-  aud_cfg_db_get_bool (db, "dvb", "log.append", &config->log_append);
+  cfg_get_bool ("dvb", "log.append", config, log_append);
 
   // Recording
-  aud_cfg_db_get_bool (db, "dvb", "rec.onplay", &config->rec_onplay);
-  aud_cfg_db_get_bool (db, "dvb", "rec.onpause", &config->rec_onpause);
+  cfg_get_bool ("dvb", "rec.onplay", config, rec_onplay);
+  cfg_get_bool ("dvb", "rec.onpause", config, rec_onpause);
   if (config->rec_fname != NULL)
     {
       g_free (config->rec_fname);
       config->rec_fname = NULL;
     }
-  aud_cfg_db_get_string (db, "dvb", "rec.fname", &config->rec_fname);
+  cfg_get_string ("dvb", "rec.fname", config, rec_fname);
   if (config->rec_fname == NULL)
     config->rec_fname = g_strdup ("/tmp/audacious-dvb-rec.mp2");
-  aud_cfg_db_get_bool (db, "dvb", "rec.append", &config->rec_append);
-  aud_cfg_db_get_bool (db, "dvb", "rec.overwrite", &config->rec_overwrite);
+  cfg_get_bool ("dvb", "rec.append", config, rec_append);
+  cfg_get_bool ("dvb", "rec.overwrite", config, rec_overwrite);
 
   // Splitting
-  aud_cfg_db_get_bool (db, "dvb", "isplit", &config->isplit);
-  aud_cfg_db_get_int (db, "dvb", "isplit.ival", &config->isplit_ival);
-  aud_cfg_db_get_bool (db, "dvb", "vsplit", &config->vsplit);
-  if (aud_cfg_db_get_double (db, "dvb", "vsplit.vol", &config->vsplit_vol))
-    config->vsplit_vol /= 100;
-  aud_cfg_db_get_int (db, "dvb", "vsplit.dur", &config->vsplit_dur);
-  aud_cfg_db_get_int (db, "dvb", "vsplit.minlen", &config->vsplit_minlen);
+  cfg_get_bool ("dvb", "isplit", config, isplit);
+  cfg_get_int ("dvb", "isplit.ival", config, isplit_ival);
+  cfg_get_bool ("dvb", "vsplit", config, vsplit);
+  cfg_get_double ("dvb", "vsplit.vol", config, vsplit_vol);
+  config->vsplit_vol /= 100;
+  cfg_get_int ("dvb", "vsplit.dur", config, vsplit_dur);
+  cfg_get_int ("dvb", "vsplit.minlen", config, vsplit_minlen);
 
   // Information retrieval
-  aud_cfg_db_get_bool (db, "dvb", "info.dvbstat", &config->info_dvbstat);
-  aud_cfg_db_get_bool (db, "dvb", "info.mmusic", &config->info_mmusic);
-  aud_cfg_db_get_bool (db, "dvb", "info.epg", &config->info_epg);
-  aud_cfg_db_get_bool (db, "dvb", "info.rt", &config->info_rt);
+  cfg_get_bool ("dvb", "info.dvbstat", config, info_dvbstat);
+  cfg_get_bool ("dvb", "info.mmusic", config, info_mmusic);
+  cfg_get_bool ("dvb", "info.epg", config, info_epg);
+  cfg_get_bool ("dvb", "info.rt", config, info_rt);
 
+#ifdef HAVE_AUDACIOUS_CONFIGDB_H
   aud_cfg_db_close (db);
+#endif
   return TRUE;
 }
 
@@ -143,50 +170,49 @@ config_from_db (cfgstruct * config)
 gboolean
 config_to_db (const cfgstruct * config)
 {
-#ifdef HAVE_MCS_HANDLE_T
+#ifdef HAVE_AUDACIOUS_CONFIGDB_H
   mcs_handle_t *db;
-#else
-  ConfigDb *db;
-#endif
-
   if ((db = aud_cfg_db_open ()) == NULL)
     return FALSE;
+#endif
 
   // DVB device
-  aud_cfg_db_set_int (db, "dvb", "devno", config->devno);
+  cfg_set_int ("dvb", "devno", config, devno);
 
   // Channel logos
-  aud_cfg_db_set_bool (db, "dvb", "logos.use", config->logos_use);
-  aud_cfg_db_set_string (db, "dvb", "logos.dir", config->logos_dir);
+  cfg_set_bool ("dvb", "logos.use", config, logos_use);
+  cfg_set_string ("dvb", "logos.dir", config, logos_dir);
 
   // Logging
-  aud_cfg_db_set_bool (db, "dvb", "log.tofile", config->log_tofile);
-  aud_cfg_db_set_int (db, "dvb", "log.level", (gint) config->log_level);
-  aud_cfg_db_set_string (db, "dvb", "log.fname", config->log_filename);
-  aud_cfg_db_set_bool (db, "dvb", "log.append", config->log_append);
+  cfg_set_bool ("dvb", "log.tofile", config, log_tofile);
+  cfg_set_int ("dvb", "log.level", config, log_level);
+  cfg_set_string ("dvb", "log.fname", config, log_filename);
+  cfg_set_bool ("dvb", "log.append", config, log_append);
 
   // Recording
-  aud_cfg_db_set_bool (db, "dvb", "rec.onplay", config->rec_onplay);
-  aud_cfg_db_set_bool (db, "dvb", "rec.onpause", config->rec_onpause);
-  aud_cfg_db_set_string (db, "dvb", "rec.fname", config->rec_fname);
-  aud_cfg_db_set_bool (db, "dvb", "rec.append", config->rec_append);
-  aud_cfg_db_set_bool (db, "dvb", "rec.overwrite", config->rec_overwrite);
+  cfg_set_bool ("dvb", "rec.onplay", config, rec_onplay);
+  cfg_set_bool ("dvb", "rec.onpause", config, rec_onpause);
+  cfg_set_string ("dvb", "rec.fname", config, rec_fname);
+  cfg_set_bool ("dvb", "rec.append", config, rec_append);
+  cfg_set_bool ("dvb", "rec.overwrite", config, rec_overwrite);
 
   // Splitting
-  aud_cfg_db_set_bool (db, "dvb", "isplit", config->isplit);
-  aud_cfg_db_set_int (db, "dvb", "isplit.ival", config->isplit_ival);
-  aud_cfg_db_set_bool (db, "dvb", "vsplit", config->vsplit);
-  aud_cfg_db_set_double (db, "dvb", "vsplit.vol", config->vsplit_vol * 100);
-  aud_cfg_db_set_int (db, "dvb", "vsplit.dur", config->vsplit_dur);
-  aud_cfg_db_set_int (db, "dvb", "vsplit.minlen", config->vsplit_minlen);
+  cfg_set_bool ("dvb", "isplit", config, isplit);
+  cfg_set_int ("dvb", "isplit.ival", config, isplit_ival);
+  cfg_set_bool ("dvb", "vsplit", config, vsplit);
+  cfg_set_double ("dvb", "vsplit.vol", config, vsplit_vol * 100);
+  cfg_set_int ("dvb", "vsplit.dur", config, vsplit_dur);
+  cfg_set_int ("dvb", "vsplit.minlen", config, vsplit_minlen);
 
   // Information retrieval
-  aud_cfg_db_set_bool (db, "dvb", "info.dvbstat", config->info_dvbstat);
-  aud_cfg_db_set_bool (db, "dvb", "info.mmusic", config->info_mmusic);
-  aud_cfg_db_set_bool (db, "dvb", "info.epg", config->info_epg);
-  aud_cfg_db_set_bool (db, "dvb", "info.rt", config->info_rt);
+  cfg_set_bool ("dvb", "info.dvbstat", config, info_dvbstat);
+  cfg_set_bool ("dvb", "info.mmusic", config, info_mmusic);
+  cfg_set_bool ("dvb", "info.epg", config, info_epg);
+  cfg_set_bool ("dvb", "info.rt", config, info_rt);
 
+#ifdef HAVE_AUDACIOUS_CONFIGDB_H
   aud_cfg_db_close (db);
+#endif
   return TRUE;
 }
 

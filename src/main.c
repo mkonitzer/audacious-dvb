@@ -32,9 +32,7 @@
 #include <sys/param.h>
 #include <linux/dvb/dmx.h>
 #include <linux/dvb/frontend.h>
-#ifdef HAVE_AUDACIOUS_MISC_H
 #include <audacious/misc.h>
-#endif
 #include <audacious/plugin.h>
 #include <mad.h>
 
@@ -57,14 +55,15 @@
 static gboolean dvb_init (void);
 static gint dvb_is_our_file_from_vfs (const gchar *, VFSFile *);
 static void dvb_pause (InputPlayback *, gboolean);
-static gint dvb_is_our_file (const gchar *);
 static Tuple * dvb_probe_for_tuple(const gchar *, VFSFile *);
 static void dvb_file_info_box (const gchar *);
 static gboolean dvb_play (InputPlayback *, const gchar *, VFSFile *, gint, gint, gboolean);
 static void dvb_stop (InputPlayback *);
 static gchar * dvb_get_song_image_fn (const gchar *);
-#if AUD_PLUGIN_API >= 16
+#if _AUD_PLUGIN_VERSION < 38
 static gboolean dvb_get_song_image (const gchar *, VFSFile *, void **, gint *);
+#else
+static gboolean dvb_get_song_image (const gchar *, VFSFile *, void **, gint64 *);
 #endif
 static void dvb_exit (void);
 
@@ -282,14 +281,14 @@ dvb_probe_for_tuple(const gchar *filename, VFSFile *fd)
 	return NULL;
 
     // Create new tuple with channel name inside
-#if AUD_PLUGIN_API < 12
-    Tuple *tuple = aud_tuple_new_from_filename (filename);
-    if (tuple != NULL)
-	aud_tuple_associate_string (tuple, FIELD_TITLE, NULL, auth);
-#else
+#if _AUD_PLUGIN_VERSION < 38
     Tuple *tuple = tuple_new_from_filename (filename);
     if (tuple != NULL)
 	tuple_associate_string (tuple, FIELD_TITLE, NULL, auth);
+#else
+    Tuple *tuple = tuple_new_from_filename (filename);
+    if (tuple != NULL)
+	tuple_set_str (tuple, FIELD_TITLE, NULL, auth);
 #endif
 
     g_free(auth);
@@ -562,7 +561,11 @@ dvb_stop (InputPlayback * playback)
       // Free tuple info
       if (tuple != NULL)
         {
+#if _AUD_PLUGIN_VERSION < 38
           tuple_free (tuple)
+#else
+	  tuple_unref (tuple);
+#endif
           tuple = NULL;
         }
       // Free tuning structure
@@ -587,7 +590,9 @@ dvb_stop (InputPlayback * playback)
       // Close output plugin
       if (audio_opened)
 	{
+#if _AUD_PLUGIN_VERSION < 41
 	  playback->output->close_audio ();
+#endif
 	  audio_opened = FALSE;
 	}
     }
@@ -669,7 +674,7 @@ dvb_get_song_image_fn (const gchar * url)
 	    {
 	      gchar *fullpath;
 	      fullpath = g_strconcat (config->logos_dir, "/", *basename, ".", *ext, NULL);
-	      log_print (hlog, LOG_DEBUG, "Trying song image: \"%s\"", fullpath);
+	      log_print (hlog, LOG_DEBUG, "Trying channel logo: \"%s\"", fullpath);
 	      if (g_file_test (fullpath, G_FILE_TEST_IS_REGULAR))
 		{
 		  for (basename = logoname; *basename != NULL; ++basename)
@@ -689,27 +694,36 @@ dvb_get_song_image_fn (const gchar * url)
 }
 
 
-#if AUD_PLUGIN_API >= 16
 static gboolean
+#if _AUD_PLUGIN_VERSION < 38
 dvb_get_song_image (const gchar * filename, VFSFile * file, void * * data, gint * size)
+#else
+dvb_get_song_image (const gchar * filename, VFSFile * file, void * * data, gint64 * size)
+#endif
 {
   gsize len;
   gchar * imagepath;
 
   imagepath = dvb_get_song_image_fn (filename);
   if (imagepath == NULL)
-    return FALSE;
+    {
+      log_print (hlog, LOG_DEBUG, "No channel logo found for \"%s\".", filename);
+      return FALSE;
+    }
 
   if (!g_file_get_contents (imagepath, (gchar **) data, &len, NULL))
-    return FALSE;
+    {
+      log_print (hlog, LOG_DEBUG, "g_file_get_contents() failed for \"%s\".", imagepath);
+      return FALSE;
+    }
 
   *size = len;
-  log_print (hlog, LOG_INFO, "Using song image: \"%s\"", imagepath);
+  log_print (hlog, LOG_INFO, "Using channel logo \"%s\".", imagepath);
   g_free (imagepath);
 
   return TRUE;
 }
-#endif
+
 
 static gboolean
 feed_thread (InputPlayback * playback)
@@ -765,7 +779,11 @@ feed_thread (InputPlayback * playback)
 
   if (audio_opened)
     {
+#if _AUD_PLUGIN_VERSION < 41
       playback->output->close_audio ();
+#else
+      playback->output->abort_write ();
+#endif
       audio_opened = FALSE;
     }
 
@@ -1002,11 +1020,22 @@ dvb_payload (InputPlayback * playback, const guchar * buf, gint len,
 static gboolean
 update_tuple_str (Tuple * tuple, gint item, const gchar * newstr)
 {
+#if _AUD_PLUGIN_VERSION < 38
   const gchar * oldstr = tuple_get_string (tuple, item, NULL);
+#else
+  gchar * oldstr = tuple_get_str (tuple, item, NULL);
+#endif
   gboolean changed = (newstr == NULL && oldstr != NULL) ||
           (newstr != NULL && (oldstr == NULL || strcmp (oldstr, newstr)));
+#if _AUD_PLUGIN_VERSION >= 38
+  str_unref (oldstr);
+#endif
   if (changed)
+#if _AUD_PLUGIN_VERSION < 38
     tuple_associate_string (tuple, item, NULL, newstr);
+#else
+    tuple_set_str (tuple, item, NULL, newstr);
+#endif
   return changed;
 }
 
@@ -1017,7 +1046,11 @@ update_tuple_int (Tuple * tuple, gint item, gint newint)
   gint oldint = tuple_get_int (tuple, item, NULL);
   gboolean changed = (oldint != newint);
   if (changed)
+#if _AUD_PLUGIN_VERSION < 38
     tuple_associate_int (tuple, item, NULL, newint);
+#else
+    tuple_set_int (tuple, item, NULL, newint);
+#endif
   return changed;
 }
 
@@ -1238,19 +1271,16 @@ dvb_mpeg_frame (InputPlayback * playback, const guchar * frame, guint len)
   // Check if tuple info has changed
   if (update_tuple (tuple, madframe.header, station, rt, mmusic))
     {
+#if _AUD_PLUGIN_VERSION < 38
       mowgli_object_ref (tuple);
-      playback->set_tuple (playback, tuple);
-#if AUD_PLUGIN_API < 19
-      playback->set_params (playback, NULL, 0, madframe.header.bitrate,
-			    madframe.header.samplerate,
-			    MAD_NCHANNELS (&madframe.header));
 #else
+      tuple_ref (tuple);
+#endif
+      playback->set_tuple (playback, tuple);
       playback->set_params (playback, madframe.header.bitrate,
 			    madframe.header.samplerate,
 			    MAD_NCHANNELS (&madframe.header));
-#endif
     }
-#endif
 
   return write_output (playback, &madsynth.pcm, &madframe.header);
 }
