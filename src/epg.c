@@ -76,7 +76,7 @@ stream_type (gint cnt, gint cty)
 }
 
 
-static gint
+static void
 dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
 {
   guint cnt, cty, dt, dl;
@@ -281,15 +281,13 @@ dvb_eit_desc (epgstruct * epg, const guchar * d, gint l)
       g_free (exttext);
       exttext = NULL;
     }
-
-  return RC_OK;
 }
 
 
 gint
 epg_read_data (epgstruct * epg, const guchar * sect, gint len)
 {
-  gint dll, rc, rst;
+  gint dll, rst;
   const guchar *p;
   static guchar un[4096];
 
@@ -318,7 +316,7 @@ epg_read_data (epgstruct * epg, const guchar * sect, gint len)
 
 	      log_print (hlog, LOG_DEBUG, "EIT: %d", dll);
 	      p += 12;
-	      rc = dvb_eit_desc (epg, p, dll);
+	      dvb_eit_desc (epg, p, dll);
 	    }
 	  else
 	    p += 12;

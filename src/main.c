@@ -868,7 +868,7 @@ static gboolean
 dvb_pes_pkt (InputPlayback * playback, const guchar * buf, gint len,
 	     gint reset)
 {
-  gint i, stream_id, PES_packet_length, j, pp_len;
+  gint i, PES_packet_length, j, pp_len;
   static gint pbh, pbl;
   guchar *p, *pp;
   static guchar pesbuf[128 * 1024];
@@ -924,7 +924,6 @@ dvb_pes_pkt (InputPlayback * playback, const guchar * buf, gint len,
         }
       else
         {
-          stream_id = pesbuf[i + 3];
           PES_packet_length =
             (pesbuf[i + 4] << 8) | pesbuf[i + 5];
           if (PES_packet_length == 0)
@@ -972,7 +971,7 @@ static gboolean
 dvb_payload (InputPlayback * playback, const guchar * buf, gint len,
 	     gint reset)
 {
-  gint br, sf, fl, num_samples;
+  gint br, sf, fl;
   gint i, mpv, mpl, bri, tlu, sfi, pad;
   static gint bph = 0;
   static guchar mpbuf[128 * 1024 + MAD_BUFFER_GUARD];
@@ -1026,12 +1025,12 @@ dvb_payload (InputPlayback * playback, const guchar * buf, gint len,
 
           if (mpl == 3)
             {
-              num_samples = 384;
+              /* 384 samples */
               fl = (12 * (br * 1000) / sf + pad) * 4;
             }
           else
             {
-              num_samples = 1152;
+              /* 1152 samples */
               fl = 144 * (br * 1000) / sf + pad;
             }
 
