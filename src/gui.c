@@ -582,7 +582,11 @@ infobox_update_service (infoboxWidgets * infobox, const statstruct * st)
   if (st->svc_imagefn != NULL)
     {
       GtkRequisition req;
+#if GTK_CHECK_VERSION(3,0,0)
+      gtk_widget_get_preferred_size (GTK_WIDGET (infobox->stationImage), &req, NULL);
+#else
       gtk_widget_size_request (GTK_WIDGET (infobox->stationImage), &req);
+#endif
       GdkPixbuf * pb = gdk_pixbuf_new_from_file_at_scale (st->svc_imagefn,
 				req.width, req.height, TRUE, NULL);
       gtk_image_set_from_pixbuf (infobox->stationImage, pb);
