@@ -76,6 +76,8 @@ typedef struct _dvbstatstruct
 #define RC_DVB_ERROR                    2001
 #define RC_DVB_TIMEOUT                  2002
 
+#define MAX_STATUS_ERR  5
+
 typedef struct _HDVB
 {
   gint dvb_num;
@@ -87,6 +89,10 @@ typedef struct _HDVB
   gint dvb_audh;
   gint dvb_admx;
   gint dvb_ddmx;
+  guint str_fail;
+  guint snr_fail;
+  guint unc_fail;
+  guint ber_fail;
   struct dmx_pes_filter_params dvb_dmx;
   struct dvb_frontend_info dvb_fe_info;
 } HDVB;
@@ -111,7 +117,7 @@ gchar *dvb_tune_to_text (const HDVB *, const tunestruct *);
 void dvb_tune_exit (tunestruct *);
 
 dvbstatstruct *dvb_status_init (void);
-gint dvb_get_status (const HDVB *, dvbstatstruct *);
+gint dvb_get_status (HDVB *, dvbstatstruct *);
 void dvb_status_exit (dvbstatstruct *);
 
 #endif // __AUDACIOUS_DVB_DVB_H__

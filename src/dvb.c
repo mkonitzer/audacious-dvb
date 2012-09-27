@@ -70,6 +70,7 @@ dvb_open (gint devnum)
       g_free (h);
       return NULL;
     }
+  h->ber_fail = h->snr_fail = h->str_fail = h->unc_fail = 0;
 
   return h;
 }
@@ -595,7 +596,7 @@ dvb_get_pid (HDVB * h, gint s, guint * apid, guint * dpid)
 }
 
 
-static int
+static gint
 diseqc_send_msg (const HDVB * h, fe_sec_voltage_t v,
 		 struct dvb_diseqc_master_cmd cmd, fe_sec_tone_mode_t t,
 		 guchar sat_no)
@@ -659,7 +660,7 @@ diseqc_send_msg (const HDVB * h, fe_sec_voltage_t v,
 }
 
 
-static int
+static gint
 do_diseqc (const HDVB * h, guchar sat_no, gint polv, gint hi_lo)
 {
   struct dvb_diseqc_master_cmd cmd =
@@ -711,11 +712,33 @@ do_diseqc (const HDVB * h, guchar sat_no, gint polv, gint hi_lo)
 }
 
 
+gint
+dvb_read_fe_safe (gint dvb_fedh, guint * failcnt, guint * val, gulong req, const gchar * reqname)
+{
+  gint rc;
+  if (*failcnt > MAX_STATUS_ERR)
+    return RC_DVB_ERROR;
+  if ((rc = ioctl (dvb_fedh, req, val)) < 0)
+    {
+      *val = -2;
+      if (++(*failcnt) > MAX_STATUS_ERR)
+        log_print (hlog, LOG_WARN, "%s failed (rc = %d) "
+                   "too often in dvb_read_fe_safe(), disabling.", reqname, rc);
+      else
+        log_print (hlog, LOG_WARN, "%s failed (rc = %d) "
+                   "in dvb_read_fe_safe().", reqname, rc);
+      return RC_DVB_ERROR;
+    }
+  *failcnt = 0;
+  return RC_OK;
+}
+
+
 static gint
-check_status (const HDVB * h, gint type,
+check_status (HDVB * h, gint type,
 	      const struct dvb_frontend_parameters *feparams, guint base)
 {
-  guint strength;
+  guint val;
   fe_status_t festatus;
   struct pollfd pfd[1];
   gint locks = 0, ok = 0;
@@ -801,14 +824,18 @@ check_status (const HDVB * h, gint type,
 	}
     }
 
-  if (ioctl (h->dvb_fedh, FE_READ_BER, &strength) >= 0)
-    log_print (hlog, LOG_DEBUG, "Bit error rate: %d", strength);
-  if (ioctl (h->dvb_fedh, FE_READ_SIGNAL_STRENGTH, &strength) >= 0)
-    log_print (hlog, LOG_DEBUG, "Signal strength: %d", strength);
-  if (ioctl (h->dvb_fedh, FE_READ_SNR, &strength) >= 0)
-    log_print (hlog, LOG_DEBUG, "SNR: %d", strength);
-  if (ioctl (h->dvb_fedh, FE_READ_UNCORRECTED_BLOCKS, &strength) >= 0)
-    log_print (hlog, LOG_DEBUG, "UNC: %d", strength);
+  if (dvb_read_fe_safe (h->dvb_fedh, &h->str_fail, &val,
+                    FE_READ_SIGNAL_STRENGTH, "FE_READ_SIGNAL_STRENGTH") == RC_OK)
+    log_print (hlog, LOG_DEBUG, "Signal strength: %d", val);
+  if (dvb_read_fe_safe (h->dvb_fedh, &h->snr_fail, &val,
+                    FE_READ_SNR, "FE_READ_SNR") == RC_OK)
+    log_print (hlog, LOG_DEBUG, "SNR: %d", val);
+  if (dvb_read_fe_safe (h->dvb_fedh, &h->ber_fail, &val,
+                    FE_READ_BER, "FE_READ_BER") == RC_OK)
+    log_print (hlog, LOG_DEBUG, "Bit error rate: %d", val);
+  if (dvb_read_fe_safe (h->dvb_fedh, &h->unc_fail, &val,
+                    FE_READ_UNCORRECTED_BLOCKS, "FE_READ_UNCORRECTED_BLOCKS") == RC_OK)
+    log_print (hlog, LOG_DEBUG, "UNC: %d", val);
 
   log_print (hlog, LOG_DEBUG, "FE_STATUS:%s%s%s%s%s%s",
 	     (festatus & FE_HAS_SIGNAL ? " FE_HAS_SIGNAL" : ""),
@@ -823,7 +850,7 @@ check_status (const HDVB * h, gint type,
 
 
 gint
-dvb_get_status (const HDVB * h, dvbstatstruct * st)
+dvb_get_status (HDVB * h, dvbstatstruct * st)
 {
   guint status;
   dvbstatstruct _st;
@@ -846,14 +873,14 @@ dvb_get_status (const HDVB * h, dvbstatstruct * st)
   _st.sync = (status & FE_HAS_SYNC);
   _st.lock = (status & FE_HAS_LOCK);
   _st.timedout = (status & FE_TIMEDOUT);
-  if (ioctl (h->dvb_fedh, FE_READ_SIGNAL_STRENGTH, &_st.str) < 0)
-    _st.str = -2;
-  if (ioctl (h->dvb_fedh, FE_READ_SNR, &_st.snr) < 0)
-    _st.snr = -2;
-  if (ioctl (h->dvb_fedh, FE_READ_BER, &_st.ber) < 0)
-    _st.ber = -2;
-  if (ioctl (h->dvb_fedh, FE_READ_UNCORRECTED_BLOCKS, &_st.unc) < 0)
-    _st.unc = -2;
+  dvb_read_fe_safe (h->dvb_fedh, &h->str_fail, &_st.str,
+                    FE_READ_SIGNAL_STRENGTH, "FE_READ_SIGNAL_STRENGTH");
+  dvb_read_fe_safe (h->dvb_fedh, &h->snr_fail, &_st.snr,
+                    FE_READ_SNR, "FE_READ_SNR");
+  dvb_read_fe_safe (h->dvb_fedh, &h->ber_fail, &_st.ber,
+                    FE_READ_BER, "FE_READ_BER");
+  dvb_read_fe_safe (h->dvb_fedh, &h->unc_fail, &_st.unc,
+                    FE_READ_UNCORRECTED_BLOCKS, "FE_READ_UNCORRECTED_BLOCKS");
   _st.refresh = TRUE;
   memcpy (st, &_st, sizeof (dvbstatstruct));
 
