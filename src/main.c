@@ -50,24 +50,16 @@
 
 #define MAX_DVB_TIMEOUT     9
 
-#if AUD_PLUGIN_API < 19
-static void dvb_init (void);
-static void dvb_play_file (InputPlayback *);
-static void dvb_pause (InputPlayback *, gshort);
-#else
+#ifndef _AUD_PLUGIN_VERSION
+#error "Unable to detect version of plugin API. Aborting."
+#endif
+
 static gboolean dvb_init (void);
 static gint dvb_is_our_file_from_vfs (const gchar *, VFSFile *);
 static void dvb_pause (InputPlayback *, gboolean);
-#endif
-#if AUD_PLUGIN_API < 12
-static gint dvb_is_our_file (gchar *);
-static Tuple * dvb_probe_for_tuple(gchar *, VFSFile *);
-static void dvb_file_info_box (gchar *);
-#else
 static gint dvb_is_our_file (const gchar *);
 static Tuple * dvb_probe_for_tuple(const gchar *, VFSFile *);
 static void dvb_file_info_box (const gchar *);
-#endif
 static gboolean dvb_play (InputPlayback *, const gchar *, VFSFile *, gint, gint, gboolean);
 static void dvb_stop (InputPlayback *);
 static gchar * dvb_get_song_image_fn (const gchar *);
@@ -99,15 +91,10 @@ static gboolean infobox_timer (gpointer);
 static gboolean dvb_status_timer (gpointer);
 
 // Title/Tuple functions
-#if AUD_PLUGIN_API < 12
-static gchar * build_file_title (void);
-#else
 static gboolean update_tuple_str (Tuple *, gint, const gchar *);
 static gboolean update_tuple_int (Tuple *, gint, gint);
 static gboolean update_tuple (Tuple*, const struct mad_header,
                               const statstruct*, const rtstruct*, const mmstruct*);
-#endif
-
 
 // Miscellaneous globals
 static gboolean playing = FALSE, paused = FALSE;
@@ -161,7 +148,7 @@ static gint sft[] = {
 static time_t isplit_last = 0;
 static time_t vsplit_last = 0;
 
-#if AUD_PLUGIN_API >= 31
+#if _AUD_PLUGIN_VERSION >= 31
 static const gchar *const schemes[] = {"dvb", NULL};
 
 AUD_INPUT_PLUGIN (
@@ -177,19 +164,12 @@ static InputPlugin dvb_ip = {
   .stop = dvb_stop,
   .pause = dvb_pause,
   .probe_for_tuple = dvb_probe_for_tuple,
-#if AUD_PLUGIN_API >= 16
   .get_song_image = dvb_get_song_image,
   .play = dvb_play,
-#endif
   .cleanup = dvb_exit,
   .file_info_box = dvb_file_info_box,
-#if AUD_PLUGIN_API < 19
-  .is_our_file = dvb_is_our_file,
-  .play_file = dvb_play_file,
-#else
   .is_our_file_from_vfs = dvb_is_our_file_from_vfs,
-#endif
-#if AUD_PLUGIN_API >= 31
+#if _AUD_PLUGIN_VERSION >= 31
 )
 #else
 };
@@ -201,11 +181,7 @@ SIMPLE_INPUT_PLUGIN (dvb, dvb_iplist);
 
 
 static void
-#if AUD_PLUGIN_API < 12
-dvb_file_info_box (gchar * s)
-#else
 dvb_file_info_box (const gchar * s)
-#endif
 {
   // Show infobox
   infobox_show (infobox, station, rt, epg, mmusic);
@@ -215,13 +191,8 @@ dvb_file_info_box (const gchar * s)
 }
 
 
-#if AUD_PLUGIN_API < 19
-static void
-dvb_init (void)
-#else
 static gboolean
 dvb_init (void)
-#endif
 {
   // Read config
   config = config_init ();
@@ -254,16 +225,14 @@ dvb_init (void)
 
   log_print (hlog, LOG_INFO, "logging started");
 
-#if AUD_PLUGIN_API < 31
+#if _AUD_PLUGIN_VERSION < 31
   aud_uri_set_plugin ("dvb://", &dvb_ip);
 #endif
   
   // Initialize infobox widget structure
   infobox = infobox_init ();
 
-#if AUD_PLUGIN_API >= 19
   return TRUE;
-#endif
 }
 
 
@@ -291,13 +260,7 @@ dvb_exit (void)
 
 
 static gint
-#if AUD_PLUGIN_API < 12
-dvb_is_our_file (gchar * filename)
-#elif AUD_PLUGIN_API < 19
-dvb_is_our_file (const gchar * filename)
-#else
 dvb_is_our_file_from_vfs (const gchar * filename, VFSFile * file)
-#endif
 {
   if (dvb_tune_check_url (filename))
     return 1;
@@ -308,11 +271,7 @@ dvb_is_our_file_from_vfs (const gchar * filename, VFSFile * file)
 
 
 static Tuple *
-#if AUD_PLUGIN_API < 12
-dvb_probe_for_tuple(gchar *filename, VFSFile *fd)
-#else
 dvb_probe_for_tuple(const gchar *filename, VFSFile *fd)
-#endif
 {
     if (filename == NULL)
 	return NULL;
@@ -513,10 +472,8 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
 	dvb_status_timer_id = g_timeout_add (750, dvb_status_timer, NULL);
     }
 
-#if AUD_PLUGIN_API >= 12
   // Initialize tuple info
   tuple = tuple_new_from_filename (auth);
-#endif
 
   // Initialize MPEG decoder
   mad_frame_init (&madframe);
@@ -525,26 +482,8 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
   mad_stream_options (&madstream, MAD_OPTION_IGNORECRC);
 
   // Initialize audio packet retrieval (including Radiotext info)
-#if AUD_PLUGIN_API < 19
-  if (g_thread_self () == NULL)
-    {
-      log_print (hlog, LOG_CRIT, "g_thread_self() failed for dvb_play().");
-      dvb_stop (playback);
-      return FALSE;
-    }
-#endif
-
   return feed_thread (playback);
 }
-
-
-#if AUD_PLUGIN_API < 19
-static void
-dvb_play_file (InputPlayback * playback)
-{
-  dvb_play (playback, playback->filename, NULL, 0, 0, FALSE);
-}
-#endif
 
 
 static void
@@ -553,9 +492,7 @@ dvb_stop (InputPlayback * playback)
   if (playing)
     {
       playing = paused = FALSE;
-#if AUD_PLUGIN_API > 15
       playback->output->abort_write();
-#endif
 
       // Stop all helper threads
       if (dvb_status_timer_id != 0)
@@ -658,13 +595,8 @@ dvb_stop (InputPlayback * playback)
 }
 
 
-#if AUD_PLUGIN_API < 19
-static void
-dvb_pause (InputPlayback * playback, gshort i)
-#else
 static void
 dvb_pause (InputPlayback * playback, gboolean _paused)
-#endif
 {
   if (config->rec_onpause)
     {
@@ -702,13 +634,8 @@ dvb_pause (InputPlayback * playback, gboolean _paused)
   else
     {
       // 'Real' pause
-#if AUD_PLUGIN_API < 19
-      paused = (i == 0 ? FALSE : TRUE);
-      playback->output->pause (i);
-#else
       paused = _paused;
       playback->output->pause (_paused);
-#endif
     }
 }
 
@@ -1072,49 +999,6 @@ dvb_payload (InputPlayback * playback, const guchar * buf, gint len,
 }
 
 
-#if AUD_PLUGIN_API < 12
-static gchar *
-build_file_title (void)
-{
-  if (station == NULL)
-    return NULL;
-
-  // Title consists of:
-  gchar *title;
-  // (1) station name
-  title = g_strdup (station->svc_name);
-
-  // (2a) Radiotext info
-  if (rt && rt->title != NULL)
-    {
-      gchar *tmp = title;
-      if (rt->artist != NULL)
-	title = g_strconcat (title, ": ", rt->artist, " - ", rt->title, NULL);
-      else
-	title = g_strconcat (title, ": ", rt->title, NULL);
-      g_free (tmp);
-      return title;
-    }
-
-  // (2b) MadMusic info
-  if (mmusic && mmusic->title != NULL)
-    {
-      gchar *tmp = title;
-      if (mmusic->artist != NULL)
-	title =
-	  g_strconcat (title, ": ", mmusic->artist, " - ", mmusic->title,
-		       NULL);
-      else
-	title = g_strconcat (title, ": ", mmusic->title, NULL);
-      g_free (tmp);
-      return title;
-    }
-
-  return title;
-}
-
-#else
-
 static gboolean
 update_tuple_str (Tuple * tuple, gint item, const gchar * newstr)
 {
@@ -1147,10 +1031,10 @@ update_tuple (Tuple* tuple, const struct mad_header mh,
 
   // Audio format
   changed = changed || update_tuple_int (tuple, FIELD_LENGTH, -1);
-  changed = changed || update_tuple_int(tuple, FIELD_BITRATE, mh.bitrate / 1000);
+  changed = changed || update_tuple_int (tuple, FIELD_BITRATE, mh.bitrate / 1000);
   changed = changed || update_tuple_str (tuple, FIELD_MIMETYPE, "audio/mpeg");
-  changed = changed || update_tuple_str(tuple, FIELD_CODEC, "MPEG Audio (MP2)");
-  changed = changed || update_tuple_str(tuple, FIELD_QUALITY, "lossy");
+  changed = changed || update_tuple_str (tuple, FIELD_CODEC, "MPEG Audio (MP2)");
+  changed = changed || update_tuple_str (tuple, FIELD_QUALITY, "lossy");
 
   // Station Name
   if (st && st->svc_name)
@@ -1190,7 +1074,6 @@ update_tuple (Tuple* tuple, const struct mad_header mh,
   g_free (stname);
   return changed;
 }
-#endif
 
 
 static gboolean
@@ -1198,37 +1081,21 @@ write_output (InputPlayback * playback, const struct mad_pcm *pcm,
 	      const struct mad_header *header)
 {
   guint i, ms, channel, channels = MAD_NCHANNELS (header);
-#ifdef HAVE_DECL_FMT_FIXED32
-  guint outbyte = sizeof (mad_fixed_t) * channels * pcm->length;
-  mad_fixed_t * output = g_malloc (outbyte);
-  mad_fixed_t * outend = output + channels * pcm->length;
-#else
   guint outbyte = sizeof (gfloat) * channels * pcm->length;
   gfloat * output = g_malloc (outbyte);
   gfloat * outend = output + channels * pcm->length;
-#endif
   gdouble vu = 0;
 
   for (channel = 0; channel < channels; channel++)
     {
       const mad_fixed_t * from = pcm->samples[channel];
-#ifdef HAVE_DECL_FMT_FIXED32
-      mad_fixed_t * to = output + channel;
-#else
       gfloat * to = output + channel;
-#endif
 
       while (to < outend)
         {
-#ifdef HAVE_DECL_FMT_FIXED32
-          mad_fixed_t sample = (*from++);
-          *to = sample;
-          vu += fabs (mad_f_todouble (sample));
-#else
           gdouble sample = mad_f_todouble (*from++);
           *to = (gfloat) sample;
           vu += fabs (sample);
-#endif
           to += channels;
         }
     }
@@ -1275,12 +1142,7 @@ write_output (InputPlayback * playback, const struct mad_pcm *pcm,
     }
 
   if (audio_opened)
-#ifdef HAVE_DECL_FMT_FIXED32
-    playback->pass_audio (playback, FMT_FIXED32, MAD_NCHANNELS (header),
-			  outbyte, output, NULL);
-#else
     playback->output->write_audio (output, outbyte);
-#endif
 
   g_free (output);
   return audio_opened;
@@ -1358,52 +1220,21 @@ dvb_mpeg_frame (InputPlayback * playback, const guchar * frame, guint len)
   // open audio card (if not already done)
   if (!audio_opened)
     {
-#ifdef HAVE_DECL_FMT_FIXED32
-      if (!playback->
- 	  output->open_audio (FMT_FIXED32, madframe.header.samplerate,
-			      MAD_NCHANNELS (&madframe.header)))
-#else
       if (!playback->
 	  output->open_audio (FMT_FLOAT, madframe.header.samplerate,
 			      MAD_NCHANNELS (&madframe.header)))
-#endif
 	{
-#if AUD_PLUGIN_API < 18
-	  playback->error = TRUE;
-#endif
 	  log_print (hlog, LOG_WARN,
 		     "open_audio() failed in dvb_mpeg_frame()");
 	  return FALSE;
 	}
 
       // Tell Audacious how we're doing
-#if AUD_PLUGIN_API < 18
-      playback->playing = TRUE;
-      playback->error = FALSE;
-#endif
       playback->set_pb_ready(playback);
 
       audio_opened = TRUE;
     }
 
-#if AUD_PLUGIN_API < 12
-  // Look if file title has changed
-  gchar *newtitle;
-  newtitle = build_file_title ();
-  if (playback->title == NULL
-      || (newtitle != NULL && strcmp (newtitle, playback->title) != 0))
-    {
-      playback->set_params (playback, newtitle, -1,
-			    madframe.header.bitrate,
-			    madframe.header.samplerate,
-			    MAD_NCHANNELS (&madframe.header));
-      if (playback->title != NULL)
-	{
-	  g_free (playback->title);
-	  playback->title = newtitle;
-	}
-    }
-#else
   // Check if tuple info has changed
   if (update_tuple (tuple, madframe.header, station, rt, mmusic))
     {

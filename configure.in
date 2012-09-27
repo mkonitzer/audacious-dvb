@@ -26,8 +26,8 @@ if test $use_gtk3 = no ; then
 fi
 
 # Audacious
-PKG_CHECK_MODULES(AUDACIOUS, [audacious >= 1.5.0], ,
-	AC_MSG_ERROR([*** Audacious >= 1.5.0 is not installed - please install first ***]))
+PKG_CHECK_MODULES(AUDACIOUS, [audacious >= 2.5.0], ,
+	AC_MSG_ERROR([*** Audacious >= 2.5.0 is not installed - please install first ***]))
 SAVED_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS $AUDACIOUS_CFLAGS"
 SAVED_CPPFLAGS="$CPPFLAGS"
@@ -35,12 +35,8 @@ CPPFLAGS="$CPPFLAGS $AUDACIOUS_CFLAGS"
 AC_CHECK_HEADERS([audacious/misc.h])
 AC_CHECK_TYPE([mcs_handle_t],
     AC_DEFINE([HAVE_MCS_HANDLE_T], 1,
-	[Define to 1 if your Audacious has the type `mcs_handle_t'.]),
-    [],	[[#include <audacious/configdb.h>]])
-AC_CHECK_DECL([FMT_FIXED32],
-    AC_DEFINE([HAVE_DECL_FMT_FIXED32], 1,
-	[Define to 1 if your Audacious has declared `FMT_FIXED32'.]),
-    [],	[[#include <audacious/plugin.h>]])
+   [Define to 1 if your Audacious has the type `mcs_handle_t'.]),
+    [],    [[#include <audacious/configdb.h>]])
 AC_MSG_CHECKING([for Audacious input plugin directory])
 AC_ARG_WITH(plugindir,
 	AS_HELP_STRING([--with-plugindir=DIR],[set the directory where Audacious-DVB will be installed @<:@default=autodetect@:>@]),
