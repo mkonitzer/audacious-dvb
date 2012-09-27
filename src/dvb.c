@@ -788,14 +788,16 @@ check_status (const HDVB * h, gint type,
 	  log_print (hlog, LOG_INFO, "        FEC_inner:  %d",
 		     feparams->u.qpsk.fec_inner);
 	  break;
-#ifdef DVB_ATSC
 	case FE_ATSC:
+#ifdef DVB_ATSC
 	  log_print (hlog, LOG_INFO, "Event:  Frequency: %d",
 		     feparams->frequency);
 	  log_print (hlog, LOG_INFO, "        Modulation: %d",
 		     feparams->u.vsb.modulation);
 	  break;
 #endif
+	default:
+	  log_print (hlog, LOG_INFO, "Unknown FE type.");
 	}
     }
 
@@ -941,8 +943,8 @@ dvb_tune (HDVB * h, tunestruct * t)
       feparams.u.qam.fec_inner = FEC_AUTO;
       feparams.u.qam.modulation = t->mod;
       break;
-#ifdef DVB_ATSC
     case FE_ATSC:
+#ifdef DVB_ATSC
       log_print (hlog, LOG_INFO, "tuning ATSC to %s", tunetext);
       g_free (tunetext);
       feparams.frequency = t->freq;
@@ -986,11 +988,11 @@ dvb_tune_to_text (const HDVB * h, const tunestruct * t)
 	g_strdup_printf ("%lu Hz, Srate: %lu, Modulation: %d", t->freq,
 			 t->srate, t->mod);
       break;
-#ifdef DVB_ATSC
     case FE_ATSC:
+#ifdef DVB_ATSC
       text = g_strdup_printf ("%lu Hz, Modulation: %d", t->freq, t->mod);
-      break;
 #endif
+      break;
     }
 
   return text;
