@@ -370,17 +370,23 @@ dvb_play (InputPlayback * playback, const gchar * filename, VFSFile * file,
   station->svc_name = auth;
   station->svc_imagefn = dvb_get_song_image_fn (filename);
 
-  // Get audio PIDs from SID
-  if ((rc =
-       dvb_get_pid (hdvb, tune->sid, &(tune->apid), &(tune->dpid))) != RC_OK)
+  // Get audio and data PID from SID
+  if (tune->apid == 0 || tune->dpid == 0)
     {
-      log_print (hlog, LOG_ERR, "dvb_get_pid() returned %d.", rc);
-      playing = FALSE;
-      dvb_tune_exit (tune);
-      tune = NULL;
-      dvb_close (hdvb);
-      hdvb = NULL;
-      return FALSE;
+      guint *apid, *dpid;
+      apid = (tune->apid == 0 ? &(tune->apid) : NULL);
+      dpid = (tune->dpid == 0 ? &(tune->dpid) : NULL);
+      if ((rc =
+	   dvb_get_pid (hdvb, tune->sid, apid, dpid)) != RC_OK)
+	{
+	  log_print (hlog, LOG_ERR, "dvb_get_pid() returned %d.", rc);
+	  playing = FALSE;
+	  dvb_tune_exit (tune);
+	  tune = NULL;
+	  dvb_close (hdvb);
+	  hdvb = NULL;
+	  return FALSE;
+	}
     }
 
   // Get station and provider name

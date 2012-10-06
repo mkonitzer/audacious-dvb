@@ -557,22 +557,18 @@ dvb_get_pid (HDVB * h, gint s, guint * apid, guint * dpid)
 
 	      if ((es_type == 0x03) || (es_type == 0x04))
 		{
+		  log_print (hlog, LOG_DEBUG,
+			  "Service Audio PID = %d (0x%04x)", es, es);
 		  if (es_audio < 0)
-		    {
-		      log_print (hlog, LOG_INFO,
-				 "Service Audio PID = %d (0x%04x)", es, es);
-		      es_audio = es;
-		    }
+		    es_audio = es;
 		}
 
 	      if (es_type == 0x05)
 		{
+		  log_print (hlog, LOG_DEBUG,
+			  "Service Data PID = %d (0x%04x)", es, es);
 		  if (es_data < 0)
-		    {
-		      log_print (hlog, LOG_INFO,
-				 "Service Data PID = %d (0x%04x)", es, es);
-		      es_data = es;
-		    }
+		    es_data = es;
 		}
 
 	      p += pil;
@@ -582,15 +578,24 @@ dvb_get_pid (HDVB * h, gint s, guint * apid, guint * dpid)
       p += 4;
     }
 
-  if (es_audio < 0)
+  if (apid != NULL && es_audio < 0)
     {
       log_print (hlog, LOG_ERR,
 		 "No corresponding Audio PID to SID %d found in PAT.", s);
       return RC_DVB_ERROR;
     }
-
-  *apid = es_audio;
-  *dpid = es_data;
+  if (apid != NULL)
+    {
+      log_print (hlog, LOG_INFO,
+		 "Setting Audio PID to %d (0x%04x)", es_audio, es_audio);
+      *apid = es_audio;
+    }
+  if (dpid != NULL)
+    {
+      log_print (hlog, LOG_INFO,
+		 "Setting Data PID to %d (0x%04x)", es_data, es_data);
+      *dpid = es_data;
+    }
 
   return RC_OK;
 }
@@ -1104,6 +1109,16 @@ dvb_tune_parse_url (const gchar * url, gchar ** authptr, tunestruct * tune)
 	{
 	  // Service ID
 	  t->sid = atol (val);
+	}
+      else if (g_ascii_strcasecmp (par, "apid") == 0)
+	{
+	  // Audio PID
+	  t->apid = atol (val);
+	}
+      else if (g_ascii_strcasecmp (par, "dpid") == 0)
+	{
+	  // Data PID
+	  t->dpid = atol (val);
 	}
       else if (g_ascii_strcasecmp (par, "freq") == 0)
 	{

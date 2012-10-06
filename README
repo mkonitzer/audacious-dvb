@@ -95,6 +95,12 @@ Runtime:
     hier    Hierarchy (DVB-T)
 	    Values: 1, 2, 4, NONE or AUTO (Default: AUTO)
 
+    apid    Audio PID
+	    Values: <num> (Default: AUTO)
+
+    dpid    Data PID
+	    Values: <num> (Default: AUTO)
+
     while <num> is a non-negative integer. For some valid practical
     combinations have a look at the .xspf-playlists in the
     'examples/'-subfolder, which contain ready-to-use URIs under examplary
